@@ -108,13 +108,44 @@ export default function Analysis({ nodes, textAnalysis, themeAnalysis }: Analysi
     }
   }
 
-  const handleRun = () => {
+  const [llmResults, setLlmResults] = useState<{ [key in AnalysisType]: any }>({
+    summary: null,
+    business: null,
+    themes: null,
+  })
+
+  const handleRun = async () => {
     setLoading((prev) => ({ ...prev, [activeTab]: true }))
-    setTimeout(() => {
+
+    try {
+      const response = await fetch("/api/analyze-nodes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nodes: nodes.map((node) => ({
+            id: node.id,
+            name: node.label,
+            type: node.type,
+            text: node.summary,
+          })),
+          analysisType: activeTab,
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setLlmResults((prev) => ({ ...prev, [activeTab]: result }))
+        setShowResults((prev) => ({ ...prev, [activeTab]: true }))
+        setLastRunTimes((prev) => ({ ...prev, [activeTab]: new Date() }))
+      }
+    } catch (error) {
+      console.error("[v0] Error running analysis:", error)
+      // Fallback to existing analysis
       setShowResults((prev) => ({ ...prev, [activeTab]: true }))
-      setLoading((prev) => ({ ...prev, [activeTab]: false }))
       setLastRunTimes((prev) => ({ ...prev, [activeTab]: new Date() }))
-    }, 1500)
+    } finally {
+      setLoading((prev) => ({ ...prev, [activeTab]: false }))
+    }
   }
 
   const [lastRunTimes, setLastRunTimes] = useState<{ [key in AnalysisType]: Date | null }>({
@@ -129,131 +160,176 @@ export default function Analysis({ nodes, textAnalysis, themeAnalysis }: Analysi
     const currentFeedback = feedback[activeTab]
     const currentCopyFeedback = copyFeedback[activeTab]
     const isEditing = editingMethodology[activeTab]
+    const llmResult = llmResults[activeTab]
 
     let content = ""
     let resultContent = null
 
     switch (activeTab) {
       case "summary":
-        content = `Summary Analysis\n\n${nodes.length} nodes spanning ${new Set(nodes.map((n) => n.type)).size} types.\nPrimary themes: ${textAnalysis.themes.join(", ")}.\nKey concepts: ${textAnalysis.commonWords
-          .slice(0, 3)
-          .map((w) => w.word)
-          .join(", ")}.`
-
-        resultContent = showResults.summary && (
-          <div className="space-y-4">
-            <p className="text-sm leading-relaxed text-gray-700">
-              {nodes.length} nodes spanning {new Set(nodes.map((n) => n.type)).size} types. Primary themes:{" "}
-              {textAnalysis.themes.join(", ")}. Key concepts:{" "}
-              {textAnalysis.commonWords
-                .slice(0, 3)
-                .map((w) => w.word)
-                .join(", ")}
-              .
-            </p>
-
-            <div className="flex flex-wrap gap-2">
-              {textAnalysis.themes.map((theme, index) => (
-                <Badge key={`theme-${index}`} className="bg-purple-100 text-purple-800 border-purple-200">
-                  {theme}
-                </Badge>
-              ))}
-              <div className="w-px h-6 bg-gray-200 mx-1" />
-              {textAnalysis.commonWords.map((word, index) => (
-                <Badge key={`concept-${index}`} variant="outline" className="text-gray-600 border-gray-300">
-                  {word.word} ({word.count})
-                </Badge>
-              ))}
+        if (llmResult?.summary) {
+          content = llmResult.summary
+          resultContent = showResults.summary && (
+            <div className="space-y-4">
+              <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">{llmResult.summary}</p>
             </div>
-          </div>
-        )
+          )
+        } else {
+          content = `Summary Analysis\n\n${nodes.length} nodes spanning ${new Set(nodes.map((n) => n.type)).size} types.\nPrimary themes: ${textAnalysis.themes.join(", ")}.\nKey concepts: ${textAnalysis.commonWords
+            .slice(0, 3)
+            .map((w) => w.word)
+            .join(", ")}.`
+
+          resultContent = showResults.summary && (
+            <div className="space-y-4">
+              <p className="text-sm leading-relaxed text-gray-700">
+                {nodes.length} nodes spanning {new Set(nodes.map((n) => n.type)).size} types. Primary themes:{" "}
+                {textAnalysis.themes.join(", ")}. Key concepts:{" "}
+                {textAnalysis.commonWords
+                  .slice(0, 3)
+                  .map((w) => w.word)
+                  .join(", ")}
+                .
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                {textAnalysis.themes.map((theme, index) => (
+                  <Badge key={`theme-${index}`} className="bg-purple-100 text-purple-800 border-purple-200">
+                    {theme}
+                  </Badge>
+                ))}
+                <div className="w-px h-6 bg-gray-200 mx-1" />
+                {textAnalysis.commonWords.map((word, index) => (
+                  <Badge key={`concept-${index}`} variant="outline" className="text-gray-600 border-gray-300">
+                    {word.word} ({word.count})
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )
+        }
         break
 
       case "business":
-        content = `Business Impact Analysis\n\nStrategic Importance:\nThe selected components represent critical infrastructure elements that directly impact business operations, customer experience, and system reliability.\n\nOperational Impact:\nDisruption to these components could result in service degradation, data processing delays, and potential revenue impact.\n\nRisk Assessment:\nHigh interdependency between selected nodes indicates potential single points of failure. Recommend implementing redundancy and monitoring.`
-
-        resultContent = showResults.business && (
-          <div className="space-y-4">
-            <div>
-              <h5 className="text-sm font-semibold mb-2 text-gray-900">Strategic Importance</h5>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                The selected components represent critical infrastructure elements that directly impact business
-                operations, customer experience, and system reliability.
-              </p>
+        if (llmResult?.summary) {
+          content = llmResult.summary
+          resultContent = showResults.business && (
+            <div className="space-y-4">
+              <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">{llmResult.summary}</p>
             </div>
+          )
+        } else {
+          content = `Business Impact Analysis\n\nStrategic Importance:\nThe selected components represent critical infrastructure elements that directly impact business operations, customer experience, and system reliability.\n\nOperational Impact:\nDisruption to these components could result in service degradation, data processing delays, and potential revenue impact.\n\nRisk Assessment:\nHigh interdependency between selected nodes indicates potential single points of failure. Recommend implementing redundancy and monitoring.`
 
-            <div>
-              <h5 className="text-sm font-semibold mb-2 text-gray-900">Operational Impact</h5>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                Disruption to these components could result in service degradation, data processing delays, and
-                potential revenue impact.
-              </p>
-            </div>
+          resultContent = showResults.business && (
+            <div className="space-y-4">
+              <div>
+                <h5 className="text-sm font-semibold mb-2 text-gray-900">Strategic Importance</h5>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  The selected components represent critical infrastructure elements that directly impact business
+                  operations, customer experience, and system reliability.
+                </p>
+              </div>
 
-            <div>
-              <h5 className="text-sm font-semibold mb-2 text-gray-900">Risk Assessment</h5>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                High interdependency between selected nodes indicates potential single points of failure. Recommend
-                implementing redundancy and monitoring.
-              </p>
+              <div>
+                <h5 className="text-sm font-semibold mb-2 text-gray-900">Operational Impact</h5>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  Disruption to these components could result in service degradation, data processing delays, and
+                  potential revenue impact.
+                </p>
+              </div>
+
+              <div>
+                <h5 className="text-sm font-semibold mb-2 text-gray-900">Risk Assessment</h5>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  High interdependency between selected nodes indicates potential single points of failure. Recommend
+                  implementing redundancy and monitoring.
+                </p>
+              </div>
             </div>
-          </div>
-        )
+          )
+        }
         break
 
       case "themes":
-        content = `Key Themes Analysis\n\n${themeAnalysis.themes
-          .map(
-            (theme) =>
-              `${theme.name} (${theme.nodes.length} nodes):\n${theme.nodes
-                .slice(0, 3)
-                .map((node) => `- ${node.label} (${node.type}) - ${Math.round(node.relevanceScore * 100)}%`)
-                .join("\n")}\nKey Terms: ${theme.nodes
-                .flatMap((n) => n.matchedKeywords)
-                .slice(0, 4)
-                .join(", ")}`,
+        if (llmResult?.themes) {
+          content = llmResult.themes
+            .map(
+              (theme: any) =>
+                `${theme.name}: ${theme.description}\nNodes: ${theme.nodeIds.join(", ")}\nReasoning: ${theme.reasoning}`,
+            )
+            .join("\n\n")
+
+          resultContent = showResults.themes && (
+            <div className="space-y-6">
+              {llmResult.themes.map((theme: any, index: number) => (
+                <div key={index} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-sm font-semibold text-gray-900">{theme.name}</h5>
+                    <Badge variant="outline" className="text-xs text-gray-600">
+                      {theme.nodeIds.length} node{theme.nodeIds.length !== 1 ? "s" : ""}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">{theme.description}</p>
+                  <p className="text-xs text-gray-600 italic">{theme.reasoning}</p>
+                </div>
+              ))}
+            </div>
           )
-          .join("\n\n")}`
+        } else {
+          content = `Key Themes Analysis\n\n${themeAnalysis.themes
+            .map(
+              (theme) =>
+                `${theme.name} (${theme.nodes.length} nodes):\n${theme.nodes
+                  .slice(0, 3)
+                  .map((node) => `- ${node.label} (${node.type}) - ${Math.round(node.relevanceScore * 100)}%`)
+                  .join("\n")}\nKey Terms: ${theme.nodes
+                  .flatMap((n) => n.matchedKeywords)
+                  .slice(0, 4)
+                  .join(", ")}`,
+            )
+            .join("\n\n")}`
 
-        resultContent = showResults.themes && themeAnalysis.themes.length > 0 && (
-          <div className="space-y-6">
-            {themeAnalysis.themes.map((theme, index) => (
-              <div key={theme.name} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h5 className="text-sm font-semibold text-gray-900">{theme.name}</h5>
-                  <Badge variant="outline" className="text-xs text-gray-600">
-                    {theme.nodes.length} node{theme.nodes.length !== 1 ? "s" : ""}
-                  </Badge>
-                </div>
+          resultContent = showResults.themes && themeAnalysis.themes.length > 0 && (
+            <div className="space-y-6">
+              {themeAnalysis.themes.map((theme, index) => (
+                <div key={theme.name} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-sm font-semibold text-gray-900">{theme.name}</h5>
+                    <Badge variant="outline" className="text-xs text-gray-600">
+                      {theme.nodes.length} node{theme.nodes.length !== 1 ? "s" : ""}
+                    </Badge>
+                  </div>
 
-                <div className="space-y-1">
-                  {theme.nodes.slice(0, 3).map((node, nodeIndex) => (
-                    <div key={node.id} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">{node.label}</span>
-                        <Badge variant="outline" className="text-xs text-gray-600">
-                          {node.type}
-                        </Badge>
+                  <div className="space-y-1">
+                    {theme.nodes.slice(0, 3).map((node, nodeIndex) => (
+                      <div key={node.id} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900">{node.label}</span>
+                          <Badge variant="outline" className="text-xs text-gray-600">
+                            {node.type}
+                          </Badge>
+                        </div>
+                        <span className="text-xs text-gray-500">{Math.round(node.relevanceScore * 100)}%</span>
                       </div>
-                      <span className="text-xs text-gray-500">{Math.round(node.relevanceScore * 100)}%</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap gap-1">
-                  {theme.nodes
-                    .flatMap((n) => n.matchedKeywords)
-                    .slice(0, 4)
-                    .map((keyword, keyIndex) => (
-                      <Badge key={keyIndex} variant="outline" className="text-xs text-gray-600">
-                        {keyword}
-                      </Badge>
                     ))}
+                  </div>
+
+                  <div className="flex flex-wrap gap-1">
+                    {theme.nodes
+                      .flatMap((n) => n.matchedKeywords)
+                      .slice(0, 4)
+                      .map((keyword, keyIndex) => (
+                        <Badge key={keyIndex} variant="outline" className="text-xs text-gray-600">
+                          {keyword}
+                        </Badge>
+                      ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )
+              ))}
+            </div>
+          )
+        }
         break
     }
 
@@ -331,5 +407,7 @@ export default function Analysis({ nodes, textAnalysis, themeAnalysis }: Analysi
     )
   }
 
-  return null
+  return (
+    null
+  )
 }

@@ -93,3 +93,4 @@ const SimilarityHistogram = ({
 }
 
 export default SimilarityHistogram
+export { SimilarityHistogram }
