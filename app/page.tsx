@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Search, Filter, Zap, Eye, EyeOff, X, ChevronDown, AlertTriangle, FileText } from "lucide-react"
+import { Search, Filter, Zap, Eye, EyeOff, X, ChevronDown, AlertTriangle, FileText, Globe } from "lucide-react"
 import NetworkGraph from "@/components/network-graph"
 import Analysis from "@/components/analysis"
 import { Textarea } from "@/components/ui/textarea"
@@ -76,6 +76,8 @@ export default function NetworkGraphApp() {
   const setDeselectedNodeTypes = useFilterStore((state) => state.setDeselectedNodeTypes)
   const toggleDeselectedNodeType = useFilterStore((state) => state.toggleDeselectedNodeType)
   const setExpandedContinents = useFilterStore((state) => state.setExpandedContinents)
+  const countrySearchTerm = useFilterStore((state) => state.countrySearchTerm)
+  const setCountrySearchTerm = useFilterStore((state) => state.setCountrySearchTerm)
 
   const showLabels = useUIStore((state) => state.showLabels)
   const apiKey = useUIStore((state) => state.apiKey)
@@ -881,8 +883,10 @@ export default function NetworkGraphApp() {
       case "continent":
         return [
           { label: "North America", color: "#dc2626" },
-          { label: "European Union", color: "#3b82f6" },
+          { label: "Europe", color: "#3b82f6" },
           { label: "Asia", color: "#f59e0b" },
+          { label: "South America", color: "#10b981" },
+          { label: "Africa", color: "#8b5cf6" },
           { label: "Oceania", color: "#7c3aed" },
         ]
       case "similarityRange":
@@ -896,6 +900,65 @@ export default function NetworkGraphApp() {
     }
   }
 
+  const getLegendItems = (mode: string) => {
+    switch (mode) {
+      case "sourceType":
+        return [
+          { label: "Government", color: "#3b82f6" },
+          { label: "Tech Company", color: "#059669" },
+          { label: "News Article", color: "#f59e0b" },
+          { label: "Law Firm", color: "#dc2626" },
+          { label: "NGO", color: "#7c3aed" },
+        ].map((item) => ({
+          ...item,
+          count: filteredNodes.filter((node) => node.sourceType === item.label).length,
+        }))
+      case "country":
+        return [
+          { label: "USA", color: "#dc2626" },
+          { label: "Germany", color: "#000000" },
+          { label: "Canada", color: "#dc2626" },
+          { label: "Japan", color: "#dc2626" },
+          { label: "France", color: "#3b82f6" },
+          { label: "Luxembourg", color: "#3b82f6" },
+          { label: "Mexico", color: "#059669" },
+          { label: "South Korea", color: "#f59e0b" },
+          { label: "Australia", color: "#7c3aed" },
+        ].map((item) => ({
+          ...item,
+          count: filteredNodes.filter((node) => node.country === item.label).length,
+        }))
+      case "continent":
+        return [
+          { label: "North America", color: "#dc2626" },
+          { label: "Europe", color: "#3b82f6" },
+          { label: "Asia", color: "#f59e0b" },
+          { label: "Oceania", color: "#7c3aed" },
+        ].map((item) => ({
+          ...item,
+          count: filteredNodes.filter((node) => node.continent === item.label).length,
+        }))
+      case "similarityRange":
+        return [
+          { label: "Low (0-33%)", color: "#dc2626" },
+          { label: "Medium (34-66%)", color: "#f59e0b" },
+          { label: "High (67-100%)", color: "#059669" },
+        ].map((item) => ({
+          ...item,
+          count: filteredNodes.filter((node) => {
+            if (!node.similarity) return false
+            const similarityPercent = Math.round(node.similarity * 100)
+            if (item.label === "Low (0-33%)") return similarityPercent >= 0 && similarityPercent <= 33
+            if (item.label === "Medium (34-66%)") return similarityPercent >= 34 && similarityPercent <= 66
+            if (item.label === "High (67-100%)") return similarityPercent >= 67 && similarityPercent <= 100
+            return false
+          }).length,
+        }))
+      default:
+        return []
+    }
+  }
+
   const toggleExpandedContinent = (continent: string) => {
     const currentExpanded = expandedContinents || []
     if (currentExpanded.includes(continent)) {
@@ -904,9 +967,6 @@ export default function NetworkGraphApp() {
       setExpandedContinents([...currentExpanded, continent])
     }
   }
-
-  const countrySearchTerm = useFilterStore((state) => state.countrySearchTerm)
-  const setCountrySearchTerm = useFilterStore((state) => state.setCountrySearchTerm)
 
   const continentCountries = useMemo(() => {
     const grouping: Record<string, string[]> = {}
@@ -1037,7 +1097,8 @@ export default function NetworkGraphApp() {
       case "continent":
         const continentColors = {
           "North America": "#dc2626", // Red
-          "European Union": "#3b82f6", // Blue
+          Europe: "#3b82f6", // Blue
+          Europe: "#3b82f6", // Blue
           Asia: "#f59e0b", // Yellow
           Oceania: "#7c3aed", // Purple
         }
@@ -1092,6 +1153,9 @@ export default function NetworkGraphApp() {
   }, [filteredNodes, colorMode, nodeSizeMode])
 
   // const [toggleContinentExpansion, setToggleContinentExpansion] = useState<((continent: string) => void) | null>(null)
+
+  const networkState = useNetworkStore()
+  const filterState = useFilterStore()
 
   return (
     <div className="flex h-screen bg-background">
@@ -1217,7 +1281,10 @@ export default function NetworkGraphApp() {
 
             {/* Geographic Filters */}
             <div className="space-y-3">
-              <Label className="text-sidebar-foreground font-medium text-sm">Geographic Filters</Label>
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-sidebar-foreground" />
+                <Label className="text-sidebar-foreground font-medium text-sm">Geographic Filters</Label>
+              </div>
 
               <div className="space-y-2">
                 <div className="relative"></div>
@@ -1575,7 +1642,7 @@ export default function NetworkGraphApp() {
 
       {/* Right Panel */}
       <div
-        className={`${rightPanelExpanded ? "absolute right-0 top-0 left-96 z-10" : "w-80"} bg-sidebar border-l border-sidebar-border overflow-y-auto transition-all duration-300 flex flex-col`}
+        className={`${rightPanelExpanded ? "absolute right-0 top-0 left-96 z-10" : "w-80"} h-screen bg-sidebar border-l border-sidebar-border overflow-y-auto transition-all duration-300 flex flex-col`}
       >
         {/* Expand/Collapse Button */}
         <div className="flex justify-start p-2 border-b border-sidebar-border">
@@ -1861,27 +1928,105 @@ export default function NetworkGraphApp() {
                                     d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 002 2v8a2 2 0 002 2z"
                                   />
                                 </svg>
-                                Copy
+                                {rightPanelExpanded && "Copy"}
                               </Button>
+
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleFeedback(conversation.id, "up")}
-                                className={
-                                  conversation.feedback === "up"
-                                    ? "text-gray-800 bg-gray-100"
-                                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-                                }
+                                onClick={() => {
+                                  const timestamp = new Date().toLocaleString()
+                                  const filterBreadcrumb = [
+                                    filterState.selectedContinents.length > 0 &&
+                                      `Continents: ${filterState.selectedContinents.join(", ")}`,
+                                    filterState.selectedCountries.length > 0 &&
+                                      `Countries: ${filterState.selectedCountries.join(", ")}`,
+                                    filterState.selectedSourceTypes.length > 0 &&
+                                      `Source Types: ${filterState.selectedSourceTypes.join(", ")}`,
+                                    filterState.searchTerm && `Search: "${filterState.searchTerm}"`,
+                                    `Similarity Range: ${filterState.selectedSimilarityRange[0]}% - ${filterState.selectedSimilarityRange[1]}%`,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" | ")
+
+                                  const selectedNodeIds = networkState.selectedNodes.map((node) => node.id).join(", ")
+
+                                  const exportContent = [
+                                    `Export Date: ${timestamp}`,
+                                    ``,
+                                    `Prompt: ${conversation.prompt}`,
+                                    ``,
+                                    `Active Filters: ${filterBreadcrumb || "None"}`,
+                                    ``,
+                                    `Selected Node IDs: ${selectedNodeIds || "None"}`,
+                                    ``,
+                                    `Analysis:`,
+                                    conversation.response,
+                                  ].join("\n")
+
+                                  const blob = new Blob([exportContent], { type: "text/plain" })
+                                  const url = URL.createObjectURL(blob)
+                                  const a = document.createElement("a")
+                                  a.href = url
+                                  a.download = `network-analysis-${Date.now()}.txt`
+                                  document.body.appendChild(a)
+                                  a.click()
+                                  document.body.removeChild(a)
+                                  URL.revokeObjectURL(url)
+                                }}
+                                className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth={2}
-                                    d="M10 14H5.147a2 2 0 01-1.789-2.894l3.5-7A2 2 0 019.147 3h5.706a2 2 0 011.789 2.894l-3.5 7A2 2 0 0110.737 19H5m7-9V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412.608 2.006L7 11v9m7-9h-2m5 9h2a2 2 0 002-2V7a2 2 0 00-2-2H9.5"
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                   />
                                 </svg>
+                                {rightPanelExpanded && "Download"}
                               </Button>
+
+                              <div className="flex items-center gap-1 ml-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleFeedback(conversation.id, "up")}
+                                  className={
+                                    conversation.feedback === "up"
+                                      ? "text-green-600 bg-green-50 hover:bg-green-100"
+                                      : "text-gray-600 hover:text-green-600 hover:bg-green-50"
+                                  }
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                                    />
+                                  </svg>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleFeedback(conversation.id, "down")}
+                                  className={
+                                    conversation.feedback === "down"
+                                      ? "text-red-600 bg-red-50 hover:bg-red-100"
+                                      : "text-gray-600 hover:text-red-600 hover:bg-red-50"
+                                  }
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M10 14H5.764a2 2 0 01-1.789-2.894l3.5-7A2 2 0 019.264 3h4.017c.163 0 .326.02.485.06L17 4m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 15V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2-2h-2.5"
+                                    />
+                                  </svg>
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
