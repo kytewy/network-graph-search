@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Badge } from '@/components/ui/badge';
+import { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter, X, ChevronDown } from 'lucide-react';
 import LayoutControls from '../components/ui/LayoutControls';
 import { ColorLegend } from '@/components/ui/ColorLegend';
 import NetworkGraph from '@/components/network-graph';
@@ -86,69 +84,25 @@ export default function NetworkGraphApp() {
 	const expandedContinents = useFilterStore(
 		(state) => state.expandedContinents
 	);
-	const setSearchTerm = useSearchStore((state) => state.setSearchTerm);
-	const toggleContinent = useFilterStore((state) => state.toggleContinent);
-	const toggleCountry = useFilterStore((state) => state.toggleCountry);
-	const toggleSourceType = useFilterStore((state) => state.toggleSourceType);
 	const toggleSimilarityRange = useFilterStore(
 		(state) => state.toggleSimilarityRange
 	);
-	const setColorMode = useLayoutStore((state) => state.setColorMode);
-	const setNodeSizeMode = useLayoutStore((state) => state.setNodeSizeMode);
-	const clearFilters = useFilterStore((state) => state.clearFilters);
-	const selectedLinkTypes = useFilterStore((state) => state.selectedLinkTypes);
-	const selectedStateProvinces = useFilterStore(
-		(state) => state.selectedStateProvinces
-	);
-	const setDeselectedNodeTypes = useFilterStore(
-		(state) => state.setDeselectedNodeTypes
-	);
-	const toggleDeselectedNodeType = useFilterStore(
-		(state) => state.toggleDeselectedNodeType
-	);
+
 	const setExpandedContinents = useFilterStore(
 		(state) => state.setExpandedContinents
 	);
 	const countrySearchTerm = useFilterStore((state) => state.countrySearchTerm);
-	const setCountrySearchTerm = useFilterStore(
-		(state) => state.setCountrySearchTerm
-	);
 
 	const showLabels = useLayoutStore((state) => state.showLabels);
 	const apiKey = useUIStore((state) => state.apiKey);
-	const showDescriptionSummary = useUIStore(
-		(state) => state.showDescriptionSummary
-	);
-	const showThemeAnalysis = useUIStore((state) => state.showThemeAnalysis);
-	const showActiveNodes = useUIStore((state) => state.showActiveNodes);
+
 	const rightPanelExpanded = useLayoutStore(
 		(state) => state.rightPanelExpanded
 	);
-	const setShowLabels = useLayoutStore((state) => state.setShowLabels);
-	const setShowDescriptionSummary = useUIStore(
-		(state) => state.setShowDescriptionAnalysis
-	);
-	const setShowThemeAnalysis = useUIStore(
-		(state) => state.setShowThemeAnalysis
-	);
-	const setShowActiveNodes = useUIStore((state) => state.setShowActiveNodes);
+
 	const setRightPanelExpanded = useLayoutStore(
 		(state) => state.setRightPanelExpanded
 	);
-	const setApiKey = useUIStore((state) => state.setApiKey);
-	const toggleThemeCollapse = useUIStore((state) => state.toggleThemeCollapse);
-	const toggleMethodology = useUIStore((state) => state.toggleMethodology);
-
-	const searchHistory = useSearchStore((state) => state.searchHistory);
-	const setSearchHistory = useSearchStore((state) => state.setSearchHistory);
-	const isSearching = useSearchStore((state) => state.isSearching);
-	const setIsSearching = useSearchStore((state) => state.setIsSearching);
-	const topResults = useSearchStore((state) => state.topResults);
-	const setTopResults = useSearchStore((state) => state.setTopResults);
-	const hasSearched = useSearchStore((state) => state.hasSearched);
-	const setHasSearched = useSearchStore((state) => state.setHasSearched);
-	const searchStatus = useSearchStore((state) => state.searchStatus);
-	const setSearchStatus = useSearchStore((state) => state.setSearchStatus);
 
 	const reorganizeLayoutRef = useRef<(() => void) | null>(null);
 	const arrangeAsTreeRef = useRef<(() => void) | null>(null);
@@ -180,12 +134,10 @@ export default function NetworkGraphApp() {
 	}, [expandedNodes]);
 
 	const nodeTypes = [...new Set(safeNodes.map((node) => node.type))];
-	const linkTypes = [...new Set(safeLinks.map((link) => link.type))];
+
 	const continents = [...new Set(safeNodes.map((node) => node.continent))];
 	const countries = [...new Set(safeNodes.map((node) => node.country))];
-	const stateProvinces = [
-		...new Set(safeNodes.map((node) => node.stateProvince).filter(Boolean)),
-	];
+
 	const sourceTypes = [...new Set(safeNodes.map((node) => node.sourceType))];
 
 	const calculateTFIDF = useCallback((documents: string[]) => {
@@ -500,17 +452,6 @@ export default function NetworkGraphApp() {
 		},
 		[toggleNodeExpansion]
 	);
-
-	const filterStore = useFilterStore();
-	const uiStore = useUIStore();
-
-	const handleToggleThemeCollapse = (themeName: string) => {
-		toggleThemeCollapse(themeName);
-	};
-
-	const handleToggleMethodology = (section: string) => {
-		toggleMethodology(section);
-	};
 
 	const removeNodeFromSelection = (nodeId: string) => {
 		removeSelectedNode(nodeId);
@@ -834,7 +775,6 @@ export default function NetworkGraphApp() {
 		toggleSimilarityRange(range);
 	};
 
-
 	const toggleExpandedContinent = (continent: string) => {
 		const currentExpanded = expandedContinents || [];
 		if (currentExpanded.includes(continent)) {
@@ -875,79 +815,6 @@ export default function NetworkGraphApp() {
 		});
 		return filtered;
 	}, [continentCountries, countrySearchTerm]);
-
-	const removeFromHistory = (indexToRemove: number) => {
-		const updatedHistory = searchHistory.filter(
-			(_: string, index: number) => index !== indexToRemove
-		);
-		setSearchHistory(updatedHistory);
-	};
-
-	const handleExpandQuery = async () => {
-		if (!hasApiKey || !searchTerm.trim()) return;
-
-		try {
-			console.log('[v0] Expanding query with AI:', searchTerm);
-			const response = await fetch('/api/expand-query', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ query: searchTerm }),
-			});
-
-			if (response.ok) {
-				const { expandedQuery } = await response.json();
-				setSearchTerm(expandedQuery);
-				console.log('[v0] Query expanded successfully:', expandedQuery);
-			} else {
-				console.error(
-					'[v0] Query expansion failed:',
-					response.status,
-					response.statusText
-				);
-			}
-		} catch (error) {
-			console.error('[v0] Error expanding query:', error);
-		}
-	};
-
-	const handleSearch = async () => {
-		if (!searchTerm || !searchTerm.trim()) return;
-
-		setIsSearching(true);
-		setSearchStatus('');
-
-		// Add to search history if not already present
-		if (!searchHistory.includes(searchTerm.trim())) {
-			const updatedHistory = [searchTerm.trim(), ...searchHistory.slice(0, 4)];
-			setSearchHistory(updatedHistory);
-		}
-
-		await new Promise((resolve) => setTimeout(resolve, 1200));
-
-		setIsSearching(false);
-		setHasSearched(true);
-
-		const highlightedCount = filteredNodes.filter((node) => {
-			const similarity = calculateSimilarity(searchTerm, node.summary);
-			return similarity > 0.1; // Lower threshold for TF-IDF similarity
-		}).length;
-
-		if (highlightedCount > 0) {
-			setSearchStatus(`Found ${highlightedCount} semantically similar results`);
-		} else {
-			setSearchStatus('No semantic matches found - try different terms');
-		}
-	};
-
-	const handleClearSearch = () => {
-		setSearchTerm('');
-		setHasSearched(false);
-		setSearchStatus('');
-	};
-
-	const handleHistoryClick = (term: string) => {
-		setSearchTerm(term);
-	};
 
 	const getNodeColorByMode = (node: Node, mode: string) => {
 		switch (mode) {
@@ -1036,31 +903,6 @@ export default function NetworkGraphApp() {
 	const safeHighlightedLinks = Array.isArray(highlightedLinks)
 		? highlightedLinks
 		: [];
-
-	// const safeSelectedNodeTypes = Array.isArray(selectedNodeTypes)
-	// 	? selectedNodeTypes
-	// 	: [];
-	// const safeSelectedLinkTypes = Array.isArray(selectedLinkTypes)
-	// 	? selectedLinkTypes
-	// 	: [];
-	// const safeSelectedCountries = Array.isArray(selectedCountries)
-	// 	? selectedCountries
-	// 	: [];
-	// const safeSelectedContinents = Array.isArray(selectedContinents)
-	// 	? selectedContinents
-	// 	: [];
-	// const safeSelectedStateProvinces = Array.isArray(selectedStateProvinces)
-	// 	? selectedStateProvinces
-	// 	: [];
-	// const safeSelectedSourceTypes = Array.isArray(selectedSourceTypes)
-	// 	? selectedSourceTypes
-	// 	: [];
-	// const safeSelectedSimilarityRange = Array.isArray(selectedSimilarityRange)
-	// 	? selectedSimilarityRange
-	// 	: [];
-	// const safeDeselectedNodeTypes = Array.isArray(deselectedNodeTypes)
-	// 	? deselectedNodeTypes
-	// 	: [];
 
 	const transformedNodes = useMemo(() => {
 		return filteredNodes.map((node) => ({
