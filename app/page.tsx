@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
-	Search,
 	Filter,
 	Zap,
 	Eye,
@@ -23,6 +22,7 @@ import NetworkGraph from '@/components/network-graph';
 import Analysis from '@/components/analysis';
 import { Textarea } from '@/components/ui/textarea';
 import SimilarityHistogram from '@/components/similarity-histogram';
+import SearchPanel from '@/components/search/SearchPanel';
 
 import { useNetworkStore } from '@/lib/stores/network-store';
 import { useFilterStore } from '@/lib/stores/filter-store';
@@ -1302,7 +1302,6 @@ export default function NetworkGraphApp() {
 				const continentColors = {
 					'North America': '#dc2626', // Red
 					Europe: '#3b82f6', // Blue
-					Europe: '#3b82f6', // Blue
 					Asia: '#f59e0b', // Yellow
 					Oceania: '#7c3aed', // Purple
 				};
@@ -1409,120 +1408,15 @@ export default function NetworkGraphApp() {
 						</p>
 					</div>
 
-					<div className="space-y-4 rounded-lg p-4 bg-white">
-						<div className="flex items-center justify-between">
-							<Label className="text-sidebar-foreground font-medium text-base">
-								Search Content
-							</Label>
-							<button
-								className={`p-1 rounded transition-all duration-200 ${
-									hasApiKey
-										? 'text-purple-600 hover:text-purple-700 hover:bg-purple-50'
-										: 'text-gray-400 opacity-50 cursor-not-allowed'
-								}`}
-								onClick={hasApiKey ? handleExpandQuery : undefined}
-								title={
-									hasApiKey
-										? 'Expand search with AI'
-										: 'AI expansion unavailable - add API key'
-								}
-								disabled={!hasApiKey}>
-								✨
-							</button>
-						</div>
-
-						{/* Search Nodes */}
-						<div className="space-y-4">
-							<div className="relative">
-								<Textarea
-									placeholder="Ask about AI regulations...."
-									value={searchTerm}
-									onChange={(e) => setSearchTerm(e.target.value)}
-									onKeyDown={(e) => {
-										if (e.key === 'Enter' && !e.shiftKey) {
-											e.preventDefault();
-											handleSearch();
-										}
-									}}
-									className="pr-12 py-3 min-h-[4rem] max-h-[8rem] text-base bg-sidebar-accent/10 border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/50 resize-none transition-all duration-200 ease-out overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-2"
-									style={{
-										height: 'auto',
-										minHeight: '4rem',
-									}}
-									onInput={(e) => {
-										const target = e.target as HTMLTextAreaElement;
-										target.style.height = 'auto';
-										target.style.height =
-											Math.min(target.scrollHeight, 8 * 24) + 'px';
-									}}
-								/>
-
-								{/* Search history dropdown removed */}
-							</div>
-
-							{searchStatus && (
-								<div className="text-sm text-sidebar-foreground/70 px-2">
-									{searchStatus}
-								</div>
-							)}
-
-							<div className="flex items-center justify-between gap-2">
-								<div className="flex items-center gap-2">
-									<Label className="text-sm text-sidebar-foreground/70 whitespace-nowrap">
-										Limit
-									</Label>
-									<Input
-										type="number"
-										value={topResults}
-										onChange={(e) =>
-											setTopResults(
-												Math.max(1, Number.parseInt(e.target.value) || 1)
-											)
-										}
-										className="w-16 h-8 text-center bg-sidebar-accent/10 border-sidebar-border text-sidebar-foreground"
-										min="1"
-										max="100"
-									/>
-									<span className="text-xs text-sidebar-foreground/50">
-										nodes
-									</span>
-								</div>
-
-								<Button
-									size="sm"
-									className={`h-8 w-8 p-0 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-										searchTerm.trim() && hasSearched
-											? 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700'
-											: 'bg-[#7c3aed] hover:bg-[#6d28d9] text-white'
-									}`}
-									onClick={
-										searchTerm.trim() && hasSearched
-											? handleClearSearch
-											: handleSearch
-									}
-									disabled={isSearching}>
-									{isSearching ? (
-										<div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-									) : searchTerm.trim() && hasSearched ? (
-										<svg
-											className="h-3 w-3"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24">
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												strokeWidth={2}
-												d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-											/>
-										</svg>
-									) : (
-										<Search className="h-3 w-3" />
-									)}
-								</Button>
-							</div>
-						</div>
-					</div>
+					<SearchPanel
+						searchStatus={searchStatus}
+						hasSearched={hasSearched}
+						isSearching={isSearching}
+						setSearchStatus={setSearchStatus}
+						setHasSearched={setHasSearched}
+						setIsSearching={setIsSearching}
+						calculateSimilarity={calculateSimilarity}
+					/>
 
 					{/* Data Filters */}
 					<div className="rounded-lg p-4 space-y-4 bg-white">
