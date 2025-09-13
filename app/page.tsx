@@ -135,7 +135,9 @@ export default function NetworkGraphApp() {
 	);
 	const showThemeAnalysis = useUIStore((state) => state.showThemeAnalysis);
 	const showActiveNodes = useUIStore((state) => state.showActiveNodes);
-	const rightPanelExpanded = useLayoutStore((state) => state.rightPanelExpanded);
+	const rightPanelExpanded = useLayoutStore(
+		(state) => state.rightPanelExpanded
+	);
 	const setShowLabels = useLayoutStore((state) => state.setShowLabels);
 	const setShowDescriptionSummary = useUIStore(
 		(state) => state.setShowDescriptionAnalysis
@@ -1152,7 +1154,9 @@ export default function NetworkGraphApp() {
 	>('force');
 
 	const removeFromHistory = (indexToRemove: number) => {
-		const updatedHistory = searchHistory.filter((_: string, index: number) => index !== indexToRemove);
+		const updatedHistory = searchHistory.filter(
+			(_: string, index: number) => index !== indexToRemove
+		);
 		setSearchHistory(updatedHistory);
 	};
 
@@ -1363,9 +1367,7 @@ export default function NetworkGraphApp() {
 						</p>
 					</div>
 
-					<SearchPanel
-						calculateSimilarity={calculateSimilarity}
-					/>
+					<SearchPanel calculateSimilarity={calculateSimilarity} />
 
 					<FilterPanel
 						filteredNodes={filteredNodes}
