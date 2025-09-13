@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import LayoutControls from '../components/ui/LayoutControls';
 import { ColorLegend } from '@/components/ui/ColorLegend';
-import NetworkGraph from '@/components/network-graph';
+import NetworkGraph from '@/components/new-network-graph';
 import Analysis from '@/components/analysis';
 import SearchPanel from '@/components/search/SearchPanel';
 import FilterPanel from '@/components/filters/FilterPanel';

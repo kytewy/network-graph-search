@@ -51,14 +51,16 @@ export default function LayoutControls({
             onClick={() => reorganizeLayoutRef.current?.()}
             variant="outline"
             size="sm"
-            className="flex-1">
+            className="flex-1"
+            title="Force-directed layout with circular-like arrangement">
             Radial
           </Button>
           <Button
             onClick={() => arrangeAsTreeRef.current?.()}
             variant="outline"
             size="sm"
-            className="flex-1">
+            className="flex-1"
+            title="Hierarchical layout with top-to-bottom arrangement">
             Tree
           </Button>
         </div>
