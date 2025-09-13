@@ -1,22 +1,13 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-	Filter,
-	X,
-	ChevronDown,
-	AlertTriangle,
-	FileText,
-	Globe,
-} from 'lucide-react';
+import { Filter, X, ChevronDown } from 'lucide-react';
 import LayoutControls from '../components/ui/LayoutControls';
 import { ColorLegend } from '@/components/ui/ColorLegend';
 import NetworkGraph from '@/components/network-graph';
 import Analysis from '@/components/analysis';
-import SimilarityHistogram from '@/components/similarity-histogram';
 import SearchPanel from '@/components/search/SearchPanel';
 import FilterPanel from '@/components/filters/FilterPanel';
 import ContextManagement from '@/components/analysis/ContextManagement';
@@ -148,9 +139,6 @@ export default function NetworkGraphApp() {
 	const toggleThemeCollapse = useUIStore((state) => state.toggleThemeCollapse);
 	const toggleMethodology = useUIStore((state) => state.toggleMethodology);
 
-	const [loadingSummary, setLoadingSummary] = useState(false);
-	const [loadingBusiness, setLoadingBusiness] = useState(false);
-	const [loadingThemes, setLoadingThemes] = useState(false);
 	const searchHistory = useSearchStore((state) => state.searchHistory);
 	const setSearchHistory = useSearchStore((state) => state.setSearchHistory);
 	const isSearching = useSearchStore((state) => state.isSearching);
@@ -516,17 +504,6 @@ export default function NetworkGraphApp() {
 	const filterStore = useFilterStore();
 	const uiStore = useUIStore();
 
-	const clearSelection = () => {
-		setSelectedNodes([]);
-		setDeselectedNodeTypes([]);
-		setShowDescriptionSummary(false);
-		setShowThemeAnalysis(false);
-	};
-
-	const toggleNodeTypeDeselection = (type: string) => {
-		toggleDeselectedNodeType(type);
-	};
-
 	const handleToggleThemeCollapse = (themeName: string) => {
 		toggleThemeCollapse(themeName);
 	};
@@ -853,100 +830,10 @@ export default function NetworkGraphApp() {
 		};
 	}, [safeSelectedNodes, filteredNodes, filteredLinks, deselectedNodeTypes]);
 
-	const sampleNodes = [
-		{
-			id: '1',
-			label: 'Node 1',
-			summary: 'Summary of Node 1',
-			content: 'Content of Node 1',
-			type: 'Type A',
-		},
-		{
-			id: '2',
-			label: 'Node 2',
-			summary: 'Summary of Node 2',
-			content: 'Content of Node 2',
-			type: 'Type B',
-		},
-	];
-
 	const handleSimilarityRangeClick = (range: string) => {
 		toggleSimilarityRange(range);
 	};
 
-	const getLegendItems = (mode: string) => {
-		switch (mode) {
-			case 'sourceType':
-				return [
-					{ label: 'Government', color: '#3b82f6' },
-					{ label: 'Tech Company', color: '#059669' },
-					{ label: 'News Article', color: '#f59e0b' },
-					{ label: 'Law Firm', color: '#dc2626' },
-					{ label: 'NGO', color: '#7c3aed' },
-				].map((item) => ({
-					...item,
-					count: filteredNodes.filter((node) => node.sourceType === item.label)
-						.length,
-				}));
-			case 'country':
-				return [
-					{ label: 'USA', color: '#dc2626' },
-					{ label: 'Germany', color: '#000000' },
-					{ label: 'Canada', color: '#dc2626' },
-					{ label: 'Japan', color: '#dc2626' },
-					{ label: 'France', color: '#3b82f6' },
-					{ label: 'Luxembourg', color: '#3b82f6' },
-					{ label: 'Mexico', color: '#059669' },
-					{ label: 'South Korea', color: '#f59e0b' },
-					{ label: 'Australia', color: '#7c3aed' },
-				].map((item) => ({
-					...item,
-					count: filteredNodes.filter((node) => node.country === item.label)
-						.length,
-				}));
-			case 'continent':
-				return [
-					{ label: 'North America', color: '#dc2626' },
-					{ label: 'Europe', color: '#3b82f6' },
-					{ label: 'Asia', color: '#f59e0b' },
-					{ label: 'Oceania', color: '#7c3aed' },
-				].map((item) => ({
-					...item,
-					count: filteredNodes.filter((node) => node.continent === item.label)
-						.length,
-				}));
-			case 'similarityRange':
-				return [
-					{ label: 'Low (0-33%)', color: '#dc2626' },
-					{ label: 'Medium (34-66%)', color: '#f59e0b' },
-					{ label: 'High (67-100%)', color: '#059669' },
-				].map((item) => ({
-					...item,
-					count: filteredNodes.filter((node) => {
-						if (!node.similarity) return false;
-						const similarityPercent = Math.round(node.similarity * 100);
-						if (item.label === 'Low (0-33%)')
-							return similarityPercent >= 0 && similarityPercent <= 33;
-						if (item.label === 'Medium (34-66%)')
-							return similarityPercent >= 34 && similarityPercent <= 66;
-						if (item.label === 'High (67-100%)')
-							return similarityPercent >= 67 && similarityPercent <= 100;
-						return false;
-					}).length,
-				}));
-			case 'documentType':
-				return [
-					{ label: 'recital', color: '#15803d' },
-					{ label: 'article', color: '#8b5cf6' },
-				].map((item) => ({
-					...item,
-					count: filteredNodes.filter((node) => node.type === item.label)
-						.length,
-				}));
-			default:
-				return [];
-		}
-	};
 
 	const toggleExpandedContinent = (continent: string) => {
 		const currentExpanded = expandedContinents || [];
@@ -988,11 +875,6 @@ export default function NetworkGraphApp() {
 		});
 		return filtered;
 	}, [continentCountries, countrySearchTerm]);
-
-	// Function to calculate similarity between two strings
-	const [layoutTypeState, setLayoutType] = useState<
-		'force' | 'radial' | 'tree'
-	>('force');
 
 	const removeFromHistory = (indexToRemove: number) => {
 		const updatedHistory = searchHistory.filter(
@@ -1155,30 +1037,30 @@ export default function NetworkGraphApp() {
 		? highlightedLinks
 		: [];
 
-	const safeSelectedNodeTypes = Array.isArray(selectedNodeTypes)
-		? selectedNodeTypes
-		: [];
-	const safeSelectedLinkTypes = Array.isArray(selectedLinkTypes)
-		? selectedLinkTypes
-		: [];
-	const safeSelectedCountries = Array.isArray(selectedCountries)
-		? selectedCountries
-		: [];
-	const safeSelectedContinents = Array.isArray(selectedContinents)
-		? selectedContinents
-		: [];
-	const safeSelectedStateProvinces = Array.isArray(selectedStateProvinces)
-		? selectedStateProvinces
-		: [];
-	const safeSelectedSourceTypes = Array.isArray(selectedSourceTypes)
-		? selectedSourceTypes
-		: [];
-	const safeSelectedSimilarityRange = Array.isArray(selectedSimilarityRange)
-		? selectedSimilarityRange
-		: [];
-	const safeDeselectedNodeTypes = Array.isArray(deselectedNodeTypes)
-		? deselectedNodeTypes
-		: [];
+	// const safeSelectedNodeTypes = Array.isArray(selectedNodeTypes)
+	// 	? selectedNodeTypes
+	// 	: [];
+	// const safeSelectedLinkTypes = Array.isArray(selectedLinkTypes)
+	// 	? selectedLinkTypes
+	// 	: [];
+	// const safeSelectedCountries = Array.isArray(selectedCountries)
+	// 	? selectedCountries
+	// 	: [];
+	// const safeSelectedContinents = Array.isArray(selectedContinents)
+	// 	? selectedContinents
+	// 	: [];
+	// const safeSelectedStateProvinces = Array.isArray(selectedStateProvinces)
+	// 	? selectedStateProvinces
+	// 	: [];
+	// const safeSelectedSourceTypes = Array.isArray(selectedSourceTypes)
+	// 	? selectedSourceTypes
+	// 	: [];
+	// const safeSelectedSimilarityRange = Array.isArray(selectedSimilarityRange)
+	// 	? selectedSimilarityRange
+	// 	: [];
+	// const safeDeselectedNodeTypes = Array.isArray(deselectedNodeTypes)
+	// 	? deselectedNodeTypes
+	// 	: [];
 
 	const transformedNodes = useMemo(() => {
 		return filteredNodes.map((node) => ({
@@ -1223,7 +1105,7 @@ export default function NetworkGraphApp() {
 					/>
 
 					{/* Layout & Meta */}
-					<LayoutControls 
+					<LayoutControls
 						reorganizeLayoutRef={reorganizeLayoutRef}
 						arrangeAsTreeRef={arrangeAsTreeRef}
 						hasApiKey={hasApiKey}
@@ -1299,8 +1181,8 @@ export default function NetworkGraphApp() {
 						)}
 
 						{/* Chat Input Interface */}
-						<ChatInterface 
-							safeSelectedNodes={safeSelectedNodes.map(node => node.id)}
+						<ChatInterface
+							safeSelectedNodes={safeSelectedNodes.map((node) => node.id)}
 							networkState={networkState}
 							filterState={filterState}
 							rightPanelExpanded={rightPanelExpanded}
