@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import SimilarityHistogram from '@/components/similarity-histogram';
 import SearchPanel from '@/components/search/SearchPanel';
 import FilterPanel from '@/components/filters/FilterPanel';
+import ContextManagement from '@/components/analysis/ContextManagement';
 
 import { useNetworkStore } from '@/lib/stores/network-store';
 import { useFilterStore } from '@/lib/stores/filter-store';
@@ -1726,96 +1727,11 @@ export default function NetworkGraphApp() {
 						</div>
 
 						{/* Context Management */}
-						<div className={rightPanelExpanded ? 'space-y-4' : 'space-y-4'}>
-							<h4 className="text-lg font-semibold text-sidebar-foreground border-b border-sidebar-border pb-2">
-								Context Management
-							</h4>
-
-							<div className={rightPanelExpanded ? 'flex gap-4' : 'space-y-4'}>
-								{/* Character Context Limit */}
-								<div
-									className={`bg-muted/20 rounded p-3 ${
-										rightPanelExpanded ? 'flex-1' : ''
-									}`}>
-									<div className="text-sm font-medium text-sidebar-foreground/70">
-										Character Limit:{' '}
-										{selectedNodesSummary.nodes
-											.reduce(
-												(total, node) => total + (node.summary?.length || 0),
-												0
-											)
-											.toLocaleString()}
-										/20,000
-									</div>
-								</div>
-
-								{/* Selected Nodes */}
-								<div
-									className={`space-y-2 ${rightPanelExpanded ? 'flex-1' : ''}`}>
-									<button
-										onClick={() => setShowActiveNodes(!showActiveNodes)}
-										className="w-full flex items-center justify-between p-2 hover:bg-muted/50 rounded transition-colors">
-										<Label className="text-sm font-medium text-sidebar-foreground/70">
-											Selected Nodes ({selectedNodesSummary.count})
-										</Label>
-										<ChevronDown
-											className={`h-4 w-4 text-muted-foreground transition-transform ${
-												showActiveNodes ? 'rotate-180' : ''
-											}`}
-										/>
-									</button>
-
-									{showActiveNodes && (
-										<div className="bg-muted/20 rounded p-2 max-h-40 overflow-y-auto">
-											<table className="w-full text-xs">
-												<thead>
-													<tr className="border-b border-muted-foreground/20">
-														<th className="text-left py-1 font-medium text-muted-foreground">
-															Node
-														</th>
-														<th className="text-left py-1 font-medium text-muted-foreground">
-															Content
-														</th>
-														<th className="text-right py-1 font-medium text-muted-foreground">
-															Chars
-														</th>
-														<th className="w-6"></th>
-													</tr>
-												</thead>
-												<tbody>
-													{selectedNodesSummary.allSelectedNodes.map((node) => (
-														<tr key={node.id} className="hover:bg-muted/30">
-															<td className="py-1 pr-2 truncate max-w-0">
-																<span className="font-medium">
-																	{node.label}
-																</span>
-															</td>
-															<td className="py-1 pr-2 text-muted-foreground">
-																{node.type}
-															</td>
-															<td className="py-1 pr-2 text-right text-muted-foreground/60">
-																{(node.summary?.length || 0).toLocaleString()}
-															</td>
-															<td className="py-1">
-																<Button
-																	variant="ghost"
-																	size="sm"
-																	onClick={() =>
-																		removeNodeFromSelection(node.id)
-																	}
-																	className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive">
-																	×
-																</Button>
-															</td>
-														</tr>
-													))}
-												</tbody>
-											</table>
-										</div>
-									)}
-								</div>
-							</div>
-						</div>
+						<ContextManagement
+							selectedNodesSummary={selectedNodesSummary}
+							rightPanelExpanded={rightPanelExpanded}
+							removeNodeFromSelection={removeNodeFromSelection}
+						/>
 
 						{/* Analysis */}
 						{safeSelectedNodes.length > 0 && (
