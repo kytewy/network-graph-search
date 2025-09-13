@@ -18,6 +18,7 @@ import {
 	FileText,
 	Globe,
 } from 'lucide-react';
+import { ColorLegend } from '@/components/ui/ColorLegend';
 import NetworkGraph from '@/components/network-graph';
 import Analysis from '@/components/analysis';
 import { Textarea } from '@/components/ui/textarea';
@@ -1030,61 +1031,6 @@ export default function NetworkGraphApp() {
 		setConversations((prev) => prev.filter((c) => c.id !== conversationId));
 	};
 
-	const getColorLegendData = () => {
-		switch (colorMode) {
-			case 'sourceType':
-				return [
-					{ label: 'Government', color: '#3b82f6' },
-					{ label: 'Tech Company', color: '#059669' },
-					{ label: 'News Article', color: '#f59e0b' },
-					{ label: 'Law Firm', color: '#dc2626' },
-					{ label: 'NGO', color: '#7c3aed' },
-				];
-			case 'country':
-				const visibleCountries = [
-					...new Set(filteredNodes.map((node) => node.country)),
-				];
-				const countryColors = {
-					USA: '#dc2626', // Red
-					Germany: '#000000', // Black
-					Canada: '#dc2626', // Red
-					Japan: '#dc2626', // Red
-					France: '#3b82f6', // Blue
-					Luxembourg: '#3b82f6', // Blue
-					Mexico: '#059669', // Green
-					'South Korea': '#f59e0b', // Yellow
-					Australia: '#7c3aed', // Purple
-				};
-				return visibleCountries.map((country) => ({
-					label: country,
-					color:
-						countryColors[country as keyof typeof countryColors] || '#6b7280',
-				}));
-			case 'continent':
-				return [
-					{ label: 'North America', color: '#dc2626' },
-					{ label: 'Europe', color: '#3b82f6' },
-					{ label: 'Asia', color: '#f59e0b' },
-					{ label: 'South America', color: '#10b981' },
-					{ label: 'Africa', color: '#8b5cf6' },
-					{ label: 'Oceania', color: '#7c3aed' },
-				];
-			case 'similarityRange':
-				return [
-					{ label: 'Low (0-33%)', color: '#dc2626' },
-					{ label: 'Medium (34-66%)', color: '#f59e0b' },
-					{ label: 'High (67-100%)', color: '#059669' },
-				];
-			case 'documentType':
-				return [
-					{ label: 'recital', color: '#15803d' },
-					{ label: 'article', color: '#8b5cf6' },
-				];
-			default:
-				return [];
-		}
-	};
-
 	const getLegendItems = (mode: string) => {
 		switch (mode) {
 			case 'sourceType':
@@ -1587,114 +1533,7 @@ export default function NetworkGraphApp() {
 					onArrangeAsTree={arrangeAsTreeRef}
 				/>
 
-				<div className="absolute top-4 left-4 space-y-4 pointer-events-none">
-					{/* Color Legend */}
-					<div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-3 shadow-lg">
-						<div className="text-sm font-medium text-gray-700 mb-2">
-							Color by:{' '}
-							{colorMode === 'sourceType'
-								? 'Source Type'
-								: colorMode === 'continent'
-								? 'Continent'
-								: colorMode === 'similarityRange'
-								? 'Similarity Range'
-								: colorMode === 'documentType'
-								? 'Document Type'
-								: 'Country'}
-						</div>
-						<div className="space-y-1">
-							{getColorLegendData().map((item, index) => (
-								<div key={index} className="flex items-center gap-2">
-									<div
-										className="w-3 h-3 rounded-full flex-shrink-0"
-										style={{ backgroundColor: item.color }}
-									/>
-									<span className="text-xs text-gray-600">{item.label}</span>
-								</div>
-							))}
-						</div>
-					</div>
-
-					{/* Size Legend */}
-					{nodeSizeMode !== 'none' && (
-						<div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-3 shadow-lg">
-							<div className="text-sm font-medium text-gray-700 mb-2">
-								Size by:{' '}
-								{nodeSizeMode === 'contentLength'
-									? 'Content Length'
-									: nodeSizeMode === 'summaryLength'
-									? 'Summary Length'
-									: 'Similarity'}
-							</div>
-							<div className="space-y-1">
-								{nodeSizeMode === 'contentLength' && (
-									<>
-										<div className="flex items-center gap-2">
-											<div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" />
-											<span className="text-xs text-gray-600">
-												Small (0-30 chars)
-											</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<div className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
-											<span className="text-xs text-gray-600">
-												Medium (30-60 chars)
-											</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<div className="w-4 h-4 rounded-full bg-gray-400 flex-shrink-0" />
-											<span className="text-xs text-gray-600">
-												Large (60+ chars)
-											</span>
-										</div>
-									</>
-								)}
-								{nodeSizeMode === 'summaryLength' && (
-									<>
-										<div className="flex items-center gap-2">
-											<div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" />
-											<span className="text-xs text-gray-600">
-												Small (0-15 chars)
-											</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<div className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
-											<span className="text-xs text-gray-600">
-												Medium (15-25 chars)
-											</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<div className="w-4 h-4 rounded-full bg-gray-400 flex-shrink-0" />
-											<span className="text-xs text-gray-600">
-												Large (25+ chars)
-											</span>
-										</div>
-									</>
-								)}
-								{nodeSizeMode === 'similarity' && (
-									<>
-										<div className="flex items-center gap-2">
-											<div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" />
-											<span className="text-xs text-gray-600">Low (0-30%)</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<div className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
-											<span className="text-xs text-gray-600">
-												Medium (30-70%)
-											</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<div className="w-4 h-4 rounded-full bg-gray-400 flex-shrink-0" />
-											<span className="text-xs text-gray-600">
-												High (70-100%)
-											</span>
-										</div>
-									</>
-								)}
-							</div>
-						</div>
-					)}
-				</div>
+				<ColorLegend filteredNodes={filteredNodes} />
 			</div>
 
 			{/* Right Panel */}
