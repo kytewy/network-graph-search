@@ -27,6 +27,8 @@ import SearchPanel from '@/components/search/SearchPanel';
 import { useNetworkStore } from '@/lib/stores/network-store';
 import { useFilterStore } from '@/lib/stores/filter-store';
 import { useUIStore } from '@/lib/stores/ui-store';
+import { useSearchStore } from '@/lib/stores/search-store';
+import { useLayoutStore } from '@/lib/stores/layout-store';
 
 // Node interface definition
 interface Node {
@@ -72,7 +74,7 @@ export default function NetworkGraphApp() {
 		(state) => state.toggleNodeExpansion
 	);
 
-	const searchTerm = useFilterStore((state) => state.searchTerm);
+	const searchTerm = useSearchStore((state) => state.searchTerm);
 	const searchMode = useFilterStore((state) => state.searchMode);
 	const selectedNodeTypes = useFilterStore((state) => state.selectedNodeTypes);
 	const selectedContinents = useFilterStore(
@@ -89,21 +91,21 @@ export default function NetworkGraphApp() {
 		(state) => state.deselectedNodeTypes
 	);
 	const minNodeSize = useFilterStore((state) => state.minNodeSize);
-	const nodeSizeMode = useFilterStore((state) => state.nodeSizeMode);
-	const colorMode = useFilterStore((state) => state.colorMode);
+	const nodeSizeMode = useLayoutStore((state) => state.nodeSizeMode);
+	const colorMode = useLayoutStore((state) => state.colorMode);
 	const useSimilaritySize = useFilterStore((state) => state.useSimilaritySize);
 	const expandedContinents = useFilterStore(
 		(state) => state.expandedContinents
 	);
-	const setSearchTerm = useFilterStore((state) => state.setSearchTerm);
+	const setSearchTerm = useSearchStore((state) => state.setSearchTerm);
 	const toggleContinent = useFilterStore((state) => state.toggleContinent);
 	const toggleCountry = useFilterStore((state) => state.toggleCountry);
 	const toggleSourceType = useFilterStore((state) => state.toggleSourceType);
 	const toggleSimilarityRange = useFilterStore(
 		(state) => state.toggleSimilarityRange
 	);
-	const setColorMode = useFilterStore((state) => state.setColorMode);
-	const setNodeSizeMode = useFilterStore((state) => state.setNodeSizeMode);
+	const setColorMode = useLayoutStore((state) => state.setColorMode);
+	const setNodeSizeMode = useLayoutStore((state) => state.setNodeSizeMode);
 	const clearFilters = useFilterStore((state) => state.clearFilters);
 	const selectedLinkTypes = useFilterStore((state) => state.selectedLinkTypes);
 	const selectedStateProvinces = useFilterStore(
@@ -123,15 +125,15 @@ export default function NetworkGraphApp() {
 		(state) => state.setCountrySearchTerm
 	);
 
-	const showLabels = useUIStore((state) => state.showLabels);
+	const showLabels = useLayoutStore((state) => state.showLabels);
 	const apiKey = useUIStore((state) => state.apiKey);
 	const showDescriptionSummary = useUIStore(
 		(state) => state.showDescriptionSummary
 	);
 	const showThemeAnalysis = useUIStore((state) => state.showThemeAnalysis);
 	const showActiveNodes = useUIStore((state) => state.showActiveNodes);
-	const rightPanelExpanded = useUIStore((state) => state.rightPanelExpanded);
-	const setShowLabels = useUIStore((state) => state.setShowLabels);
+	const rightPanelExpanded = useLayoutStore((state) => state.rightPanelExpanded);
+	const setShowLabels = useLayoutStore((state) => state.setShowLabels);
 	const setShowDescriptionSummary = useUIStore(
 		(state) => state.setShowDescriptionAnalysis
 	);
@@ -139,7 +141,7 @@ export default function NetworkGraphApp() {
 		(state) => state.setShowThemeAnalysis
 	);
 	const setShowActiveNodes = useUIStore((state) => state.setShowActiveNodes);
-	const setRightPanelExpanded = useUIStore(
+	const setRightPanelExpanded = useLayoutStore(
 		(state) => state.setRightPanelExpanded
 	);
 	const setApiKey = useUIStore((state) => state.setApiKey);
@@ -160,11 +162,16 @@ export default function NetworkGraphApp() {
 		}>
 	>([]);
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
-	const [searchHistory, setSearchHistory] = useState<string[]>([]);
-	const [isSearching, setIsSearching] = useState(false);
-	const [topResults, setTopResults] = useState(5);
-	const [hasSearched, setHasSearched] = useState(false);
-	const [searchStatus, setSearchStatus] = useState('');
+	const searchHistory = useSearchStore((state) => state.searchHistory);
+	const setSearchHistory = useSearchStore((state) => state.setSearchHistory);
+	const isSearching = useSearchStore((state) => state.isSearching);
+	const setIsSearching = useSearchStore((state) => state.setIsSearching);
+	const topResults = useSearchStore((state) => state.topResults);
+	const setTopResults = useSearchStore((state) => state.setTopResults);
+	const hasSearched = useSearchStore((state) => state.hasSearched);
+	const setHasSearched = useSearchStore((state) => state.setHasSearched);
+	const searchStatus = useSearchStore((state) => state.searchStatus);
+	const setSearchStatus = useSearchStore((state) => state.setSearchStatus);
 
 	const reorganizeLayoutRef = useRef<(() => void) | null>(null);
 	const arrangeAsTreeRef = useRef<(() => void) | null>(null);
@@ -1197,9 +1204,8 @@ export default function NetworkGraphApp() {
 	>('force');
 
 	const removeFromHistory = (indexToRemove: number) => {
-		setSearchHistory((prev) =>
-			prev.filter((_, index) => index !== indexToRemove)
-		);
+		const updatedHistory = searchHistory.filter((_: string, index: number) => index !== indexToRemove);
+		setSearchHistory(updatedHistory);
 	};
 
 	const handleExpandQuery = async () => {
@@ -1237,7 +1243,8 @@ export default function NetworkGraphApp() {
 
 		// Add to search history if not already present
 		if (!searchHistory.includes(searchTerm.trim())) {
-			setSearchHistory((prev) => [searchTerm.trim(), ...prev.slice(0, 4)]);
+			const updatedHistory = [searchTerm.trim(), ...searchHistory.slice(0, 4)];
+			setSearchHistory(updatedHistory);
 		}
 
 		await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -1409,12 +1416,6 @@ export default function NetworkGraphApp() {
 					</div>
 
 					<SearchPanel
-						searchStatus={searchStatus}
-						hasSearched={hasSearched}
-						isSearching={isSearching}
-						setSearchStatus={setSearchStatus}
-						setHasSearched={setHasSearched}
-						setIsSearching={setIsSearching}
 						calculateSimilarity={calculateSimilarity}
 					/>
 

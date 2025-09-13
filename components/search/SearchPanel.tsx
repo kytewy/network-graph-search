@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useFilterStore } from '@/lib/stores/filter-store';
+import { useSearchStore } from '@/lib/stores/search-store';
 import { useUIStore } from '@/lib/stores/ui-store';
 
 // Node interface definition (simplified version of what's in page.tsx)
@@ -24,29 +23,24 @@ interface Node {
 }
 
 interface SearchPanelProps {
-  searchStatus: string;
-  hasSearched: boolean;
-  isSearching: boolean;
-  setSearchStatus: (status: string) => void;
-  setHasSearched: (hasSearched: boolean) => void;
-  setIsSearching: (isSearching: boolean) => void;
   calculateSimilarity: (query: string, text: string) => number;
 }
 
 export default function SearchPanel({
-  searchStatus,
-  hasSearched,
-  isSearching,
-  setSearchStatus,
-  setHasSearched,
-  setIsSearching,
   calculateSimilarity
 }: SearchPanelProps) {
-  const searchTerm = useFilterStore((state) => state.searchTerm);
-  const setSearchTerm = useFilterStore((state) => state.setSearchTerm);
-  const apiKey = useUIStore((state) => state.apiKey);
+  const searchTerm = useSearchStore((state) => state.searchTerm);
+  const setSearchTerm = useSearchStore((state) => state.setSearchTerm);
+  const searchStatus = useSearchStore((state) => state.searchStatus);
+  const hasSearched = useSearchStore((state) => state.hasSearched);
+  const isSearching = useSearchStore((state) => state.isSearching);
+  const topResults = useSearchStore((state) => state.topResults);
+  const setSearchStatus = useSearchStore((state) => state.setSearchStatus);
+  const setHasSearched = useSearchStore((state) => state.setHasSearched);
+  const setIsSearching = useSearchStore((state) => state.setIsSearching);
+  const setTopResults = useSearchStore((state) => state.setTopResults);
   
-  const [topResults, setTopResults] = useState(5);
+  const apiKey = useUIStore((state) => state.apiKey);
   
   const hasApiKey = (apiKey || '').trim().length > 0;
 
@@ -104,9 +98,7 @@ export default function SearchPanel({
   };
 
   const handleClearSearch = () => {
-    setSearchTerm('');
-    setHasSearched(false);
-    setSearchStatus('');
+    useSearchStore.getState().clearSearch();
   };
 
   return (
