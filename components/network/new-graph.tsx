@@ -7,6 +7,23 @@ import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
 import { useSelection } from 'reagraph';
 import { nodeColors } from '@/lib/theme/colors';
 import { NodeContextMenu, Node as NodeType } from './NewNodeComponents';
+import { LassoSelectionMenu } from './LassoSelectionMenu';
+
+// Define extended types for reagraph's useSelection hook to support lasso selection
+interface ExtendedUseSelectionResult {
+	selections: any;
+	onNodeClick: (node: GraphNode) => void;
+	onCanvasClick: (event: MouseEvent) => void;
+	onLasso?: (selections: string[]) => void;
+	onLassoEnd?: (selections: string[]) => void;
+}
+
+interface ExtendedUseSelectionOptions {
+	ref: React.RefObject<GraphCanvasRef | null>;
+	nodes: GraphNode[];
+	edges: GraphEdge[];
+	type?: 'single' | 'multi';
+}
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
 const GraphCanvas = dynamic(
@@ -57,6 +74,7 @@ interface NetworkGraphProps {
 	layoutType?: 'forceDirected' | 'concentric' | 'radial';
 	onReorganizeLayout?: React.MutableRefObject<(() => void) | null>;
 	onArrangeAsTree?: React.MutableRefObject<(() => void) | null>;
+	onSendToContext?: (nodes: Node[]) => void;
 }
 
 export default function NetworkGraph({
@@ -73,6 +91,7 @@ export default function NetworkGraph({
 	layoutType = 'forceDirected',
 	onReorganizeLayout,
 	onArrangeAsTree,
+	onSendToContext,
 }: NetworkGraphProps) {
 	// Reference to the GraphCanvas component
 	const ref = useRef<GraphCanvasRef | null>(null);
@@ -86,6 +105,11 @@ export default function NetworkGraph({
 	
 	// State for node selection
 	const [selectedArticle, setSelectedArticle] = useState<Node | null>(null);
+	
+	// State for lasso selection
+	const [lassoSelectedNodes, setLassoSelectedNodes] = useState<string[]>([]);
+	const [showLassoMenu, setShowLassoMenu] = useState(false);
+	const [lassoMenuPosition, setLassoMenuPosition] = useState({ x: 0, y: 0 });
 
 	// Node positions reference for maintaining positions during updates
 	const nodePositionsRef = useRef<
@@ -120,11 +144,14 @@ export default function NetworkGraph({
 		selections,
 		onNodeClick: handleNodeClick,
 		onCanvasClick,
+		// Cast to access the lasso methods that aren't in the TypeScript definition
 	} = useSelection({
 		ref,
 		nodes: graphNodes,
 		edges: graphEdges,
-	});
+		// @ts-ignore - type is available in reagraph but not in the types
+		type: 'multi'
+	}) as ExtendedUseSelectionResult;
 
 	// Update dimensions on resize
 	useEffect(() => {
@@ -185,7 +212,7 @@ export default function NetworkGraph({
 		// Update selected nodes if handler is provided
 		if (onNodeSelection) {
 			// Get current selections from the Reagraph selection hook
-			const newSelections = selections.nodes.map((n) => n.id);
+			const newSelections = selections.nodes.map((n: GraphNode) => n.id);
 
 			// If the clicked node isn't already in the selections, add it
 			if (!newSelections.includes(node.id)) {
@@ -195,6 +222,47 @@ export default function NetworkGraph({
 			// Update the selected nodes in the parent component
 			onNodeSelection(newSelections);
 		}
+	};
+	
+	// Handle lasso selection
+	const handleLasso = (selectedIds: string[]) => {
+		setLassoSelectedNodes(selectedIds);
+	};
+	
+	// Handle lasso selection end
+	const handleLassoEnd = (selectedIds: string[]) => {
+		if (selectedIds.length > 0) {
+			// Get mouse position for the menu
+			// Position in the center of the screen for better visibility
+			const mousePosition = { 
+				x: Math.max(100, Math.min(window.innerWidth / 2, window.innerWidth - 400)), 
+				y: Math.max(100, Math.min(window.innerHeight / 3, window.innerHeight - 400)) 
+			};
+			setLassoMenuPosition(mousePosition);
+			setShowLassoMenu(true);
+			
+			// Update selected nodes if handler is provided
+			if (onNodeSelection) {
+				onNodeSelection(selectedIds);
+			}
+		}
+	};
+	
+	// Get the selected nodes as Node objects
+	const getSelectedNodesData = (): Node[] => {
+		return nodes.filter(node => lassoSelectedNodes.includes(node.id));
+	};
+	
+	// Handle sending selected nodes to context
+	const handleSendToContext = (selectedNodes: Node[]) => {
+		if (onSendToContext) {
+			onSendToContext(selectedNodes);
+		}
+	};
+	
+	// Close the lasso menu
+	const closeLassoMenu = () => {
+		setShowLassoMenu(false);
 	};
 
 
@@ -235,6 +303,31 @@ export default function NetworkGraph({
 	return (
 		<div
 			className="network-graph-container relative w-full h-full">
+			{showLassoMenu && lassoSelectedNodes.length > 0 && (
+				<LassoSelectionMenu
+					selectedNodes={getSelectedNodesData()}
+					onClose={closeLassoMenu}
+					onNodeSelection={onNodeSelection}
+					onSendToContext={handleSendToContext}
+					position={lassoMenuPosition}
+				/>
+			)}
+			
+			<div style={{
+				zIndex: 9,
+				userSelect: 'none',
+				position: 'absolute',
+				top: 10,
+				right: 10,
+				background: 'rgba(0, 0, 0, .5)',
+				color: 'white',
+				padding: '5px 10px',
+				borderRadius: '4px',
+				fontSize: '12px'
+			}}>
+				<span>Hold Shift and Drag to Lasso Select</span>
+			</div>
+			
 			<GraphCanvas
 				ref={ref}
 				nodes={graphNodes}
@@ -245,6 +338,12 @@ export default function NetworkGraph({
 				selections={selections}
 				onNodeClick={handleCustomNodeClick}
 				onCanvasClick={onCanvasClick}
+				// @ts-ignore - lassoType is available in reagraph but not in the types
+				lassoType="node"
+				// @ts-ignore - onLasso is available in reagraph but not in the types
+				onLasso={handleLasso}
+				// @ts-ignore - onLassoEnd is available in reagraph but not in the types
+				onLassoEnd={handleLassoEnd}
 				animated={true} // Enable animation for all layouts
 				labelType={showLabels ? 'all' : 'none'}
 				edgeStyle="curved"
