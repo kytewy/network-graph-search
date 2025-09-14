@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { type Node, type Link } from '@/lib/sample-data';
-import { realNodes, realLinks } from '@/lib/sample-data-real';
+import { euNodes, euLinks } from '@/lib/sample-eu-data';
 
 interface NetworkState {
 	nodes: Node[];
@@ -25,8 +25,8 @@ interface NetworkState {
 }
 
 export const useNetworkStore = create<NetworkState>((set, get) => ({
-	nodes: realNodes,
-	links: realLinks,
+	nodes: euNodes,
+	links: euLinks,
 	selectedNodes: [],
 	expandedNodes: [],
 	highlightedNodes: [],
