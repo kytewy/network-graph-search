@@ -9,7 +9,11 @@ import { nodeColors } from '@/lib/theme/colors'
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
 const GraphCanvas = dynamic(
-  () => import('reagraph').then((m) => m.GraphCanvas),
+  () => import('reagraph').then((m) => {
+    // Log the module to inspect available layouts
+    console.log('Reagraph module:', m);
+    return m.GraphCanvas;
+  }),
   { ssr: false }
 )
 
@@ -48,7 +52,7 @@ interface NetworkGraphProps {
   selectedNodes?: string[]
   expandedNodes?: string[]
   onNodeExpand?: (nodeId: string) => void
-  layoutType?: "forceDirected" | "concentric" | "radial" | "hierarchical"
+  layoutType?: "forceDirected" | "concentric" | "radial"
   onReorganizeLayout?: React.MutableRefObject<(() => void) | null>
   onArrangeAsTree?: React.MutableRefObject<(() => void) | null>
 }
@@ -272,46 +276,32 @@ export default function NetworkGraph({
   const reagraphLayoutType = currentLayout === 'forceDirected' 
     ? 'forceDirected2d' 
     : currentLayout === 'concentric' 
-      ? 'forceDirected2d' // Using forceDirected2d with concentric-like overrides
-      : currentLayout === 'radial'
-        ? 'forceDirected2d' // Using forceDirected2d with radial-like overrides
-        : 'hierarchical' // Using hierarchical layout
+      ? 'concentric2d'
+      : 'radialOut2d' // Default to radialOut2d for radial layout
 
   // Layout overrides for different layouts
   const layoutOverrides = currentLayout === 'forceDirected' 
     ? { 
-        linkDistance: 80, // Standard distance for force-directed
-        nodeStrength: -800, // Standard repulsion
-        alpha: 0.3, // Standard alpha
-        gravity: 0.1 // Standard gravity
+        linkDistance: 100, // Standard distance for force-directed
+        nodeStrength: -300, // Standard repulsion
+        clusterStrength: 0.8,
+        linkStrengthIntraCluster: 0.8,
+        linkStrengthInterCluster: 0.3,
+        centerInertia: 1,
+        dimensions: 2
       }
     : currentLayout === 'concentric'
       ? { 
-          linkDistance: 100, // Fixed distance for concentric-like arrangement
-          nodeStrength: -1000, // Strong repulsion for clear circles
-          alpha: 0.2, // Lower alpha for more stable layout
-          gravity: 0.4, // Higher gravity to pull nodes into circular formation
-          centralForce: 0.5, // Force toward center
-          initialTemp: 1000 // Higher initial temperature for better circle formation
+          radius: 150, // Base radius for concentric layout
+          concentricSpacing: 120 // Distance between concentric circles
+          // Note: Nodes should ideally have a 'level' property for best results
         }
-    : currentLayout === 'radial'
-      ? { 
-          linkDistance: 150, // Longer links for radial arrangement
-          nodeStrength: -1200, // Stronger repulsion for more even spacing
-          alpha: 0.2, // Lower alpha for more stable layout
-          gravity: 0.3, // Moderate gravity to pull nodes toward center
-          centralForce: 0.3, // Force toward center
-          initialTemp: 800 // Higher initial temperature for better radial formation
-        }
-      : { 
-          linkDistance: 200, // Longer vertical distance for hierarchical appearance
-          nodeStrength: -1500, // Strong repulsion for clear levels
-          alpha: 0.1, // Lower alpha for more stable layout
-          gravity: 0.2, // Light gravity
-          centralForce: 0.1, // Minimal central force
-          initialTemp: 500, // Lower temperature for more controlled movement
-          hierarchical: true, // Signal that this is a hierarchical layout
-          yForce: 0.5 // Additional downward force for hierarchical appearance
+    : { 
+          // Radial layout parameters
+          linkDistance: 80,
+          nodeStrength: -200,
+          centerInertia: 1,
+          dimensions: 2
         }
 
   return (
@@ -320,14 +310,14 @@ export default function NetworkGraph({
         ref={ref}
         nodes={graphNodes}
         edges={graphEdges}
-        layoutType={reagraphLayoutType as "forceDirected2d" | "hierarchical" | "radial" | "forceDirected3d" | "forceAtlas2" | "noOverlap"}
+        layoutType={reagraphLayoutType as any}
         layoutOverrides={layoutOverrides}
         draggable={true}
         selections={selections}
         onNodeClick={handleCustomNodeClick}
         onCanvasClick={onCanvasClick}
         onNodeHover={handleNodeHover}
-        animated={true}
+        animated={true} // Enable animation for all layouts
         labelType={showLabels ? "all" : "none"}
         edgeStyle="curved"
         sizingType="attribute"

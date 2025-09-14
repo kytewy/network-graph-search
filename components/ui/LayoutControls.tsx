@@ -13,8 +13,8 @@ interface LayoutControlsProps {
   reorganizeLayoutRef: React.MutableRefObject<(() => void) | null>;
   arrangeAsTreeRef: React.MutableRefObject<(() => void) | null>;
   hasApiKey: boolean;
-  onLayoutChange?: (layout: "forceDirected" | "concentric" | "radial" | "hierarchical") => void;
-  currentLayout?: "forceDirected" | "concentric" | "radial" | "hierarchical";
+  onLayoutChange?: (layout: "forceDirected" | "concentric" | "radial") => void;
+  currentLayout?: "forceDirected" | "concentric" | "radial";
 }
 
 export default function LayoutControls({
@@ -42,65 +42,35 @@ export default function LayoutControls({
         Layout & Meta
       </Label>
 
-      {/* Layout Controls */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-sidebar-foreground" />
-          <Label className="text-sm font-medium text-sidebar-foreground">
-            Layout
+      {/* Layout controls */}
+      <div className="space-y-2">
+        <div className="flex items-center">
+          <Label className="text-sm text-sidebar-foreground/70 mr-2">
+            Layout:
           </Label>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            onClick={() => {
-              reorganizeLayoutRef.current?.();
-              onLayoutChange?.("forceDirected");
+        <div className="flex items-center gap-2">
+          <select
+            value={currentLayout}
+            onChange={(e) => {
+              const newLayout = e.target.value as "forceDirected" | "concentric" | "radial";
+              if (newLayout === "radial" || newLayout === "concentric") {
+                reorganizeLayoutRef.current?.();
+              } else if (newLayout === "forceDirected") {
+                reorganizeLayoutRef.current?.();
+              }
+              onLayoutChange?.(newLayout);
             }}
-            variant={currentLayout === "forceDirected" ? "default" : "outline"}
-            size="sm"
-            className="flex-1"
-            title="Standard force-directed layout with physics simulation">
-            Force-Directed
-          </Button>
-          <Button
-            onClick={() => {
-              reorganizeLayoutRef.current?.();
-              onLayoutChange?.("concentric");
-            }}
-            variant={currentLayout === "concentric" ? "default" : "outline"}
-            size="sm"
-            className="flex-1"
-            title="Nodes arranged in concentric circles based on connectivity">
-            Concentric
-          </Button>
-          <Button
-            onClick={() => {
-              reorganizeLayoutRef.current?.();
-              onLayoutChange?.("radial");
-            }}
-            variant={currentLayout === "radial" ? "default" : "outline"}
-            size="sm"
-            className="flex-1"
-            title="Nodes arranged in a radial pattern around a central point">
-            Radial
-          </Button>
-          <Button
-            onClick={() => {
-              arrangeAsTreeRef.current?.();
-              onLayoutChange?.("hierarchical");
-            }}
-            variant={currentLayout === "hierarchical" ? "default" : "outline"}
-            size="sm"
-            className="flex-1"
-            title="Hierarchical layout with parent-child relationships">
-            Hierarchical
-          </Button>
+            className="flex-1 h-9 px-3 bg-sidebar-accent/10 border border-sidebar-border rounded-md text-sm text-sidebar-foreground">
+            <option value="forceDirected">Force-Directed</option>
+            <option value="concentric">Concentric</option>
+            <option value="radial">Radial</option>
+          </select>
         </div>
         <div className="text-xs text-gray-500 mt-1 italic">
-          {currentLayout === "forceDirected" && "Best for general exploration of network relationships"}
-          {currentLayout === "concentric" && "Good for visualizing node centrality and importance"}
-          {currentLayout === "radial" && "Useful for highlighting relationships from central nodes"}
-          {currentLayout === "hierarchical" && "Ideal for tree-like structures and clear hierarchies"}
+          {currentLayout === "forceDirected" && "Show me everything and how it relates. Uses physics simulation for natural spacing."}
+          {currentLayout === "concentric" && "Show me by importance level. Arranges nodes in concentric circles based on level property."}
+          {currentLayout === "radial" && "Show me everything related to THIS topic. Arranges nodes radiating outward from central points."}
         </div>
       </div>
 
