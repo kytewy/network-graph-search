@@ -97,6 +97,7 @@ export default function NetworkGraph({
   const graphNodes: GraphNode[] = nodes.map((node) => ({
     id: node.id,
     label: node.label,
+    fill: node.color, // Add fill property for node coloring
     data: {
       ...node,
       // Store original node data for tooltips and other functionality
@@ -307,7 +308,7 @@ export default function NetworkGraph({
           if (isExpanded) return "#059669" // Expanded color
           if (isHighlighted) return "#6b7280" // Highlighted color
           
-          return (node.data as Node).color // Default color from node data
+          return node.fill || (node.data as Node).color // Use fill property with fallback to node data
         }}
         nodeOutline={(node) => {
           const isHighlighted = highlightedNodes.includes(node.id)
