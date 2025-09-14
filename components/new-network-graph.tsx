@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import dynamic from 'next/dynamic'
 import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph'
 import { useSelection } from 'reagraph'
+import { nodeColors } from '@/lib/theme/colors'
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
 const GraphCanvas = dynamic(
@@ -304,9 +305,9 @@ export default function NetworkGraph({
           const isSelected = selectedNodes.includes(node.id)
           const isExpanded = expandedNodes.includes(node.id)
           
-          if (isSelected) return "#1d4ed8" // Selected color
-          if (isExpanded) return "#059669" // Expanded color
-          if (isHighlighted) return "#6b7280" // Highlighted color
+          if (isSelected) return nodeColors.primary // Selected color (blue)
+          if (isExpanded) return nodeColors.secondary // Expanded color (green)
+          if (isHighlighted) return nodeColors.neutral // Highlighted color (gray)
           
           return node.fill || (node.data as Node).color // Use fill property with fallback to node data
         }}
@@ -315,9 +316,9 @@ export default function NetworkGraph({
           const isSelected = selectedNodes.includes(node.id)
           const isExpanded = expandedNodes.includes(node.id)
           
-          if (isSelected) return { color: "#1d4ed8", width: 3 }
-          if (isExpanded) return { color: "#059669", width: 3 }
-          if (isHighlighted) return { color: "#6b7280", width: 2 }
+          if (isSelected) return { color: nodeColors.primary, width: 3 }
+          if (isExpanded) return { color: nodeColors.secondary, width: 3 }
+          if (isHighlighted) return { color: nodeColors.neutral, width: 2 }
           
           return { color: "transparent", width: 0 }
         }}
@@ -326,7 +327,7 @@ export default function NetworkGraph({
           const isNodeHighlighted = highlightedNodes.includes(edge.source) || 
                                   highlightedNodes.includes(edge.target)
           
-          return isHighlighted || isNodeHighlighted ? "#6b7280" : "#d1d5db"
+          return isHighlighted || isNodeHighlighted ? nodeColors.neutral : "#d1d5db"
         }}
         edgeWidth={(edge) => {
           const isHighlighted = highlightedLinks.includes(edge.id)

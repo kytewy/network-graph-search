@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutStore } from '@/lib/stores/layout-store';
+import { nodeColors, colorMappings, getColorByMode, getSimilarityColor } from '@/lib/theme/colors';
 
 interface Node {
   id: string;
@@ -28,78 +29,53 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
   const getColorLegendData = () => {
     switch (colorMode) {
       case 'sourceType':
-        return [
-          { label: 'Government', color: '#3b82f6' },
-          { label: 'Tech Company', color: '#059669' },
-          { label: 'News Article', color: '#f59e0b' },
-          { label: 'Law Firm', color: '#dc2626' },
-          { label: 'NGO', color: '#7c3aed' },
-        ];
+        // Use the centralized sourceType color mapping
+        return Object.entries(colorMappings.sourceType)
+          .filter(([key]) => key !== 'default')
+          .map(([label, color]) => ({ label, color }));
+
       case 'country':
+        // Get visible countries and map them to colors using the centralized system
         const visibleCountries = [
           ...new Set(filteredNodes.map((node) => node.country)),
         ];
-        const countryColors = {
-          USA: '#dc2626', // Red
-          Germany: '#000000', // Black
-          Canada: '#dc2626', // Red
-          France: '#3b82f6', // Blue
-          'United Kingdom': '#059669', // Green
-          Japan: '#f59e0b', // Yellow
-          China: '#7c3aed', // Purple
-          Australia: '#059669', // Green
-          Brazil: '#f59e0b', // Yellow
-          India: '#3b82f6', // Blue
-        };
         return visibleCountries
           .filter(Boolean)
           .map((country) => ({
             label: country,
-            color: countryColors[country as keyof typeof countryColors] || '#6b7280',
+            color: getColorByMode('country', country),
           }));
+
       case 'continent':
+        // Get visible continents and map them to colors using the centralized system
         const visibleContinents = [
           ...new Set(filteredNodes.map((node) => node.continent)),
         ];
-        const continentColors = {
-          'North America': '#dc2626', // Red
-          Europe: '#3b82f6', // Blue
-          Asia: '#059669', // Green
-          'South America': '#f59e0b', // Yellow
-          Africa: '#7c3aed', // Purple
-          Oceania: '#0891b2', // Cyan
-          Antarctica: '#6b7280', // Gray
-        };
         return visibleContinents
           .filter(Boolean)
           .map((continent) => ({
             label: continent,
-            color:
-              continentColors[continent as keyof typeof continentColors] || '#6b7280',
+            color: getColorByMode('continent', continent),
           }));
+
       case 'documentType':
+        // Get visible document types and map them to colors using the centralized system
         const visibleTypes = [...new Set(filteredNodes.map((node) => node.type))];
-        const typeColors = {
-          Article: '#3b82f6', // Blue
-          Regulation: '#dc2626', // Red
-          Standard: '#059669', // Green
-          Framework: '#f59e0b', // Yellow
-          Guideline: '#7c3aed', // Purple
-          Policy: '#0891b2', // Cyan
-          Report: '#6b7280', // Gray
-        };
         return visibleTypes
           .filter(Boolean)
           .map((type) => ({
             label: type,
-            color: typeColors[type as keyof typeof typeColors] || '#6b7280',
+            color: getColorByMode('documentType', type),
           }));
+
       case 'similarityRange':
+        // Use the centralized similarity color ranges
         return [
-          { label: 'High (80-100%)', color: '#059669' }, // Green
-          { label: 'Medium (40-79%)', color: '#f59e0b' }, // Yellow
-          { label: 'Low (0-39%)', color: '#dc2626' }, // Red
+          { label: 'High (67-100%)', color: nodeColors.high },
+          { label: 'Medium (34-66%)', color: nodeColors.medium },
+          { label: 'Low (0-33%)', color: nodeColors.low },
         ];
+
       default:
         return [];
     }
@@ -149,19 +125,19 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
             {nodeSizeMode === 'contentLength' && (
               <>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: nodeColors.neutral }} />
                   <span className="text-xs text-gray-600">
                     Small (0-30 chars)
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: nodeColors.neutral }} />
                   <span className="text-xs text-gray-600">
                     Medium (30-60 chars)
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-gray-400 flex-shrink-0" />
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: nodeColors.neutral }} />
                   <span className="text-xs text-gray-600">
                     Large (60+ chars)
                   </span>
@@ -171,19 +147,19 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
             {nodeSizeMode === 'summaryLength' && (
               <>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: nodeColors.neutral }} />
                   <span className="text-xs text-gray-600">
                     Small (0-15 chars)
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: nodeColors.neutral }} />
                   <span className="text-xs text-gray-600">
                     Medium (15-25 chars)
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-gray-400 flex-shrink-0" />
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: nodeColors.neutral }} />
                   <span className="text-xs text-gray-600">
                     Large (25+ chars)
                   </span>
@@ -193,19 +169,19 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
             {nodeSizeMode === 'similarity' && (
               <>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-gray-600">Low (0-30%)</span>
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: nodeColors.neutral }} />
+                  <span className="text-xs text-gray-600">Low (0-33%)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: nodeColors.neutral }} />
                   <span className="text-xs text-gray-600">
-                    Medium (30-70%)
+                    Medium (34-66%)
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-gray-400 flex-shrink-0" />
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: nodeColors.neutral }} />
                   <span className="text-xs text-gray-600">
-                    High (70-100%)
+                    High (67-100%)
                   </span>
                 </div>
               </>

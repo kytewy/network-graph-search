@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import LayoutControls from '../components/ui/LayoutControls';
 import { ColorLegend } from '@/components/ui/ColorLegend';
 import NetworkGraph from '@/components/new-network-graph';
+// import NetworkGraph from '@/components/network-graph';
 import Analysis from '@/components/analysis';
 import SearchPanel from '@/components/search/SearchPanel';
 import FilterPanel from '@/components/filters/FilterPanel';
@@ -16,6 +17,7 @@ import { useFilterStore } from '@/lib/stores/filter-store';
 import { useUIStore } from '@/lib/stores/ui-store';
 import { useSearchStore } from '@/lib/stores/search-store';
 import { useLayoutStore } from '@/lib/stores/layout-store';
+import { getNodeColorByMode } from '@/lib/theme/colors';
 
 // Node interface definition
 interface Node {
@@ -816,69 +818,7 @@ export default function NetworkGraphApp() {
 		return filtered;
 	}, [continentCountries, countrySearchTerm]);
 
-	const getNodeColorByMode = (node: Node, mode: string) => {
-		switch (mode) {
-			case 'sourceType':
-				const sourceTypeColors = {
-					Government: '#3b82f6', // Blue
-					'Tech Company': '#059669', // Green
-					'News Article': '#f59e0b', // Orange
-					'Law Firm': '#dc2626', // Red
-					NGO: '#7c3aed', // Purple
-				};
-				return (
-					sourceTypeColors[node.sourceType as keyof typeof sourceTypeColors] ||
-					'#6b7280'
-				);
-
-			case 'country':
-				const countryColors = {
-					USA: '#dc2626', // Red
-					Germany: '#000000', // Black
-					Canada: '#dc2626', // Red
-					Japan: '#dc2626', // Red
-					France: '#3b82f6', // Blue
-					Luxembourg: '#3b82f6', // Blue
-					Mexico: '#059669', // Green
-					'South Korea': '#f59e0b', // Yellow
-					Australia: '#7c3aed', // Purple
-				};
-				return (
-					countryColors[node.country as keyof typeof countryColors] || '#6b7280'
-				);
-
-			case 'continent':
-				const continentColors = {
-					'North America': '#dc2626', // Red
-					Europe: '#3b82f6', // Blue
-					Asia: '#f59e0b', // Yellow
-					Oceania: '#7c3aed', // Purple
-				};
-				return (
-					continentColors[node.continent as keyof typeof continentColors] ||
-					'#6b7280'
-				);
-
-			case 'similarityRange':
-				if (!node.similarity) return '#6b7280';
-				if (node.similarity <= 33) return '#dc2626'; // Red for Low
-				if (node.similarity <= 66) return '#f59e0b'; // Yellow for Medium
-				return '#059669'; // Green for High
-
-			case 'documentType':
-				const documentTypeColors = {
-					recital: '#15803d', // Green
-					article: '#8b5cf6', // Purple
-				};
-				return (
-					documentTypeColors[node.type as keyof typeof documentTypeColors] ||
-					'#6b7280'
-				);
-
-			default:
-				return node.color;
-		}
-	};
+	// Using the centralized color system from lib/theme/colors.ts
 
 	const getNodeSize = (node: Node): number => {
 		let nodeSize = node.size;
