@@ -2,24 +2,9 @@
 
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { NodeTooltip, NodeModal } from './NodeContextMenu';
+import { NodeTooltip, NodeModal, Node as NodeType } from './NodeComponents';
 
-interface Node {
-	id: string;
-	label: string;
-	type: string;
-	size: number;
-	color: string;
-	summary: string; // Brief description for tooltip
-	content: string; // Full article content for modal
-	similarity?: number;
-	url?: string;
-	x?: number;
-	y?: number;
-	vx?: number;
-	vy?: number;
-	sourceType?: string;
-}
+type Node = NodeType
 
 interface Link {
 	source: string;
@@ -421,9 +406,12 @@ export default function NetworkGraph({
 	};
 
 	const handleMouseLeave = (e: React.MouseEvent<HTMLCanvasElement>) => {
+		// Increase the delay to give more time to move to the tooltip
 		hideTooltipTimeoutRef.current = window.setTimeout(() => {
+			// Only clear the hovered node if we're not hovering over the tooltip
+			// The tooltip component will handle its own hover state
 			setHoveredNode(null);
-		}, 200);
+		}, 500);
 
 		setHoveredExpandButton(null);
 		setIsDragging(false);
