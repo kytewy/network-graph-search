@@ -13,12 +13,16 @@ interface LayoutControlsProps {
   reorganizeLayoutRef: React.MutableRefObject<(() => void) | null>;
   arrangeAsTreeRef: React.MutableRefObject<(() => void) | null>;
   hasApiKey: boolean;
+  onLayoutChange?: (layout: "forceDirected" | "concentric" | "radial" | "hierarchical") => void;
+  currentLayout?: "forceDirected" | "concentric" | "radial" | "hierarchical";
 }
 
 export default function LayoutControls({
   reorganizeLayoutRef,
   arrangeAsTreeRef,
   hasApiKey,
+  onLayoutChange,
+  currentLayout = "forceDirected",
 }: LayoutControlsProps) {
   // Layout store
   const showLabels = useLayoutStore((state) => state.showLabels);
@@ -46,23 +50,57 @@ export default function LayoutControls({
             Layout
           </Label>
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Button
-            onClick={() => reorganizeLayoutRef.current?.()}
-            variant="outline"
+            onClick={() => {
+              reorganizeLayoutRef.current?.();
+              onLayoutChange?.("forceDirected");
+            }}
+            variant={currentLayout === "forceDirected" ? "default" : "outline"}
             size="sm"
             className="flex-1"
-            title="Force-directed layout with circular-like arrangement">
+            title="Standard force-directed layout with physics simulation">
+            Force-Directed
+          </Button>
+          <Button
+            onClick={() => {
+              reorganizeLayoutRef.current?.();
+              onLayoutChange?.("concentric");
+            }}
+            variant={currentLayout === "concentric" ? "default" : "outline"}
+            size="sm"
+            className="flex-1"
+            title="Nodes arranged in concentric circles based on connectivity">
+            Concentric
+          </Button>
+          <Button
+            onClick={() => {
+              reorganizeLayoutRef.current?.();
+              onLayoutChange?.("radial");
+            }}
+            variant={currentLayout === "radial" ? "default" : "outline"}
+            size="sm"
+            className="flex-1"
+            title="Nodes arranged in a radial pattern around a central point">
             Radial
           </Button>
           <Button
-            onClick={() => arrangeAsTreeRef.current?.()}
-            variant="outline"
+            onClick={() => {
+              arrangeAsTreeRef.current?.();
+              onLayoutChange?.("hierarchical");
+            }}
+            variant={currentLayout === "hierarchical" ? "default" : "outline"}
             size="sm"
             className="flex-1"
-            title="Hierarchical layout with top-to-bottom arrangement">
-            Tree
+            title="Hierarchical layout with parent-child relationships">
+            Hierarchical
           </Button>
+        </div>
+        <div className="text-xs text-gray-500 mt-1 italic">
+          {currentLayout === "forceDirected" && "Best for general exploration of network relationships"}
+          {currentLayout === "concentric" && "Good for visualizing node centrality and importance"}
+          {currentLayout === "radial" && "Useful for highlighting relationships from central nodes"}
+          {currentLayout === "hierarchical" && "Ideal for tree-like structures and clear hierarchies"}
         </div>
       </div>
 

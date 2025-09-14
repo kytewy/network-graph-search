@@ -891,6 +891,10 @@ export default function NetworkGraphApp() {
 						reorganizeLayoutRef={reorganizeLayoutRef}
 						arrangeAsTreeRef={arrangeAsTreeRef}
 						hasApiKey={hasApiKey}
+						currentLayout={layoutType}
+						onLayoutChange={(layout) => {
+							useNetworkStore.getState().setLayoutType(layout);
+						}}
 					/>
 
 					{/* Stats */}

@@ -48,7 +48,7 @@ interface NetworkGraphProps {
   selectedNodes?: string[]
   expandedNodes?: string[]
   onNodeExpand?: (nodeId: string) => void
-  layoutType?: "radial" | "tree"
+  layoutType?: "forceDirected" | "concentric" | "radial" | "hierarchical"
   onReorganizeLayout?: React.MutableRefObject<(() => void) | null>
   onArrangeAsTree?: React.MutableRefObject<(() => void) | null>
 }
@@ -64,15 +64,16 @@ export default function NetworkGraph({
   selectedNodes = [],
   expandedNodes = [],
   onNodeExpand,
-  layoutType = "radial",
+  layoutType = "forceDirected",
   onReorganizeLayout,
   onArrangeAsTree,
 }: NetworkGraphProps) {
   // Reference to the GraphCanvas component
   const ref = useRef<GraphCanvasRef | null>(null)
   
-  // State for dimensions
+  // State for dimensions and layout
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
+  const [currentLayout, setCurrentLayout] = useState(layoutType)
   
   // State for tooltips and modals
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null)
@@ -138,6 +139,12 @@ export default function NetworkGraph({
     window.addEventListener('resize', updateDimensions)
     return () => window.removeEventListener('resize', updateDimensions)
   }, [])
+
+  // Handle layout changes
+  useEffect(() => {
+    // Update current layout when prop changes
+    setCurrentLayout(layoutType)
+  }, [layoutType])
 
   // Handle layout reorganization
   useEffect(() => {
@@ -261,24 +268,51 @@ export default function NetworkGraph({
     setMousePos({ x: e.clientX, y: e.clientY })
   }
 
-  // Determine layout type based on props
-  const reagraphLayoutType = layoutType === 'radial' 
+  // Determine layout type based on current layout
+  const reagraphLayoutType = currentLayout === 'forceDirected' 
     ? 'forceDirected2d' 
-    : layoutType === 'tree' 
-      ? 'hierarchical' 
-      : 'forceDirected2d'
+    : currentLayout === 'concentric' 
+      ? 'forceDirected2d' // Using forceDirected2d with concentric-like overrides
+      : currentLayout === 'radial'
+        ? 'forceDirected2d' // Using forceDirected2d with radial-like overrides
+        : 'hierarchical' // Using hierarchical layout
 
   // Layout overrides for different layouts
-  const layoutOverrides = layoutType === 'radial' 
+  const layoutOverrides = currentLayout === 'forceDirected' 
     ? { 
-        linkDistance: 120, // Longer links for circular-like arrangement
-        nodeStrength: -800, // Stronger repulsion for more even spacing
-        alpha: 0.3, // Lower alpha for more stable layout
-        gravity: 0.1 // Light gravity to pull nodes toward center
+        linkDistance: 80, // Standard distance for force-directed
+        nodeStrength: -800, // Standard repulsion
+        alpha: 0.3, // Standard alpha
+        gravity: 0.1 // Standard gravity
       }
-    : layoutType === 'tree'
-      ? { rankDir: 'TB', nodesep: 100, ranksep: 100 }
-      : { linkDistance: 80, nodeStrength: -800 }
+    : currentLayout === 'concentric'
+      ? { 
+          linkDistance: 100, // Fixed distance for concentric-like arrangement
+          nodeStrength: -1000, // Strong repulsion for clear circles
+          alpha: 0.2, // Lower alpha for more stable layout
+          gravity: 0.4, // Higher gravity to pull nodes into circular formation
+          centralForce: 0.5, // Force toward center
+          initialTemp: 1000 // Higher initial temperature for better circle formation
+        }
+    : currentLayout === 'radial'
+      ? { 
+          linkDistance: 150, // Longer links for radial arrangement
+          nodeStrength: -1200, // Stronger repulsion for more even spacing
+          alpha: 0.2, // Lower alpha for more stable layout
+          gravity: 0.3, // Moderate gravity to pull nodes toward center
+          centralForce: 0.3, // Force toward center
+          initialTemp: 800 // Higher initial temperature for better radial formation
+        }
+      : { 
+          linkDistance: 200, // Longer vertical distance for hierarchical appearance
+          nodeStrength: -1500, // Strong repulsion for clear levels
+          alpha: 0.1, // Lower alpha for more stable layout
+          gravity: 0.2, // Light gravity
+          centralForce: 0.1, // Minimal central force
+          initialTemp: 500, // Lower temperature for more controlled movement
+          hierarchical: true, // Signal that this is a hierarchical layout
+          yForce: 0.5 // Additional downward force for hierarchical appearance
+        }
 
   return (
     <div className="network-graph-container relative w-full h-full" onMouseMove={handleMouseMove}>
@@ -286,7 +320,7 @@ export default function NetworkGraph({
         ref={ref}
         nodes={graphNodes}
         edges={graphEdges}
-        layoutType={reagraphLayoutType}
+        layoutType={reagraphLayoutType as "forceDirected2d" | "hierarchical" | "radial" | "forceDirected3d" | "forceAtlas2" | "noOverlap"}
         layoutOverrides={layoutOverrides}
         draggable={true}
         selections={selections}

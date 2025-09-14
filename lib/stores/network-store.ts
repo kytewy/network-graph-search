@@ -9,7 +9,7 @@ interface NetworkState {
 	expandedNodes: string[];
 	highlightedNodes: string[];
 	highlightedLinks: string[];
-	layoutType: 'radial' | 'tree';
+	layoutType: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical';
 
 	// Actions
 	setNodes: (nodes: Node[]) => void;
@@ -20,7 +20,7 @@ interface NetworkState {
 	toggleNodeExpansion: (nodeId: string) => void;
 	setHighlightedNodes: (nodes: string[]) => void;
 	setHighlightedLinks: (links: string[]) => void;
-	setLayoutType: (type: 'radial' | 'tree') => void;
+	setLayoutType: (type: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical') => void;
 	clearSelections: () => void;
 }
 
@@ -31,7 +31,7 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
 	expandedNodes: [],
 	highlightedNodes: [],
 	highlightedLinks: [],
-	layoutType: 'radial',
+	layoutType: 'forceDirected',
 
 	setNodes: (nodes) => set({ nodes }),
 	setLinks: (links) => set({ links }),
