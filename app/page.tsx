@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import LayoutControls from '../components/ui/LayoutControls';
 import { ColorLegend } from '@/components/ui/ColorLegend';
-import NetworkGraph from '@/components/new-network-graph';
+import NetworkGraph from '@/components/network/new-graph';
 // import NetworkGraph from '@/components/network-graph';
 import Analysis from '@/components/analysis';
 import SearchPanel from '@/components/search/SearchPanel';
@@ -14,8 +14,9 @@ import ChatInterface from '@/components/analysis/ChatInterface';
 
 import { useNetworkStore } from '@/lib/stores/network-store';
 import { useFilterStore } from '@/lib/stores/filter-store';
+import TestControls from '@/components/TestControls';
 import { useUIStore } from '@/lib/stores/ui-store';
-import { useSearchStore } from '@/lib/stores/search-store';
+import { useUnifiedSearchStore } from '@/lib/stores/unified-search-store';
 import { useLayoutStore } from '@/lib/stores/layout-store';
 import { getNodeColorByMode } from '@/lib/theme/colors';
 
@@ -35,6 +36,31 @@ interface Node {
 	stateProvince?: string;
 }
 
+interface NetworkState {
+	nodes: Node[];
+	links: any[];
+	selectedNodes: string[];
+	expandedNodes: string[];
+	highlightedNodes: string[];
+	highlightedLinks: string[];
+	layoutType: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical';
+}
+
+interface NetworkGraphProps {
+	nodes: Node[];
+	links: any[];
+	highlightedNodes: string[];
+	highlightedLinks: string[];
+	showLabels: boolean;
+	onNodeSelection?: (nodeIds: string[]) => void;
+	selectedNodes?: string[];
+	expandedNodes?: string[];
+	onNodeExpand?: (nodeId: string) => void;
+	layoutType?: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical';
+	onReorganizeLayout?: React.MutableRefObject<(() => void) | null>;
+	onArrangeAsTree?: React.MutableRefObject<(() => void) | null>;
+}
+
 export default function NetworkGraphApp() {
 	console.log(
 		'[v0] NetworkGraphApp render started at:',
@@ -46,7 +72,7 @@ export default function NetworkGraphApp() {
 	const links = useNetworkStore((state) => state.links);
 	const selectedNodes = useNetworkStore((state) => state.selectedNodes);
 	const expandedNodes = useNetworkStore((state) => state.expandedNodes);
-	const layoutType = useNetworkStore((state) => state.layoutType);
+	const layoutType = useNetworkStore((state) => state.layoutType) as 'forceDirected' | 'concentric' | 'radial' | 'hierarchical';
 	const setHighlightedNodes = useNetworkStore(
 		(state) => state.setHighlightedNodes
 	);
@@ -63,8 +89,8 @@ export default function NetworkGraphApp() {
 		(state) => state.toggleNodeExpansion
 	);
 
-	const searchTerm = useSearchStore((state) => state.searchTerm);
-	const searchMode = useFilterStore((state) => state.searchMode);
+	const searchTerm = useUnifiedSearchStore((state) => state.searchTerm);
+	const searchMode = useUnifiedSearchStore((state) => state.searchMode);
 	const selectedNodeTypes = useFilterStore((state) => state.selectedNodeTypes);
 	const selectedContinents = useFilterStore(
 		(state) => state.selectedContinents
@@ -73,7 +99,7 @@ export default function NetworkGraphApp() {
 	const selectedSourceTypes = useFilterStore(
 		(state) => state.selectedSourceTypes
 	);
-	const selectedSimilarityRange = useFilterStore(
+	const selectedSimilarityRange = useUnifiedSearchStore(
 		(state) => state.selectedSimilarityRange
 	);
 	const deselectedNodeTypes = useFilterStore(
@@ -82,11 +108,11 @@ export default function NetworkGraphApp() {
 	const minNodeSize = useFilterStore((state) => state.minNodeSize);
 	const nodeSizeMode = useLayoutStore((state) => state.nodeSizeMode);
 	const colorMode = useLayoutStore((state) => state.colorMode);
-	const useSimilaritySize = useFilterStore((state) => state.useSimilaritySize);
+	const useSimilaritySize = useUnifiedSearchStore((state) => state.useSimilaritySize);
 	const expandedContinents = useFilterStore(
 		(state) => state.expandedContinents
 	);
-	const toggleSimilarityRange = useFilterStore(
+	const toggleSimilarityRange = useUnifiedSearchStore(
 		(state) => state.toggleSimilarityRange
 	);
 
@@ -831,7 +857,7 @@ export default function NetworkGraphApp() {
 			const summaryLength = node.summary.length;
 			nodeSize = Math.max(8, Math.min(25, 8 + (summaryLength / 50) * 17));
 		} else if (nodeSizeMode === 'similarity') {
-			const similarity = node.similarity;
+			const similarity = node.similarity || 0; // Use 0 as default if similarity is undefined
 			nodeSize = Math.max(8, Math.min(25, 8 + (similarity / 100) * 17));
 		}
 		return nodeSize;
@@ -870,6 +896,8 @@ export default function NetworkGraphApp() {
 						</p>
 					</div>
 
+					<TestControls />
+
 					<SearchPanel calculateSimilarity={calculateSimilarity} />
 
 					<FilterPanel
@@ -893,7 +921,15 @@ export default function NetworkGraphApp() {
 						hasApiKey={hasApiKey}
 						currentLayout={layoutType}
 						onLayoutChange={(layout) => {
-							useNetworkStore.getState().setLayoutType(layout);
+							// Convert reagraph layout types to our internal types
+							let networkLayout: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical';
+							switch(layout) {
+								case 'forceDirected2d': networkLayout = 'forceDirected'; break;
+								case 'concentric2d': networkLayout = 'concentric'; break;
+								case 'radialOut2d': networkLayout = 'radial'; break;
+								default: networkLayout = 'forceDirected';
+							}
+							useNetworkStore.getState().setLayoutType(networkLayout);
 						}}
 					/>
 
@@ -903,22 +939,43 @@ export default function NetworkGraphApp() {
 
 			{/* Main Graph Area */}
 			<div className="flex-1 relative">
-				<NetworkGraph
-					nodes={transformedNodes} // Use transformed nodes instead of filteredNodes
-					links={filteredLinks}
-					highlightedNodes={safeHighlightedNodes}
-					highlightedLinks={safeHighlightedLinks}
-					showLabels={showLabels}
-					onNodeSelection={handleNodeSelection}
-					selectedNodes={safeSelectedNodes}
-					expandedNodes={safeExpandedNodes}
-					onNodeExpand={onNodeExpand}
-					layoutType={layoutType}
-					onReorganizeLayout={reorganizeLayoutRef}
-					onArrangeAsTree={arrangeAsTreeRef}
-				/>
+				{useUnifiedSearchStore((state) => state.showEmptyState) ? (
+					<div className="flex items-center justify-center h-full">
+						<div className="text-center p-8 max-w-md">
+							<h2 className="text-2xl font-bold mb-4">Start Your Exploration</h2>
+							<p className="text-gray-600 mb-6">
+								Search for topics in the sidebar to visualize related nodes and their connections.
+								Or use the test controls to load sample data.
+							</p>
+							<div className="flex justify-center">
+								<svg className="h-8 w-8 text-gray-400 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+									<path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+								</svg>
+							</div>
+						</div>
+					</div>
+				) : (
+					<>
+						<NetworkGraph
+							nodes={transformedNodes} // Use transformed nodes instead of filteredNodes
+							links={filteredLinks}
+							highlightedNodes={safeHighlightedNodes}
+							highlightedLinks={safeHighlightedLinks}
+							showLabels={showLabels}
+							onNodeSelection={handleNodeSelection}
+							selectedNodes={safeSelectedNodes}
+							expandedNodes={safeExpandedNodes}
+							onNodeExpand={onNodeExpand}
+							layoutType={layoutType === 'forceDirected' ? 'forceDirected2d' : 
+										layoutType === 'concentric' ? 'concentric2d' : 
+										layoutType === 'radial' ? 'radialOut2d' : 'forceDirected2d'}
+							onReorganizeLayout={reorganizeLayoutRef}
+							onArrangeAsTree={arrangeAsTreeRef}
+						/>
 
-				<ColorLegend filteredNodes={filteredNodes} />
+						<ColorLegend filteredNodes={filteredNodes} />
+					</>
+				)}
 			</div>
 
 			{/* Right Panel */}

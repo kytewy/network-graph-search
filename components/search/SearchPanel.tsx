@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useSearchStore } from '@/lib/stores/search-store';
+import { useUnifiedSearchStore } from '@/lib/stores/unified-search-store';
 import { useUIStore } from '@/lib/stores/ui-store';
 
 // Node interface definition (simplified version of what's in page.tsx)
@@ -29,16 +29,17 @@ interface SearchPanelProps {
 export default function SearchPanel({
   calculateSimilarity
 }: SearchPanelProps) {
-  const searchTerm = useSearchStore((state) => state.searchTerm);
-  const setSearchTerm = useSearchStore((state) => state.setSearchTerm);
-  const searchStatus = useSearchStore((state) => state.searchStatus);
-  const hasSearched = useSearchStore((state) => state.hasSearched);
-  const isSearching = useSearchStore((state) => state.isSearching);
-  const topResults = useSearchStore((state) => state.topResults);
-  const setSearchStatus = useSearchStore((state) => state.setSearchStatus);
-  const setHasSearched = useSearchStore((state) => state.setHasSearched);
-  const setIsSearching = useSearchStore((state) => state.setIsSearching);
-  const setTopResults = useSearchStore((state) => state.setTopResults);
+  const searchTerm = useUnifiedSearchStore((state) => state.searchTerm);
+  const setSearchTerm = useUnifiedSearchStore((state) => state.setSearchTerm);
+  const searchStatus = useUnifiedSearchStore((state) => state.searchStatus);
+  const hasSearched = useUnifiedSearchStore((state) => state.hasSearched);
+  const isSearching = useUnifiedSearchStore((state) => state.isSearching);
+  const topResults = useUnifiedSearchStore((state) => state.topResults);
+  const setSearchStatus = useUnifiedSearchStore((state) => state.setSearchStatus);
+  const setHasSearched = useUnifiedSearchStore((state) => state.setHasSearched);
+  const setIsSearching = useUnifiedSearchStore((state) => state.setIsSearching);
+  const setTopResults = useUnifiedSearchStore((state) => state.setTopResults);
+  const addToSearchHistory = useUnifiedSearchStore((state) => state.addToSearchHistory);
   
   const apiKey = useUIStore((state) => state.apiKey);
   
@@ -76,6 +77,7 @@ export default function SearchPanel({
 
     setIsSearching(true);
     setSearchStatus('');
+    addToSearchHistory(searchTerm);
 
     await new Promise((resolve) => setTimeout(resolve, 1200));
 
@@ -98,7 +100,7 @@ export default function SearchPanel({
   };
 
   const handleClearSearch = () => {
-    useSearchStore.getState().clearSearch();
+    useUnifiedSearchStore.getState().clearSearch();
   };
 
   return (

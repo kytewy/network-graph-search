@@ -1,24 +1,22 @@
 "use client"
 
 import { useMemo } from "react"
+import { useUnifiedSearchStore } from "@/lib/stores/unified-search-store"
 
 interface SimilarityHistogramProps {
-  searchTerm: string
   filteredNodes: any[]
-  hasSearched: boolean
   calculateSimilarity: (text1: string, text2: string) => number
-  selectedSimilarityRange?: string[]
-  onSimilarityRangeClick?: (range: string) => void
 }
 
 const SimilarityHistogram = ({
-  searchTerm,
   filteredNodes,
-  hasSearched,
   calculateSimilarity,
-  selectedSimilarityRange = [],
-  onSimilarityRangeClick,
 }: SimilarityHistogramProps) => {
+  // Get state from unified search store
+  const searchTerm = useUnifiedSearchStore((state) => state.searchTerm);
+  const hasSearched = useUnifiedSearchStore((state) => state.hasSearched);
+  const selectedSimilarityRange = useUnifiedSearchStore((state) => state.selectedSimilarityRange);
+  const toggleSimilarityRange = useUnifiedSearchStore((state) => state.toggleSimilarityRange);
   const histogramData = useMemo(() => {
     const ranges = [
       { range: "<20", min: 0, max: 19 },
@@ -28,35 +26,47 @@ const SimilarityHistogram = ({
       { range: "81-100", min: 81, max: 100 },
     ]
 
-    // If no search term, return zero bars
-    if (!searchTerm.trim() || !hasSearched) {
+    // Always show bars if we have nodes, even without a search term
+    if (filteredNodes.length === 0) {
       return ranges.map(({ range }) => ({ range, count: 0, width: 0, min: 0, max: 0 }))
     }
 
-    // Calculate based on search results
-    const searchResults = filteredNodes.map((node) => ({
-      ...node,
-      searchSimilarity: Math.round(calculateSimilarity(searchTerm, node.text || node.summary || "") * 100),
-    }))
+    // Calculate based on search results or use existing similarity
+    const searchResults = filteredNodes.map((node) => {
+      // If node already has similarity, use it; otherwise calculate
+      const similarity = node.similarity !== undefined
+        ? node.similarity
+        : calculateSimilarity(searchTerm || "test query", node.text || node.summary || "");
+      
+      return {
+        ...node,
+        searchSimilarity: Math.round(similarity * 100)
+      };
+    })
 
-    return ranges.map(({ range, min, max }) => {
-      const count = searchResults.filter((node) => node.searchSimilarity >= min && node.searchSimilarity <= max).length
-      const maxCount = Math.max(
-        ...ranges.map(
-          (r) =>
-            searchResults.filter((node) => node.searchSimilarity >= r.min && node.searchSimilarity <= r.max).length,
-        ),
-        1,
-      )
-      const width = Math.max(10, (count / maxCount) * 100) // Width percentage
+    // Calculate counts for each range
+    const rangeCounts = ranges.map(({ range, min, max }) => {
+      const count = searchResults.filter((node) => node.searchSimilarity >= min && node.searchSimilarity <= max).length;
+      return { range, count, min, max };
+    });
+    
+    // Find the maximum count across all ranges
+    const maxCount = Math.max(
+      ...rangeCounts.map(item => item.count),
+      1 // Ensure we don't divide by zero
+    );
+    
+    // Calculate widths based on the maximum count
+    return rangeCounts.map(({ range, count, min, max }) => {
+      // If count is 0, show a minimal bar width (5%)
+      // Otherwise, scale the width based on the proportion of the maximum count
+      const width = count === 0 ? 5 : Math.max(10, (count / maxCount) * 100);
       return { range, count, width, min, max }
     })
   }, [searchTerm, filteredNodes, hasSearched, calculateSimilarity])
 
   const handleSimilarityRangeClick = (range: string) => {
-    if (onSimilarityRangeClick) {
-      onSimilarityRangeClick(range)
-    }
+    toggleSimilarityRange(range);
   }
 
   return (

@@ -9,6 +9,7 @@ import { Filter, Globe, FileText } from 'lucide-react';
 import SimilarityHistogram from '@/components/similarity-histogram';
 import { useFilterStore } from '@/lib/stores/filter-store';
 import { useLayoutStore } from '@/lib/stores/layout-store';
+import { useUnifiedSearchStore } from '@/lib/stores/unified-search-store';
 
 interface FilterPanelProps {
   filteredNodes: any[];
@@ -68,12 +69,8 @@ const FilterPanel = ({
         </div>
 
         <SimilarityHistogram
-          searchTerm={searchTerm}
-          filteredNodes={filteredNodes}
-          hasSearched={hasSearched}
+          filteredNodes={useUnifiedSearchStore(state => state.searchResultNodes) || filteredNodes}
           calculateSimilarity={calculateSimilarity}
-          selectedSimilarityRange={selectedSimilarityRange}
-          onSimilarityRangeClick={handleSimilarityRangeClick}
         />
       </div>
 
