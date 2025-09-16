@@ -9,7 +9,8 @@ import { Pinecone } from '@pinecone-database/pinecone';
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
 const PINECONE_INDEX_NAME = process.env.PINECONE_INDEX_NAME || 'network-graph';
 const PINECONE_INDEX_HOST = process.env.PINECONE_INDEX_HOST || ''; // Add this to your env variables
-const PINECONE_NAMESPACE = process.env.PINECONE_NAMESPACE || 'example-namespace';
+const PINECONE_NAMESPACE =
+	process.env.PINECONE_NAMESPACE || 'example-namespace';
 
 // Types for Pinecone responses
 export interface PineconeSearchResult {
@@ -48,7 +49,7 @@ export async function searchPinecone(
 		if (!PINECONE_API_KEY) {
 			throw new Error('PINECONE_API_KEY is not set');
 		}
-		
+
 		// Initialize Pinecone client
 		const pc = new Pinecone({ apiKey: PINECONE_API_KEY });
 
@@ -57,10 +58,10 @@ export async function searchPinecone(
 
 		// Get the index and namespace using the pattern from the documentation
 		// Note: If PINECONE_INDEX_HOST is empty, it will use the default host
-		const index = PINECONE_INDEX_HOST ? 
-			pc.index(PINECONE_INDEX_NAME, PINECONE_INDEX_HOST) : 
-			pc.index(PINECONE_INDEX_NAME);
-		
+		const index = PINECONE_INDEX_HOST
+			? pc.index(PINECONE_INDEX_NAME, PINECONE_INDEX_HOST)
+			: pc.index(PINECONE_INDEX_NAME);
+
 		// Get the namespace
 		const namespace = index.namespace(PINECONE_NAMESPACE);
 
@@ -69,7 +70,7 @@ export async function searchPinecone(
 			query,
 			topK,
 			namespace: PINECONE_NAMESPACE,
-			indexName: PINECONE_INDEX_NAME
+			indexName: PINECONE_INDEX_NAME,
 		});
 
 		// Search using the exact pattern from the documentation
@@ -78,11 +79,21 @@ export async function searchPinecone(
 				topK,
 				inputs: { text: query },
 			},
-			fields: ['chunk_text', 'category', 'label', 'type', 'summary', 'content'],
+			fields: [
+				'chunk_text',
+				'category',
+				'label',
+				'type',
+				'summary',
+				'content',
+				'continent',
+				'country',
+				'sourceType',
+			],
 		});
 
 		// Log the results for debugging
-		console.log('Search results structure:', JSON.stringify(response, null, 2));
+		// console.log('Search results structure:', JSON.stringify(response, null, 2));
 
 		return { results: response };
 	} catch (error) {

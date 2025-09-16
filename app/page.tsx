@@ -7,14 +7,13 @@ import { ColorLegend } from '@/components/ui/ColorLegend';
 import NetworkGraph from '@/components/network/new-graph';
 // import NetworkGraph from '@/components/network-graph';
 import Analysis from '@/components/analysis';
-import SearchPanel from '@/components/search/SearchPanel';
+import SimpleSearchPanel from '@/components/search/SimpleSearchPanel';
 import FilterPanel from '@/components/filters/FilterPanel';
 import ContextManagement from '@/components/analysis/ContextManagement';
 import ChatInterface from '@/components/analysis/ChatInterface';
 
 import { useNetworkStore } from '@/lib/stores/network-store';
 import { useFilterStore } from '@/lib/stores/filter-store';
-import TestControls from '@/components/TestControls';
 import { useUIStore } from '@/lib/stores/ui-store';
 import { useUnifiedSearchStore } from '@/lib/stores/unified-search-store';
 import { useLayoutStore } from '@/lib/stores/layout-store';
@@ -52,13 +51,15 @@ interface NetworkGraphProps {
 	highlightedNodes: string[];
 	highlightedLinks: string[];
 	showLabels: boolean;
+	onNodeClick?: (node: Node) => void;
 	onNodeSelection?: (nodeIds: string[]) => void;
 	selectedNodes?: string[];
 	expandedNodes?: string[];
 	onNodeExpand?: (nodeId: string) => void;
-	layoutType?: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical';
+	layoutType?: string;
 	onReorganizeLayout?: React.MutableRefObject<(() => void) | null>;
 	onArrangeAsTree?: React.MutableRefObject<(() => void) | null>;
+	onSendToContext?: (nodes: Node[]) => void;
 }
 
 export default function NetworkGraphApp() {
@@ -72,7 +73,11 @@ export default function NetworkGraphApp() {
 	const links = useNetworkStore((state) => state.links);
 	const selectedNodes = useNetworkStore((state) => state.selectedNodes);
 	const expandedNodes = useNetworkStore((state) => state.expandedNodes);
-	const layoutType = useNetworkStore((state) => state.layoutType) as 'forceDirected' | 'concentric' | 'radial' | 'hierarchical';
+	const layoutType = useNetworkStore((state) => state.layoutType) as
+		| 'forceDirected'
+		| 'concentric'
+		| 'radial'
+		| 'hierarchical';
 	const setHighlightedNodes = useNetworkStore(
 		(state) => state.setHighlightedNodes
 	);
@@ -90,7 +95,6 @@ export default function NetworkGraphApp() {
 	);
 
 	const searchTerm = useUnifiedSearchStore((state) => state.searchTerm);
-	const searchMode = useUnifiedSearchStore((state) => state.searchMode);
 	const selectedNodeTypes = useFilterStore((state) => state.selectedNodeTypes);
 	const selectedContinents = useFilterStore(
 		(state) => state.selectedContinents
@@ -108,7 +112,9 @@ export default function NetworkGraphApp() {
 	const minNodeSize = useFilterStore((state) => state.minNodeSize);
 	const nodeSizeMode = useLayoutStore((state) => state.nodeSizeMode);
 	const colorMode = useLayoutStore((state) => state.colorMode);
-	const useSimilaritySize = useUnifiedSearchStore((state) => state.useSimilaritySize);
+	const useSimilaritySize = useUnifiedSearchStore(
+		(state) => state.useSimilaritySize
+	);
 	const expandedContinents = useFilterStore(
 		(state) => state.expandedContinents
 	);
@@ -168,93 +174,7 @@ export default function NetworkGraphApp() {
 
 	const sourceTypes = [...new Set(safeNodes.map((node) => node.sourceType))];
 
-	const calculateTFIDF = useCallback((documents: string[]) => {
-		// Tokenize and clean documents
-		const tokenizedDocs = documents.map(
-			(doc) =>
-				doc
-					.toLowerCase()
-					.replace(/[^\w\s]/g, ' ')
-					.split(/\s+/)
-					.filter((word) => word.length > 2) // Filter out short words
-					.filter(
-						(word) =>
-							!['data', 'system', 'service', 'management'].includes(word)
-					) // Filter common tech words
-		);
-
-		// Calculate term frequencies
-		const termFreqs = tokenizedDocs.map((tokens) => {
-			const tf: Record<string, number> = {};
-			tokens.forEach((token) => {
-				tf[token] = (tf[token] || 0) + 1;
-			});
-			// Normalize by document length
-			const docLength = tokens.length;
-			Object.keys(tf).forEach((term) => {
-				tf[term] = tf[term] / docLength;
-			});
-			return tf;
-		});
-
-		// Calculate document frequencies and IDF
-		const allTerms = new Set(tokenizedDocs.flat());
-		const docFreqs: Record<string, number> = {};
-
-		allTerms.forEach((term) => {
-			docFreqs[term] = tokenizedDocs.filter((tokens) =>
-				tokens.includes(term)
-			).length;
-		});
-
-		const totalDocs = documents.length;
-		const idf: Record<string, number> = {};
-		Object.keys(docFreqs).forEach((term) => {
-			idf[term] = Math.log(totalDocs / docFreqs[term]);
-		});
-
-		return { termFreqs, idf, allTerms: Array.from(allTerms) };
-	}, []);
-
-	const calculateSimilarity = useCallback(
-		(query: string, text: string) => {
-			if (!query || !text) return 0;
-
-			const documents = [query, text];
-			const { termFreqs, idf, allTerms } = calculateTFIDF(documents);
-
-			// Calculate TF-IDF vectors
-			const queryVector: number[] = [];
-			const textVector: number[] = [];
-
-			allTerms.forEach((term) => {
-				const queryTF = termFreqs[0][term] || 0;
-				const textTF = termFreqs[1][term] || 0;
-				const termIDF = idf[term] || 0;
-
-				queryVector.push(queryTF * termIDF);
-				textVector.push(textTF * termIDF);
-			});
-
-			// Calculate cosine similarity
-			const dotProduct = queryVector.reduce(
-				(sum, val, i) => sum + val * textVector[i],
-				0
-			);
-			const queryMagnitude = Math.sqrt(
-				queryVector.reduce((sum, val) => sum + val * val, 0)
-			);
-			const textMagnitude = Math.sqrt(
-				textVector.reduce((sum, val) => sum + val * val, 0)
-			);
-
-			if (queryMagnitude === 0 || textMagnitude === 0) return 0;
-
-			const similarity = dotProduct / (queryMagnitude * textMagnitude);
-			return Math.max(0, Math.min(1, similarity)); // Clamp between 0 and 1
-		},
-		[calculateTFIDF]
-	);
+	// Vector search is now used instead of TF-IDF calculation
 
 	const filteredNodes = useMemo(() => {
 		const filterStart = performance.now();
@@ -268,7 +188,6 @@ export default function NetworkGraphApp() {
 			selectedSimilarityRange: selectedSimilarityRange?.length || 0,
 			minNodeSize: minNodeSize?.[0] || 0,
 			useSimilaritySize,
-			searchMode,
 		});
 
 		const searchLower = searchTerm?.trim()?.toLowerCase();
@@ -280,10 +199,7 @@ export default function NetworkGraphApp() {
 		const hasSimilarityRangeFilters = selectedSimilarityRange?.length > 0;
 		const hasSizeFilter = minNodeSize?.[0] > 0;
 		const needsSimilarity =
-			(useSimilaritySize ||
-				searchMode === 'semantic' ||
-				hasSimilarityRangeFilters) &&
-			hasSearch;
+			(useSimilaritySize || hasSimilarityRangeFilters) && hasSearch;
 
 		const isInSelectedSimilarityRange = (similarity: number) => {
 			if (!hasSimilarityRangeFilters) return true;
@@ -326,8 +242,10 @@ export default function NetworkGraphApp() {
 				if (hasSourceFilters && !selectedSourceTypes.includes(node.sourceType))
 					return false;
 
-				if (hasSimilarityRangeFilters && hasSearch) {
-					const similarity = calculateSimilarity(searchTerm, node.summary);
+				if (hasSimilarityRangeFilters) {
+					// Use existing score or similarity from vector search
+					// This allows filtering by similarity even without an active search term
+					const similarity = node.score || node.similarity || 0;
 					if (!isInSelectedSimilarityRange(similarity)) return false;
 				}
 
@@ -339,7 +257,8 @@ export default function NetworkGraphApp() {
 			.map((node) => {
 				if (!needsSimilarity) return node;
 
-				const similarity = calculateSimilarity(searchTerm, node.summary);
+				// Use existing score or similarity from vector search
+				const similarity = node.score || node.similarity || 0;
 				const newSize = Math.max(
 					5,
 					(node.size || 10) * (0.3 + similarity * 1.4)
@@ -370,8 +289,6 @@ export default function NetworkGraphApp() {
 		selectedSimilarityRange,
 		minNodeSize,
 		useSimilaritySize,
-		searchMode,
-		calculateSimilarity,
 	]);
 
 	const filteredLinks = useMemo(() => {
@@ -632,7 +549,9 @@ export default function NetworkGraphApp() {
 						'intelligence',
 						'neural',
 					],
-					nodes: [],
+					nodes: [] as Array<
+						Node & { relevanceScore: number; matchedKeywords: string[] }
+					>,
 					score: 0,
 				},
 				{
@@ -647,7 +566,9 @@ export default function NetworkGraphApp() {
 						'archival',
 						'distributed',
 					],
-					nodes: [],
+					nodes: [] as Array<
+						Node & { relevanceScore: number; matchedKeywords: string[] }
+					>,
 					score: 0,
 				},
 				{
@@ -662,7 +583,9 @@ export default function NetworkGraphApp() {
 						'vulnerability',
 						'protection',
 					],
-					nodes: [],
+					nodes: [] as Array<
+						Node & { relevanceScore: number; matchedKeywords: string[] }
+					>,
 					score: 0,
 				},
 				{
@@ -677,7 +600,9 @@ export default function NetworkGraphApp() {
 						'observability',
 						'logging',
 					],
-					nodes: [],
+					nodes: [] as Array<
+						Node & { relevanceScore: number; matchedKeywords: string[] }
+					>,
 					score: 0,
 				},
 				{
@@ -692,7 +617,9 @@ export default function NetworkGraphApp() {
 						'pub',
 						'asynchronous',
 					],
-					nodes: [],
+					nodes: [] as Array<
+						Node & { relevanceScore: number; matchedKeywords: string[] }
+					>,
 					score: 0,
 				},
 				{
@@ -708,7 +635,9 @@ export default function NetworkGraphApp() {
 						'cdn',
 						'edge',
 					],
-					nodes: [],
+					nodes: [] as Array<
+						Node & { relevanceScore: number; matchedKeywords: string[] }
+					>,
 					score: 0,
 				},
 				{
@@ -723,7 +652,9 @@ export default function NetworkGraphApp() {
 						'responsive',
 						'experience',
 					],
-					nodes: [],
+					nodes: [] as Array<
+						Node & { relevanceScore: number; matchedKeywords: string[] }
+					>,
 					score: 0,
 				},
 				{
@@ -738,7 +669,9 @@ export default function NetworkGraphApp() {
 						'orchestration',
 						'control',
 					],
-					nodes: [],
+					nodes: [] as Array<
+						Node & { relevanceScore: number; matchedKeywords: string[] }
+					>,
 					score: 0,
 				},
 			];
@@ -896,9 +829,7 @@ export default function NetworkGraphApp() {
 						</p>
 					</div>
 
-					<TestControls />
-
-					<SearchPanel calculateSimilarity={calculateSimilarity} />
+					<SimpleSearchPanel />
 
 					<FilterPanel
 						filteredNodes={filteredNodes}
@@ -907,7 +838,6 @@ export default function NetworkGraphApp() {
 						sourceTypes={sourceTypes}
 						safeHighlightedNodes={safeHighlightedNodes}
 						safeExpandedNodes={safeExpandedNodes}
-						calculateSimilarity={calculateSimilarity}
 						toggleExpandedContinent={toggleExpandedContinent}
 						handleSimilarityRangeClick={handleSimilarityRangeClick}
 						continentCountries={continentCountries}
@@ -920,15 +850,25 @@ export default function NetworkGraphApp() {
 						arrangeAsTreeRef={arrangeAsTreeRef}
 						hasApiKey={hasApiKey}
 						currentLayout={layoutType}
-						onLayoutChange={(layout) => {
+						onLayoutChange={(layout: string) => {
 							// Convert reagraph layout types to our internal types
-							let networkLayout: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical';
-							switch(layout) {
-								case 'forceDirected2d': networkLayout = 'forceDirected'; break;
-								case 'concentric2d': networkLayout = 'concentric'; break;
-								case 'radialOut2d': networkLayout = 'radial'; break;
-								default: networkLayout = 'forceDirected';
+							let networkLayout:
+								| 'forceDirected'
+								| 'concentric'
+								| 'radial'
+								| 'hierarchical';
+
+							// Use string comparison with type safety
+							if (layout === 'forceDirected2d') {
+								networkLayout = 'forceDirected';
+							} else if (layout === 'concentric2d') {
+								networkLayout = 'concentric';
+							} else if (layout === 'radialOut2d') {
+								networkLayout = 'radial';
+							} else {
+								networkLayout = 'forceDirected';
 							}
+
 							useNetworkStore.getState().setLayoutType(networkLayout);
 						}}
 					/>
@@ -942,14 +882,25 @@ export default function NetworkGraphApp() {
 				{useUnifiedSearchStore((state) => state.showEmptyState) ? (
 					<div className="flex items-center justify-center h-full">
 						<div className="text-center p-8 max-w-md">
-							<h2 className="text-2xl font-bold mb-4">Start Your Exploration</h2>
+							<h2 className="text-2xl font-bold mb-4">
+								Start Your Exploration
+							</h2>
 							<p className="text-gray-600 mb-6">
-								Search for topics in the sidebar to visualize related nodes and their connections.
-								Or use the test controls to load sample data.
+								Search for topics in the sidebar to visualize related nodes and
+								their connections. Or use the test controls to load sample data.
 							</p>
 							<div className="flex justify-center">
-								<svg className="h-8 w-8 text-gray-400 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-									<path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+								<svg
+									className="h-8 w-8 text-gray-400 animate-pulse"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2">
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M10 19l-7-7m0 0l7-7m-7 7h18"
+									/>
 								</svg>
 							</div>
 						</div>
@@ -966,9 +917,15 @@ export default function NetworkGraphApp() {
 							selectedNodes={safeSelectedNodes}
 							expandedNodes={safeExpandedNodes}
 							onNodeExpand={onNodeExpand}
-							layoutType={layoutType === 'forceDirected' ? 'forceDirected2d' : 
-										layoutType === 'concentric' ? 'concentric2d' : 
-										layoutType === 'radial' ? 'radialOut2d' : 'forceDirected2d'}
+							layoutType={
+								(layoutType === 'forceDirected'
+									? 'forceDirected2d'
+									: layoutType === 'concentric'
+									? 'concentric2d'
+									: layoutType === 'radial'
+									? 'radialOut2d'
+									: 'forceDirected2d') as string
+							}
 							onReorganizeLayout={reorganizeLayoutRef}
 							onArrangeAsTree={arrangeAsTreeRef}
 						/>

@@ -14,6 +14,7 @@ interface Node {
   size: number;
   color?: string;
   similarity?: number;
+  score?: number; // Score from vector search
   stateProvince?: string;
 }
 
@@ -28,7 +29,6 @@ interface Link {
 interface UnifiedSearchState {
   // Search parameters
   searchTerm: string;
-  searchMode: 'fulltext' | 'semantic';
   searchHistory: string[];
   
   // Search status
@@ -46,7 +46,6 @@ interface UnifiedSearchState {
   
   // Actions
   setSearchTerm: (term: string) => void;
-  setSearchMode: (mode: 'fulltext' | 'semantic') => void;
   setIsSearching: (searching: boolean) => void;
   setSearchStatus: (status: string) => void;
   setHasSearched: (searched: boolean) => void;
@@ -58,6 +57,9 @@ interface UnifiedSearchState {
   
   // Network store interactions
   setShowEmptyState: (show: boolean) => void;
+  
+  // Vector search
+  performVectorSearch: (query: string, limit?: number) => Promise<void>;
   setSearchResultNodes: (nodes: Node[]) => void;
   setSearchResultLinks: (links: Link[]) => void;
   updateNetworkWithSearchResults: () => void;
@@ -67,11 +69,11 @@ interface UnifiedSearchState {
 export const useUnifiedSearchStore = create<UnifiedSearchState>((set, get) => ({
   // Initial state - mirror existing stores
   searchTerm: '',
-  searchMode: 'fulltext',
   searchHistory: [],
   isSearching: false,
   searchStatus: '',
   hasSearched: false,
+  searchError: null,
   topResults: 5,
   selectedSimilarityRange: [],
   useSimilaritySize: false,
@@ -81,7 +83,6 @@ export const useUnifiedSearchStore = create<UnifiedSearchState>((set, get) => ({
   
   // Actions
   setSearchTerm: (term) => set({ searchTerm: term }),
-  setSearchMode: (mode) => set({ searchMode: mode }),
   setIsSearching: (searching) => set({ isSearching: searching }),
   setSearchStatus: (status) => set({ searchStatus: status }),
   setHasSearched: (searched) => set({ hasSearched: searched }),
@@ -130,14 +131,64 @@ export const useUnifiedSearchStore = create<UnifiedSearchState>((set, get) => ({
     }
   },
   
-  setSearchResultNodes: (nodes) => {
-    set({ searchResultNodes: nodes });
-    get().updateNetworkWithSearchResults();
-  },
+  setSearchResultNodes: (nodes: any[]) => set({ searchResultNodes: nodes }),
+  setSearchResultLinks: (links: any[]) => set({ searchResultLinks: links }),
   
-  setSearchResultLinks: (links) => {
-    set({ searchResultLinks: links });
-    get().updateNetworkWithSearchResults();
+  // Perform vector search using Pinecone API
+  performVectorSearch: async (query: string, limit: number = 10) => {
+    const state = get();
+    
+    if (!query.trim()) {
+      state.setSearchStatus('Please enter a search query');
+      return;
+    }
+    
+    try {
+      // Set loading state
+      state.setIsSearching(true);
+      state.setSearchStatus('Searching...');
+      state.setSearchTerm(query);
+      
+      // Call the reranked vector search API
+      const response = await fetch('/api/reranked-vector-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          topK: limit,
+          useReranking: true
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Search failed');
+      }
+      
+      const data = await response.json();
+      
+      // Update state with search results
+      state.setSearchResultNodes(data.nodes);
+      state.setSearchResultLinks(data.links);
+      state.setHasSearched(true);
+      state.setShowEmptyState(false);
+      state.setSearchStatus(`Found ${data.nodes.length} results`);
+      
+      // Add to search history
+      state.addToSearchHistory(query);
+      
+      // Update network with search results
+      state.updateNetworkWithSearchResults();
+      
+      console.log(`[UnifiedSearchStore] Vector search complete: ${data.nodes.length} nodes found`);
+    } catch (error: any) {
+      console.error('Vector search error:', error);
+      state.setSearchStatus(`Error: ${error.message || 'An error occurred during search'}`);
+    } finally {
+      state.setIsSearching(false);
+    }
   },
   
   updateNetworkWithSearchResults: () => {
@@ -158,7 +209,8 @@ export const useUnifiedSearchStore = create<UnifiedSearchState>((set, get) => ({
     // Apply any filters (like similarity range)
     const filteredNodes = selectedSimilarityRange.length > 0
       ? searchResultNodes.filter(node => {
-          const similarity = Math.round((node.similarity || 0) * 100);
+          // For vector search, use score directly
+          const similarity = Math.round((node.score || node.similarity || 0) * 100);
           // Check if node's similarity falls within any of the selected ranges
           return selectedSimilarityRange.some(range => {
             switch (range) {

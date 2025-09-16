@@ -20,7 +20,9 @@ interface NetworkState {
 	toggleNodeExpansion: (nodeId: string) => void;
 	setHighlightedNodes: (nodes: string[]) => void;
 	setHighlightedLinks: (links: string[]) => void;
-	setLayoutType: (type: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical') => void;
+	setLayoutType: (
+		type: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical'
+	) => void;
 	clearSelections: () => void;
 }
 
