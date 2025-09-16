@@ -22,11 +22,11 @@ export default function SimpleSearchPanel() {
   const [processedResults, setProcessedResults] = useState<any[]>([]);
   const [topK, setTopK] = useState<number>(10); // Default topK value
   
-  // Connect to unified search store
+  // Connect to unified search store with null safety
   const setSearchTerm = useUnifiedSearchStore((state) => state.setSearchTerm);
   const setHasSearched = useUnifiedSearchStore((state) => state.setHasSearched);
   const setSearchResultNodes = useUnifiedSearchStore((state) => state.setSearchResultNodes);
-  const selectedSimilarityRange = useUnifiedSearchStore((state) => state.selectedSimilarityRange);
+  const selectedSimilarityRange = useUnifiedSearchStore((state) => state.selectedSimilarityRange || []); // Provide default empty array
 
   // Process API response to extract and normalize scores
   const processApiResponse = (data: any) => {
@@ -60,14 +60,21 @@ export default function SimpleSearchPanel() {
 
   // Effect to filter nodes based on selected similarity ranges
   useEffect(() => {
-    if (processedResults.length > 0) {
-      let nodes = processedResults;
+    // Guard against undefined values
+    const safeProcessedResults = processedResults || [];
+    const safeRanges = selectedSimilarityRange || [];
+    
+    // Only proceed if we have results
+    if (safeProcessedResults.length > 0) {
+      let nodes = [...safeProcessedResults]; // Create a copy to avoid reference issues
       
       // Apply similarity range filters if any are selected
-      if (selectedSimilarityRange.length > 0) {
+      if (safeRanges.length > 0) {
         nodes = nodes.filter((node: any) => {
-          const similarity = Math.round((node.score || 0) * 100);
-          return selectedSimilarityRange.some(range => {
+          // Ensure we have a valid score
+          const similarity = Math.round((node?.score || 0) * 100);
+          
+          return safeRanges.some(range => {
             switch (range) {
               case '<20': return similarity >= 0 && similarity <= 19;
               case '21-40': return similarity >= 20 && similarity <= 40;
@@ -81,6 +88,9 @@ export default function SimpleSearchPanel() {
       }
       
       setFilteredNodes(nodes);
+    } else {
+      // Ensure filteredNodes is always an array
+      setFilteredNodes([]);
     }
   }, [processedResults, selectedSimilarityRange]);
 
@@ -180,7 +190,7 @@ export default function SimpleSearchPanel() {
         <div className="mt-4 p-4 border rounded-md bg-gray-50">
           <h3 className="text-lg font-semibold mb-3">Filter by Similarity</h3>
           <p className="text-sm text-gray-600 mb-3">Click on bars to filter results by similarity score</p>
-          <SimilarityHistogram filteredNodes={processedResults} />
+          <SimilarityHistogram filteredNodes={processedResults || []} />
         </div>
       )}
       
@@ -200,7 +210,7 @@ export default function SimpleSearchPanel() {
           
           <TabsContent value="results" className="mt-2">
             <Card className="p-4 overflow-auto max-h-[500px]">
-              <h3 className="text-lg font-semibold mb-2">Search Results: {filteredNodes.length} of {processedResults.length || 0}</h3>
+              <h3 className="text-lg font-semibold mb-2">Search Results: {filteredNodes?.length || 0} of {processedResults?.length || 0}</h3>
               {filteredNodes.map((result: any, index: number) => (
                 <div key={result.id} className="mb-4 p-3 border rounded">
                   <div className="flex justify-between">
