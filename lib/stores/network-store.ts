@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { type Node, type Link } from '@/lib/sample-data';
-import { euNodes, euLinks } from '@/lib/sample-eu-data';
+// Sample data is still available in the project but not imported here
 
 interface NetworkState {
 	nodes: Node[];
@@ -27,8 +27,8 @@ interface NetworkState {
 }
 
 export const useNetworkStore = create<NetworkState>((set, get) => ({
-	nodes: euNodes,
-	links: euLinks,
+	nodes: [], // Initialize with empty array instead of sample data
+	links: [], // Initialize with empty array instead of sample data
 	selectedNodes: [],
 	expandedNodes: [],
 	highlightedNodes: [],

@@ -1,12 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SimilarityHistogram } from '@/components/similarity-histogram';
 import { useUnifiedSearchStore } from '@/lib/stores/unified-search-store';
+import dynamic from 'next/dynamic';
+import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
+import { useSelection } from 'reagraph';
+
+// Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
+const GraphCanvas = dynamic(
+  () => import('reagraph').then((m) => m.GraphCanvas),
+  { ssr: false }
+);
 
 /**
  * Simple search panel that displays raw Pinecone response with reranking
@@ -21,6 +30,23 @@ export default function SimpleSearchPanel() {
   const [filteredNodes, setFilteredNodes] = useState<any[]>([]);
   const [processedResults, setProcessedResults] = useState<any[]>([]);
   const [topK, setTopK] = useState<number>(10); // Default topK value
+  const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
+  const [graphEdges, setGraphEdges] = useState<GraphEdge[]>([]);
+  // Define the allowed layout types for Reagraph
+  type LayoutType = 'forceDirected2d' | 'forceDirected3d' | 'hierarchical' | 'radial' | 'forceAtlas2' | 'noOverlap' | 'concentric';
+  // Define the type for the GraphCanvas layoutType prop
+  type GraphCanvasLayoutType = 'forceDirected2d' | 'forceDirected3d' | 'hierarchical' | 'radial' | 'forceAtlas2' | 'noOverlap';
+  const [layoutType, setLayoutType] = useState<LayoutType>('forceDirected2d');
+  
+  // Reference for the graph canvas
+  const graphRef = useRef<GraphCanvasRef | null>(null);
+  
+  // Move useSelection to the top level of the component
+  const { selections, onNodeClick, onCanvasClick } = useSelection({
+    ref: graphRef,
+    nodes: graphNodes,
+    edges: graphEdges,
+  });
   
   // Connect to unified search store with null safety
   const setSearchTerm = useUnifiedSearchStore((state) => state.setSearchTerm);
@@ -132,6 +158,86 @@ export default function SimpleSearchPanel() {
       
       // Initialize filtered nodes
       setFilteredNodes(results);
+      
+      // Process nodes and edges for graph visualization
+      console.log('API response data:', data);
+      
+      // Check if we have the rawResponse structure from Pinecone
+      if (data && data.rawResponse && data.rawResponse.result && data.rawResponse.result.hits) {
+        const hits = data.rawResponse.result.hits;
+        
+        // Create nodes from hits
+        const nodes = hits.map((hit: any) => ({
+          id: hit._id,
+          label: hit.fields?.label || hit._id,
+          fill: hit.fields?.category === 'article' ? '#4f46e5' : '#10b981', // Different colors for different categories
+          size: hit._score ? hit._score * 15 : 10, // Size based on score or default
+          score: hit._score || 0.5,
+          category: hit.fields?.category || '',
+          data: hit.fields
+        }));
+        
+        // Create a set of all node IDs for quick lookup
+        const nodeIds = new Set(nodes.map((node: any) => node.id));
+        
+        // Create edges from connected_to fields
+        const edges: any[] = [];
+        hits.forEach((hit: any) => {
+          const connectedTo = hit.fields?.connected_to || [];
+          if (Array.isArray(connectedTo)) {
+            connectedTo.forEach((targetId: string) => {
+              // Only create edges to nodes that are in our result set
+              if (nodeIds.has(targetId)) {
+                const edgeId = `${hit._id}-${targetId}`;
+                edges.push({
+                  id: edgeId,
+                  source: hit._id,
+                  target: targetId,
+                  label: `${hit.fields?.label || hit._id} → ${targetId}`,
+                  type: 'connected',
+                  weight: 1
+                });
+              }
+            });
+          }
+        });
+        
+        console.log('Nodes created:', JSON.stringify(nodes, null, 2));
+        console.log('Edges created:', JSON.stringify(edges, null, 2));
+        
+        setGraphNodes(nodes);
+        setGraphEdges(edges);
+      } else if (data && data.nodes && Array.isArray(data.nodes)) {
+        // Fallback to the previous structure if available
+        const nodes = data.nodes.map((node: any) => ({
+          id: node.id,
+          label: node.label || node.id,
+          fill: node.category === 'article' ? '#4f46e5' : '#10b981',
+          size: node.score ? node.score * 15 : 10,
+          score: node.score || 0.5,
+          category: node.category || '',
+          data: node
+        }));
+        setGraphNodes(nodes);
+        
+        if (data.edges && Array.isArray(data.edges)) {
+          const edges = data.edges.map((edge: any) => ({
+            id: edge.id || `${edge.source}-${edge.target}`,
+            source: edge.source,
+            target: edge.target,
+            label: edge.label || '',
+            type: edge.type || 'default',
+            data: edge
+          }));
+          setGraphEdges(edges);
+        } else {
+          setGraphEdges([]);
+        }
+      } else {
+        console.warn('No valid data structure found in API response:', data);
+        setGraphNodes([]);
+        setGraphEdges([]);
+      }
     } catch (err: any) {
       console.error('Search error:', err);
       setError(err.message || 'An error occurred during search');
@@ -201,12 +307,71 @@ export default function SimpleSearchPanel() {
       )}
       
       {rerankedResponse && (
-        <Tabs defaultValue="results" className="w-full mt-4">
+        <Tabs defaultValue="graph" className="w-full mt-4">
           <TabsList>
+            <TabsTrigger value="graph">Graph View</TabsTrigger>
             <TabsTrigger value="results">Search Results</TabsTrigger>
+            <TabsTrigger value="nodes">Nodes JSON</TabsTrigger>
+            <TabsTrigger value="edges">Edges JSON</TabsTrigger>
             <TabsTrigger value="api">API Response</TabsTrigger>
             <TabsTrigger value="raw">Raw Response</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="graph" className="mt-2">
+            <Card className="p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Network Graph: {graphNodes.length} nodes, {graphEdges.length} edges</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Layout:</span>
+                  <select 
+                    className="border rounded p-1 text-sm" 
+                    value={layoutType}
+                    onChange={(e) => setLayoutType(e.target.value as LayoutType)}
+                  >
+                    <option value="forceDirected2d">Force Directed</option>
+                    <option value="concentric">Concentric</option>
+                    <option value="radial">Radial</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="h-[500px] w-full border rounded bg-gray-50 overflow-hidden relative">
+                {graphNodes.length > 0 && (
+                  <div className="absolute inset-0">
+                    <GraphCanvas
+                      ref={graphRef}
+                      nodes={graphNodes}
+                      edges={graphEdges}
+                      layoutType={layoutType === 'concentric' ? 'forceDirected2d' : layoutType}
+                      layoutOverrides={{
+                        linkDistance: 80, // Reduced from 100
+                        nodeStrength: -250, // Reduced from -300
+                        gravity: 0.5, // Added gravity to keep nodes more centered
+                      }}
+                      selections={selections}
+                      onNodeClick={onNodeClick}
+                      onCanvasClick={onCanvasClick}
+                      sizingType="attribute"
+                      sizingAttribute="score"
+                      minNodeSize={4} // Reduced from 5
+                      maxNodeSize={16} // Reduced from 20
+                      labelType="auto"
+                      edgeStyle="curved"
+                      clusterAttribute="category"
+                      animated={true}
+                      cameraMode="pan" // Explicitly set camera mode
+                      containment // Add containment to keep nodes within bounds
+                    />
+                  </div>
+                )}
+                {graphNodes.length === 0 && (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No graph data available. Try a different search query.
+                  </div>
+                )}
+              </div>
+            </Card>
+          </TabsContent>
           
           <TabsContent value="results" className="mt-2">
             <Card className="p-4 overflow-auto max-h-[500px]">
@@ -221,6 +386,24 @@ export default function SimpleSearchPanel() {
                   <p className="mt-2 text-sm">{result.text?.substring(0, 200) || result.content?.substring(0, 200) || 'No content available'}...</p>
                 </div>
               ))}
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="nodes" className="mt-2">
+            <Card className="p-4 overflow-auto max-h-[500px]">
+              <h3 className="text-lg font-semibold mb-2">Nodes JSON ({graphNodes.length} nodes):</h3>
+              <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
+                {JSON.stringify(graphNodes, null, 2)}
+              </pre>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="edges" className="mt-2">
+            <Card className="p-4 overflow-auto max-h-[500px]">
+              <h3 className="text-lg font-semibold mb-2">Edges JSON ({graphEdges.length} edges):</h3>
+              <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
+                {JSON.stringify(graphEdges, null, 2)}
+              </pre>
             </Card>
           </TabsContent>
           

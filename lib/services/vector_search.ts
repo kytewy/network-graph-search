@@ -89,11 +89,12 @@ export async function searchPinecone(
 				'continent',
 				'country',
 				'sourceType',
+				'connected_to',
 			],
 		});
 
 		// Log the results for debugging
-		// console.log('Search results structure:', JSON.stringify(response, null, 2));
+		console.log('Search results structure:', JSON.stringify(response, null, 2));
 
 		return { results: response };
 	} catch (error) {

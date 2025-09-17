@@ -170,11 +170,23 @@ export const useUnifiedSearchStore = create<UnifiedSearchState>((set, get) => ({
       const data = await response.json();
       
       // Update state with search results
-      state.setSearchResultNodes(data.nodes);
-      state.setSearchResultLinks(data.links);
-      state.setHasSearched(true);
-      state.setShowEmptyState(false);
-      state.setSearchStatus(`Found ${data.nodes.length} results`);
+      if (data.nodes && Array.isArray(data.nodes)) {
+        state.setSearchResultNodes(data.nodes);
+        state.setHasSearched(true);
+        state.setShowEmptyState(false);
+        state.setSearchStatus(`Found ${data.nodes.length} results`);
+      } else {
+        console.error('API response does not contain nodes array:', data);
+        state.setSearchStatus('Error: Invalid response format');
+      }
+      
+      // Handle edges/links - the API now returns edges instead of links
+      if (data.edges && Array.isArray(data.edges)) {
+        state.setSearchResultLinks(data.edges);
+      } else {
+        console.warn('API response does not contain edges array');
+        state.setSearchResultLinks([]);
+      }
       
       // Add to search history
       state.addToSearchHistory(query);
