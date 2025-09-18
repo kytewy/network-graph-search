@@ -160,8 +160,8 @@ export function NetworkGraph() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col h-full">
+      <div className="flex justify-between items-center mb-2">
         <h3 className="text-lg font-semibold">
           Network Graph: {graphNodes.length} nodes, {graphEdges.length} edges
         </h3>
@@ -183,7 +183,7 @@ export function NetworkGraph() {
         </div>
       </div>
 
-      <div className="h-[500px] w-full border rounded bg-gray-50 overflow-hidden relative">
+      <div className="flex-1 w-full border rounded bg-gray-50 overflow-hidden relative">
         {/* Instruction for lasso selection */}
         <div
           style={{

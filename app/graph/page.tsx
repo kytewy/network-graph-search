@@ -755,7 +755,7 @@ export default function NetworkGraphApp() {
 	const filterState = useFilterStore();
 
 	return (
-		<div className="flex h-screen bg-background">
+		<div className="flex h-screen overflow-hidden bg-background">
 			{/* Sidebar */}
 			<div className="w-96 bg-sidebar border-r border-sidebar-border p-6 overflow-y-auto">
 				<div className="space-y-6">
@@ -817,7 +817,7 @@ export default function NetworkGraphApp() {
 			</div>
 
 			{/* Main Graph Area */}
-			<div className="flex-1 relative">
+			<div className="flex-1 relative h-screen overflow-hidden">
 				<div className="w-full h-full">
 					<NetworkGraph />
 				</div>
