@@ -1,5 +1,6 @@
 'use client';
 
+import { useAppStore } from '@/lib/stores/app-state';
 import { useLayoutStore } from '@/lib/stores/layout-store';
 import { nodeColors, colorMappings, getColorByMode, getSimilarityColor } from '@/lib/theme/colors';
 
@@ -23,8 +24,8 @@ interface ColorLegendProps {
 }
 
 export function ColorLegend({ filteredNodes }: ColorLegendProps) {
-  const colorMode = useLayoutStore((state) => state.colorMode);
-  const nodeSizeMode = useLayoutStore((state) => state.nodeSizeMode);
+  const colorMode = useAppStore((state) => state.colorMode);
+  const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
 
   const getColorLegendData = () => {
     switch (colorMode) {

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Zap, Eye, EyeOff } from 'lucide-react';
 import { useLayoutStore } from '@/lib/stores/layout-store';
 import { useUIStore } from '@/lib/stores/ui-store';
+import { useAppStore } from '@/lib/stores/app-state';
 
 interface LayoutControlsProps {
 	reorganizeLayoutRef: React.MutableRefObject<(() => void) | null>;
@@ -24,13 +25,13 @@ export default function LayoutControls({
 	onLayoutChange,
 	currentLayout = 'forceDirected',
 }: LayoutControlsProps) {
-	// Layout store
-	const showLabels = useLayoutStore((state) => state.showLabels);
-	const colorMode = useLayoutStore((state) => state.colorMode);
-	const nodeSizeMode = useLayoutStore((state) => state.nodeSizeMode);
-	const setShowLabels = useLayoutStore((state) => state.setShowLabels);
-	const setColorMode = useLayoutStore((state) => state.setColorMode);
-	const setNodeSizeMode = useLayoutStore((state) => state.setNodeSizeMode);
+	// App store for layout and visualization
+	const showLabels = useAppStore((state) => state.showLabels);
+	const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
+	const colorMode = useAppStore((state) => state.colorMode);
+	const setShowLabels = useAppStore((state) => state.setShowLabels);
+	const setNodeSizeMode = useAppStore((state) => state.setNodeSizeMode);
+	const setColorMode = useAppStore((state) => state.setColorMode);
 
 	// UI store
 	const apiKey = useUIStore((state) => state.apiKey);

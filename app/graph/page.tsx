@@ -20,6 +20,7 @@ import { useFilterStore } from '@/lib/stores/filter-store';
 import { useUIStore } from '@/lib/stores/ui-store';
 import { useUnifiedSearchStore } from '@/lib/stores/unified-search-store';
 import { useLayoutStore } from '@/lib/stores/layout-store';
+import { useAppStore } from '@/lib/stores/app-state';
 import { getNodeColorByMode } from '@/lib/theme/colors';
 
 // Node interface definition
@@ -109,8 +110,8 @@ export default function NetworkGraphApp() {
 		(state) => state.deselectedNodeTypes
 	);
 	const minNodeSize = useFilterStore((state) => state.minNodeSize);
-	const nodeSizeMode = useLayoutStore((state) => state.nodeSizeMode);
-	const colorMode = useLayoutStore((state) => state.colorMode);
+	const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
+	const colorMode = useAppStore((state) => state.colorMode);
 	const expandedContinents = useFilterStore(
 		(state) => state.expandedContinents
 	);
@@ -120,14 +121,14 @@ export default function NetworkGraphApp() {
 	);
 	const countrySearchTerm = useFilterStore((state) => state.countrySearchTerm);
 
-	const showLabels = useLayoutStore((state) => state.showLabels);
+	const showLabels = useAppStore((state) => state.showLabels);
 	const apiKey = useUIStore((state) => state.apiKey);
 
-	const rightPanelExpanded = useLayoutStore(
+	const rightPanelExpanded = useAppStore(
 		(state) => state.rightPanelExpanded
 	);
 
-	const setRightPanelExpanded = useLayoutStore(
+	const setRightPanelExpanded = useAppStore(
 		(state) => state.setRightPanelExpanded
 	);
 
