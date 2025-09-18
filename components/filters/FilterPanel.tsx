@@ -1,15 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Filter, Globe, FileText } from 'lucide-react';
-import SimilarityHistogram from '@/components/similarity-histogram';
 import { useFilterStore } from '@/lib/stores/filter-store';
-import { useLayoutStore } from '@/lib/stores/layout-store';
-import { useUnifiedSearchStore } from '@/lib/stores/unified-search-store';
 
 interface FilterPanelProps {
 	filteredNodes: any[];
@@ -56,17 +52,6 @@ const FilterPanel = ({
 			<Label className="text-sidebar-foreground font-medium text-base">
 				Data Filters
 			</Label>
-
-			{/* Similarity Filters */}
-			{/* <div className="space-y-3">
-				<div className="flex items-center gap-2">
-					<Filter className="h-4 w-4 text-black" /> */}
-			{/* <Label className="text-sidebar-foreground font-medium text-sm">
-						Vector Similarity Distribution
-					</Label> */}
-			{/* </div> */}
-			{/* <SimilarityHistogram filteredNodes={filteredNodes} /> */}
-			{/* </div> */}
 
 			{/* Geographic Filters */}
 			<div className="space-y-3">
