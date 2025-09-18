@@ -39,6 +39,12 @@ interface AppState {
   links: Link[];
   filteredLinks: Link[];
   
+  // Visualization state
+  colorMode: 'sourceType' | 'continent' | 'similarityRange' | 'documentType' | 'country';
+  nodeSizeMode: 'none' | 'contentLength' | 'summaryLength' | 'similarity';
+  showLabels: boolean;
+  rightPanelExpanded: boolean;
+  
   // Similarity histogram state
   selectedSimilarityRanges: string[];
   
@@ -49,6 +55,10 @@ interface AppState {
   setTopK: (topK: number) => void;
   setSearchResults: (results: Node[]) => void;
   setLinks: (links: Link[]) => void;
+  setColorMode: (mode: 'sourceType' | 'continent' | 'similarityRange' | 'documentType' | 'country') => void;
+  setNodeSizeMode: (mode: 'none' | 'contentLength' | 'summaryLength' | 'similarity') => void;
+  setShowLabels: (show: boolean) => void;
+  setRightPanelExpanded: (expanded: boolean) => void;
   toggleSimilarityRange: (range: string) => void;
   clearSimilarityRanges: () => void;
   applyFilters: () => void;
@@ -68,6 +78,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   filteredResults: [],
   links: [],
   filteredLinks: [],
+  colorMode: 'sourceType',
+  nodeSizeMode: 'none',
+  showLabels: true,
+  rightPanelExpanded: false,
   selectedSimilarityRanges: [],
   
   // Basic actions
@@ -86,6 +100,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ links });
     get().applyFilters(); // Apply any existing filters to links as well
   },
+  
+  // Visualization state actions
+  setColorMode: (colorMode) => set({ colorMode }),
+  setNodeSizeMode: (nodeSizeMode) => set({ nodeSizeMode }),
+  setShowLabels: (showLabels) => set({ showLabels }),
+  setRightPanelExpanded: (rightPanelExpanded) => set({ rightPanelExpanded }),
   
   // Toggle a similarity range selection
   toggleSimilarityRange: (range) => {
