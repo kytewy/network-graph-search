@@ -2,9 +2,27 @@
 
 import { useRef, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import type { GraphCanvasRef } from 'reagraph';
+import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
 import { useSelection } from 'reagraph';
-import { useAppStore } from '@/lib/stores/app-state';
+import { useAppStore, type Node, type Link } from '@/lib/stores/app-state';
+import { NodeContextMenu, Node as NodeType } from './NewNodeComponents';
+import { LassoSelectionMenu } from './LassoSelectionMenu';
+
+// Define extended types for reagraph's useSelection hook to support lasso selection
+interface ExtendedUseSelectionResult {
+  selections: any;
+  onNodeClick: (node: GraphNode) => void;
+  onCanvasClick: (event: MouseEvent) => void;
+  onLasso?: (selections: string[]) => void;
+  onLassoEnd?: (selections: string[]) => void;
+}
+
+interface ExtendedUseSelectionOptions {
+  ref: React.RefObject<GraphCanvasRef | null>;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  type?: 'single' | 'multi';
+}
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
 const GraphCanvas = dynamic(
@@ -33,6 +51,19 @@ export function NetworkGraph() {
   const filteredLinks = useAppStore((state) => state.filteredLinks);
   const [layoutType, setLayoutType] = useState<LayoutType>('forceDirected2d');
   const graphRef = useRef<GraphCanvasRef | null>(null);
+  
+  // State for context menu
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  
+  // State for lasso selection
+  const [lassoSelectedNodes, setLassoSelectedNodes] = useState<string[]>([]);
+  const [showLassoMenu, setShowLassoMenu] = useState(false);
+  const [lassoMenuPosition, setLassoMenuPosition] = useState({ x: 0, y: 0 });
+  
+  // Node positions reference for maintaining positions during updates
+  const nodePositionsRef = useRef<
+    Map<string, { x: number; y: number; z: number }>
+  >(new Map());
 
   // Convert nodes to Reagraph nodes
   const graphNodes = useMemo(() => {
@@ -76,9 +107,57 @@ export function NetworkGraph() {
     };
   }, [graphNodes, graphEdges]);
 
-  // Selection handling
-  const { selections, onNodeClick, onCanvasClick } =
-    useSelection(selectionConfig);
+  // Selection handling with extended types for lasso support
+  const { 
+    selections, 
+    onNodeClick: handleNodeClick, 
+    onCanvasClick,
+    onLasso,
+    onLassoEnd 
+  } = useSelection(selectionConfig) as ExtendedUseSelectionResult;
+  
+  // Custom node click handler
+  const handleCustomNodeClick = (node: GraphNode) => {
+    // Call the built-in handler
+    if (graphRef.current) {
+      handleNodeClick(node);
+    }
+    
+    // Update selected node if data exists
+    if (node.data) {
+      setSelectedNode(node.data as Node);
+    }
+  };
+  
+  // Handle lasso selection
+  const handleLasso = (selectedIds: string[]) => {
+    setLassoSelectedNodes(selectedIds);
+  };
+  
+  // Handle lasso selection end
+  const handleLassoEnd = (selectedIds: string[]) => {
+    if (selectedIds.length > 0) {
+      // Get mouse position for the menu
+      const mousePosition = {
+        x: Math.max(
+          100,
+          Math.min(window.innerWidth / 2, window.innerWidth - 400)
+        ),
+        y: Math.max(
+          100,
+          Math.min(window.innerHeight / 3, window.innerHeight - 400)
+        ),
+      };
+      setLassoMenuPosition(mousePosition);
+      setShowLassoMenu(true);
+    }
+  };
+  
+  // Close lasso menu
+  const closeLassoMenu = () => {
+    setShowLassoMenu(false);
+    setLassoSelectedNodes([]);
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -105,6 +184,23 @@ export function NetworkGraph() {
       </div>
 
       <div className="h-[500px] w-full border rounded bg-gray-50 overflow-hidden relative">
+        {/* Instruction for lasso selection */}
+        <div
+          style={{
+            zIndex: 9,
+            userSelect: 'none',
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            background: 'rgba(0, 0, 0, .5)',
+            color: 'white',
+            padding: '5px 10px',
+            borderRadius: '4px',
+            fontSize: '12px',
+          }}>
+          <span>Hold Shift and Drag to Lasso Select</span>
+        </div>
+        
         {graphNodes.length > 0 ? (
           <div className="absolute inset-0">
             <GraphCanvas
@@ -118,22 +214,62 @@ export function NetworkGraph() {
                 gravity: 0.5,
               }}
               selections={selections || []}
-              onNodeClick={onNodeClick}
+              onNodeClick={handleCustomNodeClick}
               onCanvasClick={onCanvasClick}
+              // @ts-ignore - lassoType is available in reagraph but not in the types
+              lassoType="node"
+              // @ts-ignore - onLasso is available in reagraph but not in the types
+              onLasso={handleLasso}
+              // @ts-ignore - onLassoEnd is available in reagraph but not in the types
+              onLassoEnd={handleLassoEnd}
               sizingType="attribute"
               sizingAttribute="score"
               minNodeSize={4}
               maxNodeSize={16}
               labelType="auto"
               edgeStyle="curved"
-              animated={false} // Disable animation initially to prevent errors
+              animated={true} // Enable animation for better visualization
               cameraMode="pan"
+              contextMenu={({ data, onClose }) => {
+                // Only show context menu for nodes, not edges
+                if (!data || !data.data) return null;
+                
+                // Get the node data from the graph node
+                const nodeData = data.data as NodeType;
+                
+                return (
+                  <NodeContextMenu
+                    node={nodeData}
+                    onClose={onClose}
+                  />
+                );
+              }}
+              getNodePosition={(id: string) => {
+                return nodePositionsRef.current.get(id) || null;
+              }}
+              onNodeDragEnd={(
+                node: GraphNode,
+                position: { x: number; y: number; z: number }
+              ) => {
+                nodePositionsRef.current.set(node.id, position);
+              }}
             />
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
             No graph data available. Try a different search query.
           </div>
+        )}
+        
+        {/* Lasso Selection Menu */}
+        {showLassoMenu && lassoSelectedNodes.length > 0 && (
+          <LassoSelectionMenu
+            position={lassoMenuPosition}
+            selectedNodes={filteredResults.filter(node => 
+              lassoSelectedNodes.includes(node.id)
+            )}
+            onClose={closeLassoMenu}
+          />
         )}
       </div>
     </div>
