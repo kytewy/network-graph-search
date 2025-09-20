@@ -124,9 +124,7 @@ export default function NetworkGraphApp() {
 	const showLabels = useAppStore((state) => state.showLabels);
 	const apiKey = useUIStore((state) => state.apiKey);
 
-	const rightPanelExpanded = useAppStore(
-		(state) => state.rightPanelExpanded
-	);
+	const rightPanelExpanded = useAppStore((state) => state.rightPanelExpanded);
 
 	const setRightPanelExpanded = useAppStore(
 		(state) => state.setRightPanelExpanded
