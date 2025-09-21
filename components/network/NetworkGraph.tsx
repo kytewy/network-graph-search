@@ -72,9 +72,15 @@ export function NetworkGraph() {
   };
   
   const [layoutType, setLayoutType] = useState<LayoutType>(getReagraphLayoutType());
-  const [showLabels, setShowLabels] = useState<boolean>(true);
-  const [colorBy, setColorBy] = useState<string>('continent');
-  const [sizeBy, setSizeBy] = useState<string>('similarity');
+  // Get visualization settings from app store
+  const showLabels = useAppStore((state) => state.showLabels);
+  const colorMode = useAppStore((state) => state.colorMode);
+  const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
+  
+  // Get setters from app store
+  const setShowLabels = useAppStore((state) => state.setShowLabels);
+  const setColorMode = useAppStore((state) => state.setColorMode);
+  const setNodeSizeMode = useAppStore((state) => state.setNodeSizeMode);
   const graphRef = useRef<ExtendedGraphCanvasRef | null>(null);
   
   // Update layout when network store changes
@@ -95,6 +101,49 @@ export function NetworkGraph() {
     Map<string, { x: number; y: number; z: number }>
   >(new Map());
 
+  // Get color based on node property and colorMode
+  const getNodeColor = (node: Node) => {
+    switch (colorMode) {
+      case 'sourceType':
+        return node.type === 'article' ? '#4f46e5' : 
+               node.type === 'document' ? '#10b981' : 
+               node.type === 'webpage' ? '#f59e0b' : 
+               node.type === 'pdf' ? '#ef4444' : '#a855f7';
+      case 'continent':
+        return node.continent === 'North America' ? '#4f46e5' :
+               node.continent === 'Europe' ? '#10b981' :
+               node.continent === 'Asia' ? '#f59e0b' :
+               node.continent === 'Africa' ? '#ef4444' :
+               node.continent === 'South America' ? '#a855f7' :
+               '#6b7280'; // Unknown/Other
+      case 'country':
+        // Specific colors for important countries, gray for others
+        return node.country === 'USA' ? '#ef4444' : // Red
+               node.country === 'Canada' ? '#3b82f6' : // Blue
+               '#6b7280'; // Gray for other countries
+      case 'similarityRange':
+        // Color by similarity percentage (using score) matching the histogram ranges
+        if (node.score !== undefined) {
+          // Convert score to percentage (0-1 to 0-100)
+          const similarityPercent = Math.round(node.score * 100);
+          
+          if (similarityPercent >= 81) return '#22c55e'; // Green for 81-100%
+          if (similarityPercent >= 61) return '#84cc16'; // Light green for 61-80%
+          if (similarityPercent >= 41) return '#eab308'; // Yellow for 41-60%
+          if (similarityPercent >= 20) return '#f97316'; // Orange for 20-40%
+          return '#ef4444'; // Red for <20%
+        }
+        return '#6b7280'; // Default gray if no score
+      case 'documentType':
+        return node.type === 'article' ? '#4f46e5' : 
+               node.type === 'document' ? '#10b981' : 
+               node.type === 'webpage' ? '#f59e0b' : 
+               node.type === 'pdf' ? '#ef4444' : '#a855f7';
+      default:
+        return node.category === 'article' ? '#4f46e5' : '#10b981';
+    }
+  };
+
   // Convert nodes to Reagraph nodes
   const graphNodes = useMemo(() => {
     if (!filteredResults || filteredResults.length === 0) return [];
@@ -102,13 +151,13 @@ export function NetworkGraph() {
     return filteredResults.map((node) => ({
       id: node.id,
       label: node.label || node.id,
-      fill: node.category === 'article' ? '#4f46e5' : '#10b981',
+      fill: getNodeColor(node),
       size: Math.max(4, Math.min(20, (node.score || 0.5) * 15)), // Ensure size is within bounds
       score: node.score || 0.5,
       category: node.category || '',
       data: node,
     }));
-  }, [filteredResults]);
+  }, [filteredResults, colorMode]);
 
   // Convert links to Reagraph edges
   const graphEdges = useMemo(() => {
@@ -255,10 +304,14 @@ export function NetworkGraph() {
         <VisualizationControls
           currentLayout={layoutType}
           onLayoutChange={handleLayoutChange}
-          currentColorBy={colorBy}
-          onColorByChange={setColorBy}
-          currentSizeBy={sizeBy}
-          onSizeByChange={setSizeBy}
+          currentColorBy={colorMode}
+          onColorByChange={(colorBy: string) => {
+            setColorMode(colorBy as 'sourceType' | 'continent' | 'similarityRange' | 'documentType' | 'country');
+          }}
+          currentSizeBy={nodeSizeMode}
+          onSizeByChange={(sizeBy: string) => {
+            setNodeSizeMode(sizeBy as 'none' | 'contentLength' | 'summaryLength' | 'similarity');
+          }}
           showLabels={showLabels}
           onShowLabelsChange={setShowLabels}
           reorganizeLayoutRef={reorganizeLayoutRef}
@@ -307,7 +360,7 @@ export function NetworkGraph() {
               // @ts-ignore - onLassoEnd is available in reagraph but not in the types
               onLassoEnd={handleLassoEnd}
               sizingType="attribute"
-              sizingAttribute={sizeBy === 'none' ? 'score' : sizeBy}
+              sizingAttribute={nodeSizeMode === 'none' ? 'score' : nodeSizeMode}
               minNodeSize={4}
               maxNodeSize={16}
               labelType={showLabels ? "auto" : "none"}

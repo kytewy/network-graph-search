@@ -65,7 +65,7 @@ export function VisualizationControls({
 		{ id: 'continent', name: 'Continent' },
 		{ id: 'country', name: 'Country' },
 		{ id: 'sourceType', name: 'Source Type' },
-		{ id: 'similarity', name: 'Similarity Range' },
+		{ id: 'similarityRange', name: 'Similarity Range' },
 	];
 
 	// Size by options
