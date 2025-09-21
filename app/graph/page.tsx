@@ -785,33 +785,6 @@ export default function NetworkGraphApp() {
 						continentCountries={continentCountries}
 						filteredContinentCountries={filteredContinentCountries}
 					/>
-
-					{/* Layout & Meta */}
-					<LayoutControls
-						reorganizeLayoutRef={reorganizeLayoutRef}
-						arrangeAsTreeRef={arrangeAsTreeRef}
-						hasApiKey={hasApiKey}
-						currentLayout={layoutType}
-						onLayoutChange={(layout: string) => {
-							// Convert reagraph layout types to our internal types
-							let networkLayout: 'forceDirected' | 'concentric' | 'radial';
-
-							// Use string comparison with type safety
-							if (layout === 'forceDirected2d') {
-								networkLayout = 'forceDirected';
-							} else if (layout === 'concentric2d') {
-								networkLayout = 'concentric';
-							} else if (layout === 'radialOut2d') {
-								networkLayout = 'radial';
-							} else {
-								networkLayout = 'forceDirected';
-							}
-
-							useNetworkStore.getState().setLayoutType(networkLayout);
-						}}
-					/>
-
-					{/* Stats */}
 				</div>
 			</div>
 

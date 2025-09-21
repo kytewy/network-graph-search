@@ -1,12 +1,20 @@
 'use client';
 
-import { useRef, useMemo, useState } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
 import { useSelection } from 'reagraph';
 import { useAppStore, type Node, type Link } from '@/lib/stores/app-state';
 import { NodeContextMenu, Node as NodeType } from './NewNodeComponents';
 import { LassoSelectionMenu } from './LassoSelectionMenu';
+import { VisualizationControls } from '@/components/ui/VisualizationControls';
+import { useNetworkStore } from '@/lib/stores/network-store';
+
+// Extend GraphCanvasRef to include the methods we need
+interface ExtendedGraphCanvasRef extends GraphCanvasRef {
+  reorganize?: () => void;
+  arrangeAsTree?: () => void;
+}
 
 // Define extended types for reagraph's useSelection hook to support lasso selection
 interface ExtendedUseSelectionResult {
@@ -49,8 +57,28 @@ type LayoutType =
 export function NetworkGraph() {
   const filteredResults = useAppStore((state) => state.filteredResults);
   const filteredLinks = useAppStore((state) => state.filteredLinks);
-  const [layoutType, setLayoutType] = useState<LayoutType>('forceDirected2d');
-  const graphRef = useRef<GraphCanvasRef | null>(null);
+  const networkLayoutType = useNetworkStore((state) => state.layoutType);
+  
+  // Map network store layout type to Reagraph layout type
+  const getReagraphLayoutType = (): LayoutType => {
+    switch (networkLayoutType) {
+      case 'forceDirected': return 'forceDirected2d';
+      case 'concentric': return 'concentric2d';
+      case 'radial': return 'radialOut2d';
+      default: return 'forceDirected2d';
+    }
+  };
+  
+  const [layoutType, setLayoutType] = useState<LayoutType>(getReagraphLayoutType());
+  const [showLabels, setShowLabels] = useState<boolean>(true);
+  const [colorBy, setColorBy] = useState<string>('continent');
+  const [sizeBy, setSizeBy] = useState<string>('similarity');
+  const graphRef = useRef<ExtendedGraphCanvasRef | null>(null);
+  
+  // Update layout when network store changes
+  useMemo(() => {
+    setLayoutType(getReagraphLayoutType());
+  }, [networkLayoutType]);
   
   // State for context menu
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -97,15 +125,20 @@ export function NetworkGraph() {
   // Selection configuration
   const selectionConfig = useMemo(() => {
     if (graphNodes.length === 0) {
-      return { selections: [], onNodeClick: () => {}, onCanvasClick: () => {} };
+      // Return a dummy config that won't be used
+      return { 
+        ref: graphRef as React.RefObject<GraphCanvasRef>,
+        nodes: [],
+        edges: [],
+      };
     }
 
     return {
-      ref: graphRef,
+      ref: graphRef as React.RefObject<GraphCanvasRef>,
       nodes: graphNodes,
       edges: graphEdges,
     };
-  }, [graphNodes, graphEdges]);
+  }, [graphNodes, graphEdges, graphRef]);
 
   // Selection handling with extended types for lasso support
   const { 
@@ -159,28 +192,60 @@ export function NetworkGraph() {
     setLassoSelectedNodes([]);
   };
 
+  // Create refs for advanced layout functions
+  const reorganizeLayoutRef = useRef<(() => void) | null>(null);
+  const arrangeAsTreeRef = useRef<(() => void) | null>(null);
+  
+  // Handle layout change
+  const handleLayoutChange = (layout: string) => {
+    setLayoutType(layout as LayoutType);
+    
+    // Map Reagraph layout type to network store layout type
+    let networkLayout: 'forceDirected' | 'concentric' | 'radial';
+    if (layout === 'forceDirected2d') {
+      networkLayout = 'forceDirected';
+    } else if (layout === 'concentric2d') {
+      networkLayout = 'concentric';
+    } else if (layout === 'radialOut2d') {
+      networkLayout = 'radial';
+    } else {
+      networkLayout = 'forceDirected';
+    }
+    
+    useNetworkStore.getState().setLayoutType(networkLayout);
+  };
+  
+  // Set up reorganize layout function
+  useEffect(() => {
+    reorganizeLayoutRef.current = () => {
+      if (graphRef.current && graphRef.current.reorganize) {
+        graphRef.current.reorganize();
+      }
+    };
+    
+    arrangeAsTreeRef.current = () => {
+      if (graphRef.current && graphRef.current.arrangeAsTree) {
+        graphRef.current.arrangeAsTree();
+      }
+    };
+  }, [graphRef]);
+  
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-semibold">
-          Network Graph: {graphNodes.length} nodes, {graphEdges.length} edges
-        </h3>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Layout:</span>
-          <select
-            className="border rounded p-1 text-sm"
-            value={layoutType}
-            onChange={(e) => setLayoutType(e.target.value as LayoutType)}>
-            <option value="forceDirected2d">Force Directed 2D</option>
-            <option value="forceDirected3d">Force Directed 3D</option>
-            <option value="radial">Radial</option>
-            <option value="radialOut2d">Radial Out</option>
-            <option value="concentric2d">Concentric</option>
-            <option value="hierarchical">Hierarchical</option>
-            <option value="forceAtlas2">Force Atlas 2</option>
-            <option value="noOverlap">No Overlap</option>
-          </select>
-        </div>
+      <div className="absolute top-4 right-4 z-10">
+        <VisualizationControls
+          currentLayout={layoutType}
+          onLayoutChange={handleLayoutChange}
+          currentColorBy={colorBy}
+          onColorByChange={setColorBy}
+          currentSizeBy={sizeBy}
+          onSizeByChange={setSizeBy}
+          showLabels={showLabels}
+          onShowLabelsChange={setShowLabels}
+          reorganizeLayoutRef={reorganizeLayoutRef}
+          arrangeAsTreeRef={arrangeAsTreeRef}
+          hasApiKey={true}
+        />
       </div>
 
       <div className="flex-1 w-full border rounded bg-gray-50 overflow-hidden relative">
@@ -207,7 +272,7 @@ export function NetworkGraph() {
               ref={graphRef}
               nodes={graphNodes}
               edges={graphEdges}
-              layoutType={layoutType}
+              layoutType={layoutType as any}
               layoutOverrides={{
                 linkDistance: 80,
                 nodeStrength: -250,
@@ -215,7 +280,7 @@ export function NetworkGraph() {
               }}
               selections={selections || []}
               onNodeClick={handleCustomNodeClick}
-              onCanvasClick={onCanvasClick}
+              onCanvasClick={(e: any) => onCanvasClick?.(e)}
               // @ts-ignore - lassoType is available in reagraph but not in the types
               lassoType="node"
               // @ts-ignore - onLasso is available in reagraph but not in the types
@@ -223,14 +288,14 @@ export function NetworkGraph() {
               // @ts-ignore - onLassoEnd is available in reagraph but not in the types
               onLassoEnd={handleLassoEnd}
               sizingType="attribute"
-              sizingAttribute="score"
+              sizingAttribute={sizeBy === 'none' ? 'score' : sizeBy}
               minNodeSize={4}
               maxNodeSize={16}
-              labelType="auto"
+              labelType={showLabels ? "auto" : "none"}
               edgeStyle="curved"
               animated={true} // Enable animation for better visualization
               cameraMode="pan"
-              contextMenu={({ data, onClose }) => {
+              contextMenu={({ data, onClose }: { data: any, onClose: () => void }) => {
                 // Only show context menu for nodes, not edges
                 if (!data || !data.data) return null;
                 
@@ -267,7 +332,7 @@ export function NetworkGraph() {
             position={lassoMenuPosition}
             selectedNodes={filteredResults.filter(node => 
               lassoSelectedNodes.includes(node.id)
-            )}
+            ) as any}
             onClose={closeLassoMenu}
           />
         )}
