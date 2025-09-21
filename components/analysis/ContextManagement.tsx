@@ -5,18 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ChevronDown } from 'lucide-react';
 import { useUIStore } from '@/lib/stores/ui-store';
+import { useContextStore } from '@/lib/stores/context-store';
 
 interface Node {
   id: string;
   label: string;
-  summary: string;
-  content: string;
-  type: string;
-  continent: string;
-  country: string;
-  sourceType: string;
-  size: number;
-  color: string;
+  summary?: string;
+  content?: string;
+  type?: string;
+  continent?: string;
+  country?: string;
+  sourceType?: string;
+  size?: number;
+  color?: string;
   similarity?: number;
   stateProvince?: string;
 }
@@ -46,18 +47,39 @@ interface SelectedNodesSummary {
 }
 
 interface ContextManagementProps {
-  selectedNodesSummary: SelectedNodesSummary;
   rightPanelExpanded: boolean;
-  removeNodeFromSelection: (nodeId: string) => void;
 }
 
 export default function ContextManagement({
-  selectedNodesSummary,
   rightPanelExpanded,
-  removeNodeFromSelection,
 }: ContextManagementProps) {
   const showActiveNodes = useUIStore((state) => state.showActiveNodes);
   const setShowActiveNodes = useUIStore((state) => state.setShowActiveNodes);
+  
+  // Get context nodes from context store
+  const contextNodes = useContextStore((state) => state.contextNodes);
+  const removeNodeFromContext = useContextStore((state) => state.removeNodeFromContext);
+  
+  // Create a summary object similar to the original selectedNodesSummary
+  const contextSummary = {
+    nodes: contextNodes,
+    allSelectedNodes: contextNodes,
+    count: contextNodes.length,
+    types: Array.from(new Set(contextNodes.map(node => node.type || ''))),
+    avgSize: contextNodes.length > 0 ? 
+      contextNodes.reduce((sum, node) => sum + (node.size || 0), 0) / contextNodes.length : 0,
+    totalConnections: 0, // Would need connection data to calculate this
+    internalConnections: 0,
+    externalConnections: 0,
+    textAnalysis: {
+      commonWords: [],
+      themes: [],
+      summary: ''
+    },
+    themeAnalysis: {
+      themes: []
+    }
+  };
 
   return (
     <div className={rightPanelExpanded ? 'space-y-4' : 'space-y-4'}>
@@ -73,7 +95,7 @@ export default function ContextManagement({
           }`}>
           <div className="text-sm font-medium text-sidebar-foreground/70">
             Character Limit:{' '}
-            {selectedNodesSummary.nodes
+            {contextSummary.nodes
               .reduce(
                 (total, node) => total + (node.summary?.length || 0),
                 0
@@ -90,7 +112,7 @@ export default function ContextManagement({
             onClick={() => setShowActiveNodes(!showActiveNodes)}
             className="w-full flex items-center justify-between p-2 hover:bg-muted/50 rounded transition-colors">
             <Label className="text-sm font-medium text-sidebar-foreground/70">
-              Selected Nodes ({selectedNodesSummary.count})
+              Selected Nodes ({contextSummary.count})
             </Label>
             <ChevronDown
               className={`h-4 w-4 text-muted-foreground transition-transform ${
@@ -117,7 +139,7 @@ export default function ContextManagement({
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedNodesSummary.allSelectedNodes.map((node) => (
+                  {contextSummary.allSelectedNodes.map((node) => (
                     <tr key={node.id} className="hover:bg-muted/30">
                       <td className="py-1 pr-2 truncate max-w-0">
                         <span className="font-medium">
@@ -135,7 +157,7 @@ export default function ContextManagement({
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            removeNodeFromSelection(node.id)
+                            removeNodeFromContext(node.id)
                           }
                           className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive">
                           ×

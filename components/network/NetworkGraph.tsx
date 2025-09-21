@@ -9,6 +9,8 @@ import { NodeContextMenu, Node as NodeType } from './NewNodeComponents';
 import { LassoSelectionMenu } from './LassoSelectionMenu';
 import { VisualizationControls } from '@/components/ui/VisualizationControls';
 import { useNetworkStore } from '@/lib/stores/network-store';
+import { useContextStore } from '@/lib/stores/context-store';
+import { toast } from 'sonner';
 
 // Extend GraphCanvasRef to include the methods we need
 interface ExtendedGraphCanvasRef extends GraphCanvasRef {
@@ -186,6 +188,23 @@ export function NetworkGraph() {
     }
   };
   
+  // Access the context store
+  const addNodesToContext = useContextStore((state) => state.addNodesToContext);
+  
+  // Handler for sending selected nodes to context
+  const handleSendToContext = (nodes: Node[]) => {
+    console.log('Sending nodes to context:', nodes.length);
+    console.log('Node content example:', nodes[0]?.content?.substring(0, 50) + '...');
+    
+    // Show toast notification
+    toast.success(`Added ${nodes.length} node${nodes.length > 1 ? 's' : ''} to context`, {
+      description: "Node content is now available in the Context Management panel",
+      duration: 3000
+    });
+    
+    addNodesToContext(nodes);
+  };
+  
   // Close lasso menu
   const closeLassoMenu = () => {
     setShowLassoMenu(false);
@@ -334,6 +353,7 @@ export function NetworkGraph() {
               lassoSelectedNodes.includes(node.id)
             ) as any}
             onClose={closeLassoMenu}
+            onSendToContext={handleSendToContext}
           />
         )}
       </div>

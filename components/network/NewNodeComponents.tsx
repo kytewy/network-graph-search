@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Card } from "@/components/ui/card"
+import { useContextStore } from "@/lib/stores/context-store"
+import { toast } from "sonner"
 
 // Shared Node interface
 export interface Node {
@@ -127,20 +129,21 @@ export function NodeContextMenu({
                   <button
                     className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-gray-50 cursor-pointer"
                     onClick={() => {
-                      if (onNodeSelection && node) {
-                        const currentSelected = selectedNodes || []
-                        const isAlreadySelected = currentSelected.includes(node.id)
-                        if (isAlreadySelected) {
-                          onNodeSelection(currentSelected.filter((id) => id !== node.id))
-                        } else {
-                          onNodeSelection([...currentSelected, node.id])
-                        }
-                      }
+                      // Add node to context store
+                      const addNodeToContext = useContextStore.getState().addNodesToContext;
+                      addNodeToContext([node]);
+                      
+                      // Show toast notification
+                      toast.success(`Added "${node.label}" to context`, {
+                        description: "Node content is now available in the Context Management panel",
+                        duration: 3000
+                      });
+                      
                       setShowModalDropdown(false)
                       setModalDropdownAnimating(false)
                     }}
                   >
-                    {selectedNodes?.includes(node.id) ? "Remove from Selection ✓" : "Add to Selection"}
+                    Add to Context
                   </button>
                   {onNodeExpand && (
                     <button
@@ -151,7 +154,7 @@ export function NodeContextMenu({
                         setModalDropdownAnimating(false)
                       }}
                     >
-                      {expandedNodes?.includes(node.id) ? "Collapse Node" : "Add to Selection with Neighbors"}
+                      {expandedNodes?.includes(node.id) ? "Collapse Node" : "Expand Node"}
                     </button>
                   )}
                   <div className="border-t border-gray-200 my-1"></div>
