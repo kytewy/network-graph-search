@@ -7,65 +7,77 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Filter, Globe, FileText } from 'lucide-react';
 import { useAppStore, type Node } from '@/lib/stores/app-state';
-import { CONTINENT_COUNTRY_MAP } from '@/lib/stores/country_map';
 
-interface FilterPanelProps {
-	filteredNodes: any[];
-	filteredLinks: any[];
-	safeNodes: any[];
-	sourceTypes: string[];
-	safeHighlightedNodes: string[];
-	safeExpandedNodes: string[];
-	toggleExpandedContinent: (continent: string) => void;
-	handleSimilarityRangeClick: (range: string) => void;
-	continentCountries: Record<string, string[]>;
-	filteredContinentCountries: Record<string, string[]>;
-}
-
-const FilterPanel = ({
-	filteredNodes,
-	filteredLinks,
-	safeNodes,
-	sourceTypes,
-	safeHighlightedNodes,
-	safeExpandedNodes,
-	toggleExpandedContinent,
-	handleSimilarityRangeClick,
-	continentCountries,
-	filteredContinentCountries,
-}: FilterPanelProps) => {
+/**
+ * FilterPanel - Displays filtering options for the network graph
+ * Uses Zustand store directly instead of props for better data access
+ */
+const FilterPanel = () => {
 	// Get all required state and actions from app-state store
+	const filteredResults = useAppStore((state) => state.filteredResults);
+	const filteredLinks = useAppStore((state) => state.filteredLinks);
 	const selectedContinents = useAppStore((state) => state.selectedContinents);
 	const selectedCountries = useAppStore((state) => state.selectedCountries);
+	const selectedSimilarityRanges = useAppStore(
+		(state) => state.selectedSimilarityRanges
+	);
 	const toggleContinent = useAppStore((state) => state.toggleContinent);
 	const toggleCountry = useAppStore((state) => state.toggleCountry);
-	const clearLocationFilters = useAppStore((state) => state.clearLocationFilters);
-	
+	const toggleSimilarityRange = useAppStore(
+		(state) => state.toggleSimilarityRange
+	);
+	const clearLocationFilters = useAppStore(
+		(state) => state.clearLocationFilters
+	);
+
+	// Get helper functions from store
+	const getNodeCountByContinent = useAppStore(
+		(state) => state.getNodeCountByContinent
+	);
+	const getNodeCountByCountry = useAppStore(
+		(state) => state.getNodeCountByCountry
+	);
+	const getAvailableContinents = useAppStore(
+		(state) => state.getAvailableContinents
+	);
+	const getCountriesByContinent = useAppStore(
+		(state) => state.getCountriesByContinent
+	);
+
 	// For source types, we'll manage this locally since app-state might not have it
 	const [selectedSourceTypes, setSelectedSourceTypes] = useState<string[]>([]);
 	const toggleSourceType = (sourceType: string) => {
-		setSelectedSourceTypes(prev => 
-			prev.includes(sourceType) 
-				? prev.filter(type => type !== sourceType)
+		setSelectedSourceTypes((prev) =>
+			prev.includes(sourceType)
+				? prev.filter((type) => type !== sourceType)
 				: [...prev, sourceType]
 		);
 	};
-	
+
 	// For expandedContinents, we'll need to manage this locally since it's UI state
 	const [expandedContinents, setExpandedContinents] = useState<string[]>([]);
 	const [countrySearchTerm, setCountrySearchTerm] = useState<string>('');
 
-	// Get data from app-state store
-	const appFilteredResults = useAppStore((state) => state.filteredResults);
-	const appFilteredLinks = useAppStore((state) => state.filteredLinks);
+	// Toggle expanded state for continents
+	const toggleExpandedContinent = (continent: string) => {
+		setExpandedContinents((prev) =>
+			prev.includes(continent)
+				? prev.filter((c) => c !== continent)
+				: [...prev, continent]
+		);
+	};
 
-	// Debug output to check node structure
-	console.log(
-		'FilterPanel appFilteredResults:',
-		appFilteredResults.length,
-		appFilteredResults[0]
-	);
-	console.log('FilterPanel continents:', continentCountries);
+	// Get available continents from the store
+	const availableContinents = getAvailableContinents();
+
+	// Extract source types from nodes
+	const sourceTypes = [
+		...new Set(filteredResults.map((node) => node.type || '').filter(Boolean)),
+	];
+
+	// For highlighted and expanded nodes tracking (simplified for now)
+	const safeHighlightedNodes: string[] = [];
+	const safeExpandedNodes: string[] = [];
 
 	return (
 		<div className="rounded-lg p-4 space-y-4 bg-white">
@@ -85,156 +97,189 @@ const FilterPanel = ({
 				<div className="space-y-2">
 					<div className="relative">
 						<div className="text-xs text-sidebar-foreground/70 mb-2">
-							Filter by geography - {Object.keys(continentCountries).length}{' '}
-							continents, {safeNodes.length} nodes
+							Filter by geography - {availableContinents.length} continents,{' '}
+							{filteredResults.length} nodes
 						</div>
 					</div>
 				</div>
 
 				<div className="space-y-2">
-					{Object.entries(filteredContinentCountries).map(
-						([continent, countries]) => {
-							const isSelected = selectedContinents.includes(continent);
-							const isExpanded = expandedContinents.includes(continent);
+					{availableContinents.map((continent) => {
+						const isSelected = selectedContinents.includes(continent);
+						const isExpanded = expandedContinents.includes(continent);
 
-							return (
-								<div key={continent} className="space-y-1">
-									<div className="flex items-center gap-2">
-										<Badge
-											variant={isSelected ? 'default' : 'outline'}
-											className={`cursor-pointer transition-colors flex-1 justify-between ${
-												isSelected
-													? 'bg-[#a855f7] text-white hover:bg-[#9333ea]'
-													: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
-											}`}
-											onClick={() =>
-												toggleContinent && toggleContinent(continent)
-											}>
-											<span>
-												{continent} {isSelected && '✓'}
-											</span>
-											<div className="flex items-center gap-2">
-												{/* Count badge with explicit styling */}
-												<div
-													className={`text-xs px-2 py-0.5 rounded-full ${
-														isSelected
-															? 'bg-white/20 text-white'
-															: 'bg-gray-200 text-gray-700'
-													}`}
-													style={{
-														minWidth: '24px',
-														textAlign: 'center',
-														display: 'inline-block',
-													}}>
-													{(() => {
-														// Calculate count with explicit check for continent property
-														const count = appFilteredResults.filter(
-															(node: Node) =>
-																node && node.fields?.continent === continent
-														).length;
-														return count;
-													})()}
-												</div>
-												<button
-													onClick={(e) => {
-														e.stopPropagation();
-														toggleExpandedContinent(continent);
-													}}
-													className="hover:opacity-70 transition-opacity">
-													<span
-														className={`inline-block transition-transform duration-200 text-sm ${
-															isExpanded ? 'rotate-180' : ''
-														}`}>
-														▼
-													</span>
-												</button>
+						return (
+							<div key={continent} className="space-y-1">
+								<div className="flex items-center gap-2">
+									<Badge
+										variant={isSelected ? 'default' : 'outline'}
+										className={`cursor-pointer transition-colors flex-1 justify-between ${
+											isSelected
+												? 'bg-[#a855f7] text-white hover:bg-[#9333ea]'
+												: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+										}`}
+										onClick={() => toggleContinent(continent)}>
+										<span>
+											{continent} {isSelected && '✓'}
+										</span>
+										<div className="flex items-center gap-2">
+											{/* Count badge with explicit styling */}
+											<div
+												className={`text-xs px-2 py-0.5 rounded-full ${
+													isSelected
+														? 'bg-white/20 text-white'
+														: 'bg-gray-200 text-gray-700'
+												}`}
+												style={{
+													minWidth: '24px',
+													textAlign: 'center',
+													display: 'inline-block',
+												}}>
+												{getNodeCountByContinent(continent)}
 											</div>
-										</Badge>
-									</div>
-
-									{isExpanded && (
-										<div className="ml-4 space-y-1 max-h-48 overflow-y-auto">
-											<div className="text-xs text-sidebar-foreground/60 mb-1">
-												{countries.length}{' '}
-												{countries.length === 1 ? 'country' : 'countries'}
-												{countrySearchTerm && ' matching search'}-{' '}
-												{
-													appFilteredResults.filter((node: Node) =>
-														countries.includes(node.fields?.country)
-													).length
-												}{' '}
-												nodes
-											</div>
-											<div className="grid grid-cols-1 gap-1">
-												{countries.map((country) => {
-													const isCountrySelected =
-														selectedCountries.includes(country);
-													const nodeCount = appFilteredResults.filter(
-														(node: Node) => node.fields?.country === country
-													).length;
-
-													return (
-														<div
-															key={country}
-															className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${
-																isCountrySelected
-																	? 'bg-[#a855f7] text-white'
-																	: 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-															}`}
-															onClick={() => toggleCountry(country)}>
-															<span className="text-xs font-medium">
-																{countrySearchTerm
-																	? country
-																			.split(
-																				new RegExp(
-																					`(${countrySearchTerm})`,
-																					'gi'
-																				)
-																			)
-																			.map((part, index) =>
-																				part.toLowerCase() ===
-																				countrySearchTerm.toLowerCase() ? (
-																					<mark
-																						key={index}
-																						className="bg-yellow-200 text-gray-900 px-0.5 rounded">
-																						{part}
-																					</mark>
-																				) : (
-																					part
-																				)
-																			)
-																	: country}
-															</span>
-															<div className="flex items-center gap-1">
-																<span
-																	className={`text-xs px-1.5 py-0.5 rounded-full ${
-																		isCountrySelected
-																			? 'bg-white/20 text-white'
-																			: 'bg-gray-200 text-gray-700'
-																	}`}>
-																	{nodeCount}
-																</span>
-																{isCountrySelected && (
-																	<span className="text-xs">✓</span>
-																)}
-															</div>
-														</div>
-													);
-												})}
-											</div>
+											<button
+												onClick={(e) => {
+													e.stopPropagation();
+													toggleExpandedContinent(continent);
+												}}
+												className="hover:opacity-70 transition-opacity">
+												<span
+													className={`inline-block transition-transform duration-200 text-sm ${
+														isExpanded ? 'rotate-180' : ''
+													}`}>
+													▼
+												</span>
+											</button>
 										</div>
-									)}
+									</Badge>
 								</div>
-							);
-						}
-					)}
 
-					{countrySearchTerm &&
-						Object.keys(filteredContinentCountries).length === 0 && (
-							<div className="text-center py-4 text-sm text-sidebar-foreground/60">
-								No countries found matching "{countrySearchTerm}"
+								{isExpanded && (
+									<div className="ml-4 space-y-1 max-h-48 overflow-y-auto">
+										{(() => {
+											// Get countries for this continent using the store helper
+											const countriesForContinent =
+												getCountriesByContinent(continent);
+											// Filter countries by search term if provided
+											const filteredCountries = countrySearchTerm
+												? countriesForContinent.filter((country) =>
+														country
+															.toLowerCase()
+															.includes(countrySearchTerm.toLowerCase())
+												  )
+												: countriesForContinent;
+
+											return (
+												<>
+													<div className="text-xs text-sidebar-foreground/60 mb-1">
+														{filteredCountries.length}{' '}
+														{filteredCountries.length === 1
+															? 'country'
+															: 'countries'}
+														{countrySearchTerm && ' matching search'} -{' '}
+														{filteredCountries.reduce(
+															(total, country) =>
+																total + getNodeCountByCountry(country),
+															0
+														)}{' '}
+														nodes
+													</div>
+													<div className="grid grid-cols-1 gap-1">
+														{filteredCountries.map((country) => {
+															const isCountrySelected =
+																selectedCountries.includes(country);
+															const nodeCount = getNodeCountByCountry(country);
+
+															return (
+																<div
+																	key={country}
+																	className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${
+																		isCountrySelected
+																			? 'bg-[#a855f7] text-white'
+																			: 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+																	}`}
+																	onClick={() => toggleCountry(country)}>
+																	<span className="text-xs font-medium">
+																		{countrySearchTerm
+																			? country
+																					.split(
+																						new RegExp(
+																							`(${countrySearchTerm})`,
+																							'gi'
+																						)
+																					)
+																					.map((part, i) =>
+																						part.toLowerCase() ===
+																						countrySearchTerm.toLowerCase() ? (
+																							<mark
+																								key={i}
+																								className="bg-yellow-200 text-gray-900 px-0.5 rounded">
+																								{part}
+																							</mark>
+																						) : (
+																							part
+																						)
+																					)
+																			: country}
+																	</span>
+																	<div className="flex items-center gap-1">
+																		<span
+																			className={`text-xs px-1.5 py-0.5 rounded-full ${
+																				isCountrySelected
+																					? 'bg-white/20 text-white'
+																					: 'bg-gray-200 text-gray-700'
+																			}`}>
+																			{nodeCount}
+																		</span>
+																		{isCountrySelected && (
+																			<span className="text-xs">✓</span>
+																		)}
+																	</div>
+																</div>
+															);
+														})}
+													</div>
+												</>
+											);
+										})()}
+									</div>
+								)}
 							</div>
-						)}
+						);
+					})}
+
+					{countrySearchTerm && availableContinents.length === 0 && (
+						<div className="text-center py-4 text-sm text-sidebar-foreground/60">
+							No countries found matching "{countrySearchTerm}"
+						</div>
+					)}
+				</div>
+			</div>
+
+			{/* Similarity Range Filters */}
+			<div className="space-y-3">
+				<div className="flex items-center gap-2">
+					<Filter className="h-4 w-4 text-sidebar-foreground" />
+					<Label className="text-sidebar-foreground font-medium text-sm">
+						Similarity Range Filters
+					</Label>
+				</div>
+				<div className="flex flex-wrap gap-2">
+					{['<20', '21-40', '41-60', '61-80', '81-100'].map((range) => (
+						<Badge
+							key={range}
+							variant={
+								selectedSimilarityRanges.includes(range) ? 'default' : 'outline'
+							}
+							className={`cursor-pointer transition-colors ${
+								selectedSimilarityRanges.includes(range)
+									? 'bg-[#a855f7] text-white hover:bg-[#9333ea]'
+									: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+							}`}
+							onClick={() => toggleSimilarityRange(range)}>
+							{range}%
+						</Badge>
+					))}
 				</div>
 			</div>
 
@@ -247,7 +292,6 @@ const FilterPanel = ({
 					</Label>
 				</div>
 				<div className="flex flex-wrap gap-2">
-					{/* Updated source type badges to use gray for inactive states */}
 					{sourceTypes.map((sourceType) => (
 						<Badge
 							key={sourceType}
@@ -271,13 +315,13 @@ const FilterPanel = ({
 					<div className="flex justify-between text-sm">
 						<span className="text-card-foreground/70">Visible Nodes:</span>
 						<span className="font-medium text-card-foreground">
-							{appFilteredResults.length}
+							{filteredResults.length}
 						</span>
 					</div>
 					<div className="flex justify-between text-sm">
 						<span className="text-card-foreground/70">Visible Links:</span>
 						<span className="font-medium text-card-foreground">
-							{appFilteredLinks.length}
+							{filteredLinks.length}
 						</span>
 					</div>
 					<div className="flex justify-between text-sm">

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from './country_map';
 
 // Define Node and Link types
@@ -12,6 +13,10 @@ export interface Node {
 	content?: string;
 	summary?: string;
 	type?: string;
+	// Direct properties for easier access and consistent data structure
+	country?: string;
+	continent?: string;
+	// Keep fields for backward compatibility and other metadata
 	fields?: any;
 	data?: any;
 }
@@ -90,10 +95,16 @@ interface AppState {
 	toggleCountry: (country: string) => void; // Smart toggle: selects country, deselects its continent
 	clearLocationFilters: () => void; // Reset all location filters
 	getEffectiveCountries: () => string[]; // Get all countries that should be included (from both continent and country selections)
+	
+	// Helper functions for counts and data access
+	getNodeCountByContinent: (continent: string) => number; // Get count of nodes for a specific continent
+	getNodeCountByCountry: (country: string) => number; // Get count of nodes for a specific country
+	getAvailableContinents: () => string[]; // Get list of all continents in current data
+	getCountriesByContinent: (continent: string) => string[]; // Get countries for a specific continent in current data
 }
 
-// Create the store
-export const useAppStore = create<AppState>((set, get) => ({
+// Create the store with DevTools middleware
+export const useAppStore = create<AppState>()(devtools((set, get) => ({
 	// Initial state
 	query: '',
 	isLoading: false,
@@ -171,8 +182,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 		// STEP 1: Apply location filter (continent/country)
 		const effectiveCountries = getEffectiveCountries();
 		if (effectiveCountries.length > 0) {
+			// Use direct country property instead of fields.country
 			filtered = filtered.filter((node) =>
-				effectiveCountries.includes(node.fields?.country)
+				effectiveCountries.includes(node.country || '')
 			);
 		}
 
@@ -222,18 +234,30 @@ export const useAppStore = create<AppState>((set, get) => ({
 		) {
 			const hits = data.rawResponse.result.hits;
 
-			// Extract nodes
-			nodes = hits.map((hit: any) => ({
-				id: hit._id,
-				score: hit._score,
-				label: hit.fields?.label || hit._id,
-				category: hit.fields?.category || '',
-				type: hit.fields?.type || '',
-				text: hit.fields?.chunk_text || hit.fields?.content || '',
-				summary: hit.fields?.summary || '',
-				content: hit.fields?.content || '',
-				fields: hit.fields || {},
-			}));
+			// Extract nodes with normalized data structure
+			nodes = hits.map((hit: any) => {
+				// Get country and continent from fields or default to empty string
+				const country = hit.fields?.country || '';
+				// Look up continent from country map if not directly provided
+				const continent = hit.fields?.continent || 
+					(country ? COUNTRY_CONTINENT_MAP[country] || '' : '');
+				
+				return {
+					id: hit._id,
+					score: hit._score,
+					label: hit.fields?.label || hit._id,
+					category: hit.fields?.category || '',
+					type: hit.fields?.type || '',
+					text: hit.fields?.chunk_text || hit.fields?.content || '',
+					summary: hit.fields?.summary || '',
+					content: hit.fields?.content || '',
+					// Add normalized direct properties
+					country,
+					continent,
+					// Keep original fields for backward compatibility
+					fields: hit.fields || {},
+				};
+			});
 
 			// Extract links
 			const nodeIds = new Set(nodes.map((node) => node.id));
@@ -256,7 +280,18 @@ export const useAppStore = create<AppState>((set, get) => ({
 				}
 			});
 		} else if (data.results && Array.isArray(data.results)) {
-			nodes = data.results;
+			// Handle other result formats with normalization
+			nodes = data.results.map((node: any) => {
+				const country = node.fields?.country || node.country || '';
+				const continent = node.fields?.continent || node.continent || 
+					(country ? COUNTRY_CONTINENT_MAP[country] || '' : '');
+				
+				return {
+					...node,
+					country,
+					continent
+				};
+			});
 		}
 
 		return { nodes, links };
@@ -382,4 +417,36 @@ export const useAppStore = create<AppState>((set, get) => ({
 		// Combine and deduplicate using Set
 		return [...new Set([...countriesFromContinents, ...selectedCountries])];
 	},
-}));
+	
+	// Get count of nodes for a specific continent
+	getNodeCountByContinent: (continent: string) => {
+		const { filteredResults } = get();
+		return filteredResults.filter(node => node.continent === continent).length;
+	},
+	
+	// Get count of nodes for a specific country
+	getNodeCountByCountry: (country: string) => {
+		const { filteredResults } = get();
+		return filteredResults.filter(node => node.country === country).length;
+	},
+	
+	// Get list of all continents in current data
+	getAvailableContinents: () => {
+		const { filteredResults } = get();
+		const continents = filteredResults
+			.map(node => node.continent || '')
+			.filter(continent => continent && continent.trim() !== '');
+		return [...new Set(continents)] as string[];
+	},
+	
+	// Get countries for a specific continent in current data
+	getCountriesByContinent: (continent: string) => {
+		const { filteredResults } = get();
+		const countries = filteredResults
+			.filter(node => node.continent === continent)
+			.map(node => node.country || '')
+			.filter(country => country && country.trim() !== '');
+		return [...new Set(countries)] as string[];
+	},
+})));
+
