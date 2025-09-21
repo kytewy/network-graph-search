@@ -14,7 +14,7 @@ const CONTINENT_COUNTRY_MAP = {
 	Oceania: ['Australia', 'New Zealand'],
 };
 
-// Reverse mapping: country -> continent
+// Reverse mapping: country -> continentwith
 // Automatically generated from the continent map above
 const COUNTRY_CONTINENT_MAP = Object.entries(CONTINENT_COUNTRY_MAP).reduce(
 	(acc, [continent, countries]) => {

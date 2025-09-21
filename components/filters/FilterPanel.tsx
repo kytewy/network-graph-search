@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Filter, Globe, FileText } from 'lucide-react';
-import { useFilterStore } from '@/lib/stores/filter-store';
+import { useAppStore, type Node } from '@/lib/stores/app-state';
+import { CONTINENT_COUNTRY_MAP } from '@/lib/stores/country_map';
 
 interface FilterPanelProps {
 	filteredNodes: any[];
@@ -32,20 +34,38 @@ const FilterPanel = ({
 	continentCountries,
 	filteredContinentCountries,
 }: FilterPanelProps) => {
-	const {
-		searchTerm,
-		selectedContinents,
-		selectedCountries,
-		selectedSourceTypes,
-		selectedSimilarityRange,
-		expandedContinents,
-		countrySearchTerm,
-		toggleContinent,
-		toggleCountry,
-		toggleSourceType,
-		clearFilters,
-		hasSearched,
-	} = useFilterStore();
+	// Get all required state and actions from app-state store
+	const selectedContinents = useAppStore((state) => state.selectedContinents);
+	const selectedCountries = useAppStore((state) => state.selectedCountries);
+	const toggleContinent = useAppStore((state) => state.toggleContinent);
+	const toggleCountry = useAppStore((state) => state.toggleCountry);
+	const clearLocationFilters = useAppStore((state) => state.clearLocationFilters);
+	
+	// For source types, we'll manage this locally since app-state might not have it
+	const [selectedSourceTypes, setSelectedSourceTypes] = useState<string[]>([]);
+	const toggleSourceType = (sourceType: string) => {
+		setSelectedSourceTypes(prev => 
+			prev.includes(sourceType) 
+				? prev.filter(type => type !== sourceType)
+				: [...prev, sourceType]
+		);
+	};
+	
+	// For expandedContinents, we'll need to manage this locally since it's UI state
+	const [expandedContinents, setExpandedContinents] = useState<string[]>([]);
+	const [countrySearchTerm, setCountrySearchTerm] = useState<string>('');
+
+	// Get data from app-state store
+	const appFilteredResults = useAppStore((state) => state.filteredResults);
+	const appFilteredLinks = useAppStore((state) => state.filteredLinks);
+
+	// Debug output to check node structure
+	console.log(
+		'FilterPanel appFilteredResults:',
+		appFilteredResults.length,
+		appFilteredResults[0]
+	);
+	console.log('FilterPanel continents:', continentCountries);
 
 	return (
 		<div className="rounded-lg p-4 space-y-4 bg-white">
@@ -63,7 +83,12 @@ const FilterPanel = ({
 				</div>
 
 				<div className="space-y-2">
-					<div className="relative"></div>
+					<div className="relative">
+						<div className="text-xs text-sidebar-foreground/70 mb-2">
+							Filter by geography - {Object.keys(continentCountries).length}{' '}
+							continents, {safeNodes.length} nodes
+						</div>
+					</div>
 				</div>
 
 				<div className="space-y-2">
@@ -88,19 +113,42 @@ const FilterPanel = ({
 											<span>
 												{continent} {isSelected && '✓'}
 											</span>
-											<button
-												onClick={(e) => {
-													e.stopPropagation();
-													toggleExpandedContinent(continent);
-												}}
-												className="ml-2 hover:opacity-70 transition-opacity">
-												<span
-													className={`inline-block transition-transform duration-200 text-sm ${
-														isExpanded ? 'rotate-180' : ''
-													}`}>
-													▼
-												</span>
-											</button>
+											<div className="flex items-center gap-2">
+												{/* Count badge with explicit styling */}
+												<div
+													className={`text-xs px-2 py-0.5 rounded-full ${
+														isSelected
+															? 'bg-white/20 text-white'
+															: 'bg-gray-200 text-gray-700'
+													}`}
+													style={{
+														minWidth: '24px',
+														textAlign: 'center',
+														display: 'inline-block',
+													}}>
+													{(() => {
+														// Calculate count with explicit check for continent property
+														const count = appFilteredResults.filter(
+															(node: Node) =>
+																node && node.fields?.continent === continent
+														).length;
+														return count;
+													})()}
+												</div>
+												<button
+													onClick={(e) => {
+														e.stopPropagation();
+														toggleExpandedContinent(continent);
+													}}
+													className="hover:opacity-70 transition-opacity">
+													<span
+														className={`inline-block transition-transform duration-200 text-sm ${
+															isExpanded ? 'rotate-180' : ''
+														}`}>
+														▼
+													</span>
+												</button>
+											</div>
 										</Badge>
 									</div>
 
@@ -109,14 +157,20 @@ const FilterPanel = ({
 											<div className="text-xs text-sidebar-foreground/60 mb-1">
 												{countries.length}{' '}
 												{countries.length === 1 ? 'country' : 'countries'}
-												{countrySearchTerm && ' matching search'}
+												{countrySearchTerm && ' matching search'}-{' '}
+												{
+													appFilteredResults.filter((node: Node) =>
+														countries.includes(node.fields?.country)
+													).length
+												}{' '}
+												nodes
 											</div>
 											<div className="grid grid-cols-1 gap-1">
 												{countries.map((country) => {
 													const isCountrySelected =
 														selectedCountries.includes(country);
-													const nodeCount = safeNodes.filter(
-														(node) => node.country === country
+													const nodeCount = appFilteredResults.filter(
+														(node: Node) => node.fields?.country === country
 													).length;
 
 													return (
@@ -153,10 +207,10 @@ const FilterPanel = ({
 															</span>
 															<div className="flex items-center gap-1">
 																<span
-																	className={`text-xs ${
+																	className={`text-xs px-1.5 py-0.5 rounded-full ${
 																		isCountrySelected
-																			? 'text-white/80'
-																			: 'text-gray-500'
+																			? 'bg-white/20 text-white'
+																			: 'bg-gray-200 text-gray-700'
 																	}`}>
 																	{nodeCount}
 																</span>
@@ -217,13 +271,13 @@ const FilterPanel = ({
 					<div className="flex justify-between text-sm">
 						<span className="text-card-foreground/70">Visible Nodes:</span>
 						<span className="font-medium text-card-foreground">
-							{filteredNodes.length}
+							{appFilteredResults.length}
 						</span>
 					</div>
 					<div className="flex justify-between text-sm">
 						<span className="text-card-foreground/70">Visible Links:</span>
 						<span className="font-medium text-card-foreground">
-							{filteredLinks.length}
+							{appFilteredLinks.length}
 						</span>
 					</div>
 					<div className="flex justify-between text-sm">
@@ -244,7 +298,10 @@ const FilterPanel = ({
 			</Card>
 
 			<Button
-				onClick={clearFilters}
+				onClick={() => {
+					clearLocationFilters();
+					setSelectedSourceTypes([]);
+				}}
 				variant="outline"
 				className="w-full border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground bg-transparent">
 				<Filter className="h-4 w-4 mr-2" />
