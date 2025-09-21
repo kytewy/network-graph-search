@@ -256,33 +256,6 @@ const FilterPanel = () => {
 				</div>
 			</div>
 
-			{/* Similarity Range Filters */}
-			<div className="space-y-3">
-				<div className="flex items-center gap-2">
-					<Filter className="h-4 w-4 text-sidebar-foreground" />
-					<Label className="text-sidebar-foreground font-medium text-sm">
-						Similarity Range Filters
-					</Label>
-				</div>
-				<div className="flex flex-wrap gap-2">
-					{['<20', '21-40', '41-60', '61-80', '81-100'].map((range) => (
-						<Badge
-							key={range}
-							variant={
-								selectedSimilarityRanges.includes(range) ? 'default' : 'outline'
-							}
-							className={`cursor-pointer transition-colors ${
-								selectedSimilarityRanges.includes(range)
-									? 'bg-[#a855f7] text-white hover:bg-[#9333ea]'
-									: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
-							}`}
-							onClick={() => toggleSimilarityRange(range)}>
-							{range}%
-						</Badge>
-					))}
-				</div>
-			</div>
-
 			{/* Source Type Filters */}
 			<div className="space-y-3">
 				<div className="flex items-center gap-2">
@@ -309,38 +282,6 @@ const FilterPanel = () => {
 					))}
 				</div>
 			</div>
-
-			<Card className="p-4 bg-card border-sidebar-border">
-				<div className="space-y-2">
-					<div className="flex justify-between text-sm">
-						<span className="text-card-foreground/70">Visible Nodes:</span>
-						<span className="font-medium text-card-foreground">
-							{filteredResults.length}
-						</span>
-					</div>
-					<div className="flex justify-between text-sm">
-						<span className="text-card-foreground/70">Visible Links:</span>
-						<span className="font-medium text-card-foreground">
-							{filteredLinks.length}
-						</span>
-					</div>
-					<div className="flex justify-between text-sm">
-						<span className="text-card-foreground/70">Highlighted:</span>
-						<span className="font-medium text-card-foreground">
-							{safeHighlightedNodes.length}
-						</span>
-					</div>
-					{safeExpandedNodes.length > 0 && (
-						<div className="flex justify-between text-sm">
-							<span className="text-card-foreground/70">Expanded:</span>
-							<span className="font-medium text-card-foreground">
-								{safeExpandedNodes.length}
-							</span>
-						</div>
-					)}
-				</div>
-			</Card>
-
 			<Button
 				onClick={() => {
 					clearLocationFilters();
