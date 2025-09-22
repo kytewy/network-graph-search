@@ -8,6 +8,7 @@ const CONTINENT_COUNTRY_MAP = {
 		'Netherlands',
 		'Belgium',
 		'Austria',
+		'European Union', // Added European Union as a country within Europe
 	],
 	'North America': ['USA', 'Canada', 'Mexico'],
 	Asia: ['Japan', 'China', 'South Korea', 'Singapore', 'India'],

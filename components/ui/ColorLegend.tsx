@@ -55,9 +55,10 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
 			case 'country':
 				// Specific colors for important countries, hash for others
 				return [
-					{ label: 'USA', color: '#ef4444' },  // Red
-					{ label: 'Canada', color: '#3b82f6' }, // Blue
-					{ label: 'Other', color: '#6b7280' },  // Gray
+					{ label: 'USA', color: '#1e40af' }, // Dark blue
+					{ label: 'Canada', color: '#ef4444' }, // Red
+					{ label: 'Europian Union', color: '#60a5fa' }, // Light blue
+					{ label: 'Other', color: '#6b7280' }, // Gray
 				];
 
 			case 'documentType':
@@ -71,11 +72,11 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
 
 			case 'similarityRange':
 				return [
-					{ label: 'Very High (81-100%)', color: '#22c55e' },  // Green
-					{ label: 'High (61-80%)', color: '#84cc16' },   // Light green
-					{ label: 'Medium (41-60%)', color: '#eab308' },   // Yellow
-					{ label: 'Low (20-40%)', color: '#f97316' },   // Orange
-					{ label: 'Very Low (0-19%)', color: '#ef4444' },     // Red
+					{ label: 'Very High (81-100%)', color: '#22c55e' }, // Green
+					{ label: 'High (61-80%)', color: '#84cc16' }, // Light green
+					{ label: 'Medium (41-60%)', color: '#eab308' }, // Yellow
+					{ label: 'Low (20-40%)', color: '#f97316' }, // Orange
+					{ label: 'Very Low (0-19%)', color: '#ef4444' }, // Red
 				];
 
 			default:
@@ -193,7 +194,9 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
 										className="w-1 h-1 rounded-full"
 										style={{ backgroundColor: nodeColors.neutral }}
 									/>
-									<span className="text-xs text-gray-600">Very Low (0-19%)</span>
+									<span className="text-xs text-gray-600">
+										Very Low (0-19%)
+									</span>
 								</div>
 								<div className="flex items-center gap-2">
 									<div
@@ -221,7 +224,9 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
 										className="w-5 h-5 rounded-full"
 										style={{ backgroundColor: nodeColors.neutral }}
 									/>
-									<span className="text-xs text-gray-600">Very High (81-100%)</span>
+									<span className="text-xs text-gray-600">
+										Very High (81-100%)
+									</span>
 								</div>
 							</>
 						)}

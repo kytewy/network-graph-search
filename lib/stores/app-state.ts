@@ -432,8 +432,10 @@ export const useAppStore = create<AppState>()(devtools((set, get) => ({
 	
 	// Get list of all continents in current data
 	getAvailableContinents: () => {
-		const { filteredResults } = get();
-		const continents = filteredResults
+		// Use searchResults instead of filteredResults to show all available continents
+		// regardless of current filters
+		const { searchResults } = get();
+		const continents = searchResults
 			.map(node => node.continent || '')
 			.filter(continent => continent && continent.trim() !== '');
 		return [...new Set(continents)] as string[];
@@ -441,8 +443,10 @@ export const useAppStore = create<AppState>()(devtools((set, get) => ({
 	
 	// Get countries for a specific continent in current data
 	getCountriesByContinent: (continent: string) => {
-		const { filteredResults } = get();
-		const countries = filteredResults
+		// Use searchResults instead of filteredResults to show all available countries
+		// regardless of current filters
+		const { searchResults } = get();
+		const countries = searchResults
 			.filter(node => node.continent === continent)
 			.map(node => node.country || '')
 			.filter(country => country && country.trim() !== '');

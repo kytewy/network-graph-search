@@ -118,8 +118,9 @@ export function NetworkGraph() {
                '#6b7280'; // Unknown/Other
       case 'country':
         // Specific colors for important countries, gray for others
-        return node.country === 'USA' ? '#ef4444' : // Red
-               node.country === 'Canada' ? '#3b82f6' : // Blue
+        return node.country === 'USA' ? '#1e40af' : // Dark blue
+               node.country === 'Canada' ? '#ef4444' : // Red
+               node.country === 'European Union' ? '#60a5fa' : // Light blue
                '#6b7280'; // Gray for other countries
       case 'similarityRange':
         // Color by similarity percentage (using score) matching the histogram ranges
