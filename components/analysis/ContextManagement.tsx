@@ -60,25 +60,11 @@ export default function ContextManagement({
   const contextNodes = useContextStore((state) => state.contextNodes);
   const removeNodeFromContext = useContextStore((state) => state.removeNodeFromContext);
   
-  // Create a summary object similar to the original selectedNodesSummary
+  // Create a simple summary object for the context nodes
   const contextSummary = {
     nodes: contextNodes,
     allSelectedNodes: contextNodes,
     count: contextNodes.length,
-    types: Array.from(new Set(contextNodes.map(node => node.type || ''))),
-    avgSize: contextNodes.length > 0 ? 
-      contextNodes.reduce((sum, node) => sum + (node.size || 0), 0) / contextNodes.length : 0,
-    totalConnections: 0, // Would need connection data to calculate this
-    internalConnections: 0,
-    externalConnections: 0,
-    textAnalysis: {
-      commonWords: [],
-      themes: [],
-      summary: ''
-    },
-    themeAnalysis: {
-      themes: []
-    }
   };
 
   return (
@@ -95,9 +81,9 @@ export default function ContextManagement({
           }`}>
           <div className="text-sm font-medium text-sidebar-foreground/70">
             Character Limit:{' '}
-            {contextSummary.nodes
+            {contextNodes
               .reduce(
-                (total, node) => total + (node.summary?.length || 0),
+                (total: number, node: Node) => total + (node.content?.length || 0),
                 0
               )
               .toLocaleString()}
@@ -129,9 +115,6 @@ export default function ContextManagement({
                     <th className="text-left py-1 font-medium text-muted-foreground">
                       Node
                     </th>
-                    <th className="text-left py-1 font-medium text-muted-foreground">
-                      Content
-                    </th>
                     <th className="text-right py-1 font-medium text-muted-foreground">
                       Chars
                     </th>
@@ -139,18 +122,15 @@ export default function ContextManagement({
                   </tr>
                 </thead>
                 <tbody>
-                  {contextSummary.allSelectedNodes.map((node) => (
+                  {contextSummary.allSelectedNodes.map((node: Node) => (
                     <tr key={node.id} className="hover:bg-muted/30">
-                      <td className="py-1 pr-2 truncate max-w-0">
+                      <td className="py-1 pr-2 truncate max-w-[200px]">
                         <span className="font-medium">
                           {node.label}
                         </span>
                       </td>
-                      <td className="py-1 pr-2 text-muted-foreground">
-                        {node.type}
-                      </td>
                       <td className="py-1 pr-2 text-right text-muted-foreground/60">
-                        {(node.summary?.length || 0).toLocaleString()}
+                        {(node.content?.length || 0).toLocaleString()}
                       </td>
                       <td className="py-1">
                         <Button

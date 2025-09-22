@@ -40,7 +40,14 @@ export function LassoSelectionMenu({
 
   const handleSendToContext = () => {
     if (onSendToContext) {
-      onSendToContext(selectedNodes);
+      // Ensure each node has a content property populated
+      const nodesWithContent = selectedNodes.map(node => ({
+        ...node,
+        // If content is missing, use summary or a default message
+        content: node.content || node.summary || `No content available for ${node.label}`
+      }));
+      
+      onSendToContext(nodesWithContent);
       onClose();
     }
   };
@@ -124,13 +131,17 @@ export function LassoSelectionMenu({
                 <tr>
                   <th className="text-left py-2 px-3 font-medium text-[#6b7280]">Label</th>
                   <th className="text-left py-2 px-3 font-medium text-[#6b7280]">Type</th>
+                  <th className="text-right py-2 px-3 font-medium text-[#6b7280]">Chars</th>
                 </tr>
               </thead>
               <tbody>
                 {selectedNodes.map((node) => (
                   <tr key={node.id} className="border-t border-gray-200 hover:bg-gray-50">
-                    <td className="py-2 px-3 truncate max-w-[200px]">{node.label}</td>
+                    <td className="py-2 px-3 truncate max-w-[150px]">{node.label}</td>
                     <td className="py-2 px-3 text-[#6b7280]">{node.type}</td>
+                    <td className="py-2 px-3 text-right text-[#6b7280]">
+                      {(node.content?.length || 0).toLocaleString()} chars
+                    </td>
                   </tr>
                 ))}
               </tbody>
