@@ -53,6 +53,7 @@ interface AppState {
 		| 'documentType'
 		| 'country';
 	nodeSizeMode: 'none' | 'contentLength' | 'summaryLength' | 'similarity';
+	clusterMode: 'none' | 'type' | 'continent' | 'country' | 'sourceType';
 	showLabels: boolean;
 	rightPanelExpanded: boolean;
 
@@ -76,6 +77,9 @@ interface AppState {
 	) => void;
 	setNodeSizeMode: (
 		mode: 'none' | 'contentLength' | 'summaryLength' | 'similarity'
+	) => void;
+	setClusterMode: (
+		mode: 'none' | 'type' | 'continent' | 'country' | 'sourceType'
 	) => void;
 	setShowLabels: (show: boolean) => void;
 	setRightPanelExpanded: (expanded: boolean) => void;
@@ -116,6 +120,7 @@ export const useAppStore = create<AppState>()(devtools((set, get) => ({
 	filteredLinks: [],
 	colorMode: 'sourceType',
 	nodeSizeMode: 'none',
+	clusterMode: 'none',
 	showLabels: true,
 	rightPanelExpanded: false,
 	selectedSimilarityRanges: [],
@@ -144,6 +149,7 @@ export const useAppStore = create<AppState>()(devtools((set, get) => ({
 	// Visualization state actions
 	setColorMode: (colorMode) => set({ colorMode }),
 	setNodeSizeMode: (nodeSizeMode) => set({ nodeSizeMode }),
+	setClusterMode: (clusterMode) => set({ clusterMode }),
 	setShowLabels: (showLabels) => set({ showLabels }),
 	setRightPanelExpanded: (rightPanelExpanded) => set({ rightPanelExpanded }),
 

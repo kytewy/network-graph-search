@@ -83,11 +83,13 @@ export function NetworkGraph() {
 	const showLabels = useAppStore((state) => state.showLabels);
 	const colorMode = useAppStore((state) => state.colorMode);
 	const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
+	const clusterMode = useAppStore((state) => state.clusterMode);
 
 	// Get setters from app store
 	const setShowLabels = useAppStore((state) => state.setShowLabels);
 	const setColorMode = useAppStore((state) => state.setColorMode);
 	const setNodeSizeMode = useAppStore((state) => state.setNodeSizeMode);
+	const setClusterMode = useAppStore((state) => state.setClusterMode);
 	const graphRef = useRef<ExtendedGraphCanvasRef | null>(null);
 
 	// Update layout when network store changes
@@ -345,8 +347,16 @@ export function NetworkGraph() {
 			networkLayout = 'forceDirected';
 		} else if (layout === 'concentric2d') {
 			networkLayout = 'concentric';
+			// Reset cluster mode when switching to a non-force-directed layout
+			if (clusterMode !== 'none') {
+				setClusterMode('none');
+			}
 		} else if (layout === 'radialOut2d') {
 			networkLayout = 'radial';
+			// Reset cluster mode when switching to a non-force-directed layout
+			if (clusterMode !== 'none') {
+				setClusterMode('none');
+			}
 		} else {
 			networkLayout = 'forceDirected';
 		}
@@ -394,6 +404,17 @@ export function NetworkGraph() {
 								| 'contentLength'
 								| 'summaryLength'
 								| 'similarity'
+						);
+					}}
+					currentClusterBy={clusterMode}
+					onClusterByChange={(clusterBy: string) => {
+						setClusterMode(
+							clusterBy as
+								| 'none'
+								| 'type'
+								| 'continent'
+								| 'country'
+								| 'sourceType'
 						);
 					}}
 					showLabels={showLabels}
@@ -446,17 +467,25 @@ export function NetworkGraph() {
 							onLassoEnd={handleLassoEnd}
 							// Use direct nodeSize prop to set custom sizes
 							nodeSize={(node) => getNodeSize(node.data)}
+							// Use clusterAttribute if clusterMode is not 'none'
+							clusterAttribute={clusterMode !== 'none' ? clusterMode : undefined}
 							labelType={showLabels ? 'auto' : 'none'}
 							edgeStyle="curved"
 							animated={true} // Enable animation for better visualization
 							cameraMode="pan"
-							contextMenu={({ data, onClose }: { data: any; onClose: () => void }) => {
+							contextMenu={({
+								data,
+								onClose,
+							}: {
+								data: any;
+								onClose: () => void;
+							}) => {
 								// Only show context menu for nodes, not edges
 								if (!data || !data.data) return null;
 
 								// Get the node data from the graph node
 								const nodeData = data.data as Node;
-								
+
 								return (
 									<div className="custom-context-menu-wrapper">
 										<NodeContextMenu
@@ -470,7 +499,7 @@ export function NetworkGraph() {
 												summary: nodeData.summary || '',
 												content: nodeData.content || nodeData.text || '',
 												similarity: nodeData.similarity || nodeData.score,
-												sourceType: nodeData.category || ''
+												sourceType: nodeData.category || '',
 											}}
 											onClose={onClose}
 										/>
@@ -508,7 +537,6 @@ export function NetworkGraph() {
 						className="lasso-menu"
 					/>
 				)}
-				
 			</div>
 		</div>
 	);

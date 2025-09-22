@@ -8,6 +8,7 @@ import {
 	Palette,
 	Maximize2,
 	Tag,
+	Network,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
@@ -18,6 +19,8 @@ interface VisualizationControlsProps {
 	onColorByChange?: (colorBy: string) => void;
 	currentSizeBy?: string;
 	onSizeByChange?: (sizeBy: string) => void;
+	currentClusterBy?: string;
+	onClusterByChange?: (clusterBy: string) => void;
 	showLabels?: boolean;
 	onShowLabelsChange?: (show: boolean) => void;
 	reorganizeLayoutRef?: React.MutableRefObject<(() => void) | null>;
@@ -32,6 +35,8 @@ export function VisualizationControls({
 	onColorByChange,
 	currentSizeBy = 'none',
 	onSizeByChange,
+	currentClusterBy = 'none',
+	onClusterByChange,
 	showLabels = true,
 	onShowLabelsChange,
 	reorganizeLayoutRef,
@@ -75,6 +80,15 @@ export function VisualizationControls({
 		{ id: 'contentLength', name: 'Content Length' },
 	];
 
+	// Cluster by options
+	const clusterByOptions = [
+		{ id: 'none', name: 'None' },
+		{ id: 'type', name: 'Type' },
+		{ id: 'continent', name: 'Continent' },
+		{ id: 'country', name: 'Country' },
+		{ id: 'sourceType', name: 'Source Type' },
+	];
+
 	// Get display name for current layout
 	const getCurrentLayoutName = () => {
 		const layout = layoutOptions.find((l) => l.id === currentLayout);
@@ -93,15 +107,23 @@ export function VisualizationControls({
 		return sizeBy ? sizeBy.name : 'None';
 	};
 
+	// Get display name for current cluster by
+	const getCurrentClusterByName = () => {
+		const clusterBy = clusterByOptions.find((c) => c.id === currentClusterBy);
+		return clusterBy ? clusterBy.name : 'None';
+	};
+
 	// State for dropdown visibility
 	const [showLayoutDropdown, setShowLayoutDropdown] = useState(false);
 	const [showColorDropdown, setShowColorDropdown] = useState(false);
 	const [showSizeDropdown, setShowSizeDropdown] = useState(false);
+	const [showClusterDropdown, setShowClusterDropdown] = useState(false);
 
 	// Refs for dropdown containers
 	const layoutDropdownRef = useRef<HTMLDivElement>(null);
 	const colorDropdownRef = useRef<HTMLDivElement>(null);
 	const sizeDropdownRef = useRef<HTMLDivElement>(null);
+	const clusterDropdownRef = useRef<HTMLDivElement>(null);
 
 	// Handle click outside to close dropdown
 	useEffect(() => {
@@ -123,6 +145,12 @@ export function VisualizationControls({
 				!sizeDropdownRef.current.contains(event.target as Node)
 			) {
 				setShowSizeDropdown(false);
+			}
+			if (
+				clusterDropdownRef.current &&
+				!clusterDropdownRef.current.contains(event.target as Node)
+			) {
+				setShowClusterDropdown(false);
 			}
 		}
 
@@ -236,6 +264,51 @@ export function VisualizationControls({
 										}}>
 										<span>{option.name}</span>
 										{currentSizeBy === option.id && (
+											<Check className="h-4 w-4" />
+										)}
+									</button>
+								))}
+							</div>
+						)}
+					</div>
+				</div>
+			)}
+
+			<Separator orientation="vertical" className="h-6" />
+
+			{/* Cluster By Control */}
+			{onClusterByChange && (
+				<div className="flex items-center">
+					<div className="relative" ref={clusterDropdownRef}>
+						<div className="relative group">
+							<button
+								className={`flex items-center gap-2 h-8 px-3 border rounded-md ${currentLayout === 'forceDirected2d' ? 'bg-white hover:bg-gray-100' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+								onClick={() => currentLayout === 'forceDirected2d' && setShowClusterDropdown(!showClusterDropdown)}
+								disabled={currentLayout !== 'forceDirected2d'}
+							>
+								<Network className="h-4 w-4" />
+								<span>Cluster: {getCurrentClusterByName()}</span>
+								<ChevronDown className="h-3 w-3 opacity-50" />
+							</button>
+							{currentLayout !== 'forceDirected2d' && (
+								<div className="absolute left-1/2 -translate-x-1/2 top-full mt-4 px-3 py-1 bg-purple-100 text-purple-700 border border-purple-300 text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+									Clustering is only available for Force Directed layout
+								</div>
+							)}
+						</div>
+
+						{showClusterDropdown && (
+							<div className="absolute top-full left-0 mt-1 bg-white shadow-md rounded-md p-2 z-50 w-56">
+								{clusterByOptions.map((option) => (
+									<button
+										key={option.id}
+										className="flex items-center justify-between w-full p-2 hover:bg-gray-100 rounded-sm text-left"
+										onClick={() => {
+											onClusterByChange(option.id);
+											setShowClusterDropdown(false);
+										}}>
+										<span>{option.name}</span>
+										{currentClusterBy === option.id && (
 											<Check className="h-4 w-4" />
 										)}
 									</button>
