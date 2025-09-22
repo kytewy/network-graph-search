@@ -124,7 +124,7 @@ export default function ContextManagement({
                 <tbody>
                   {contextSummary.allSelectedNodes.map((node: Node) => (
                     <tr key={node.id} className="hover:bg-muted/30">
-                      <td className="py-1 pr-2 truncate max-w-[200px]">
+                      <td className="py-1 pr-2 truncate max-w-[120px]">
                         <span className="font-medium">
                           {node.label}
                         </span>
