@@ -71,11 +71,11 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
 
 			case 'similarityRange':
 				return [
-					{ label: '81-100%', color: '#22c55e' },  // Green
-					{ label: '61-80%', color: '#84cc16' },   // Light green
-					{ label: '41-60%', color: '#eab308' },   // Yellow
-					{ label: '20-40%', color: '#f97316' },   // Orange
-					{ label: '<20%', color: '#ef4444' },     // Red
+					{ label: 'Very High (81-100%)', color: '#22c55e' },  // Green
+					{ label: 'High (61-80%)', color: '#84cc16' },   // Light green
+					{ label: 'Medium (41-60%)', color: '#eab308' },   // Yellow
+					{ label: 'Low (20-40%)', color: '#f97316' },   // Orange
+					{ label: 'Very Low (0-19%)', color: '#ef4444' },     // Red
 				];
 
 			default:
@@ -132,7 +132,7 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
 										style={{ backgroundColor: nodeColors.neutral }}
 									/>
 									<span className="text-xs text-gray-600">
-										Small (0-30 chars)
+										Small (Under 500 chars)
 									</span>
 								</div>
 								<div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
 										style={{ backgroundColor: nodeColors.neutral }}
 									/>
 									<span className="text-xs text-gray-600">
-										Medium (30-60 chars)
+										Medium (501-1000 chars)
 									</span>
 								</div>
 								<div className="flex items-center gap-2">
@@ -150,7 +150,7 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
 										style={{ backgroundColor: nodeColors.neutral }}
 									/>
 									<span className="text-xs text-gray-600">
-										Large (60+ chars)
+										Large (1000+ chars)
 									</span>
 								</div>
 							</>
@@ -190,24 +190,38 @@ export function ColorLegend({ filteredNodes }: ColorLegendProps) {
 							<>
 								<div className="flex items-center gap-2">
 									<div
+										className="w-1 h-1 rounded-full"
+										style={{ backgroundColor: nodeColors.neutral }}
+									/>
+									<span className="text-xs text-gray-600">Very Low (0-19%)</span>
+								</div>
+								<div className="flex items-center gap-2">
+									<div
 										className="w-2 h-2 rounded-full"
 										style={{ backgroundColor: nodeColors.neutral }}
 									/>
-									<span className="text-xs text-gray-600">Low (0-33%)</span>
+									<span className="text-xs text-gray-600">Low (20-40%)</span>
 								</div>
 								<div className="flex items-center gap-2">
 									<div
 										className="w-3 h-3 rounded-full"
 										style={{ backgroundColor: nodeColors.neutral }}
 									/>
-									<span className="text-xs text-gray-600">Medium (34-66%)</span>
+									<span className="text-xs text-gray-600">Medium (41-60%)</span>
 								</div>
 								<div className="flex items-center gap-2">
 									<div
 										className="w-4 h-4 rounded-full"
 										style={{ backgroundColor: nodeColors.neutral }}
 									/>
-									<span className="text-xs text-gray-600">High (67-100%)</span>
+									<span className="text-xs text-gray-600">High (61-80%)</span>
+								</div>
+								<div className="flex items-center gap-2">
+									<div
+										className="w-5 h-5 rounded-full"
+										style={{ backgroundColor: nodeColors.neutral }}
+									/>
+									<span className="text-xs text-gray-600">Very High (81-100%)</span>
 								</div>
 							</>
 						)}

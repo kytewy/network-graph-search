@@ -144,6 +144,44 @@ export function NetworkGraph() {
     }
   };
 
+  // Force refresh when nodeSizeMode changes
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Update refresh key when nodeSizeMode changes to force re-render
+  useEffect(() => {
+    setRefreshKey(prev => prev + 1);
+  }, [nodeSizeMode]);
+
+  // Get node size based on nodeSizeMode
+  const getNodeSize = (node: Node) => {
+    switch (nodeSizeMode) {
+      case 'similarity':
+        // Use score for similarity (0-1 value)
+        if (node.score !== undefined) {
+          const similarityPercent = Math.round(node.score * 100);
+          
+          // 5 different size buckets based on similarity
+          if (similarityPercent >= 81) return 20; // Largest
+          if (similarityPercent >= 61) return 16;
+          if (similarityPercent >= 41) return 12;
+          if (similarityPercent >= 20) return 8;
+          return 4; // Smallest
+        }
+        return 10; // Default size
+        
+      case 'contentLength':
+        // Size based on content length
+        const contentLength = (node.content || '').length;
+        
+        if (contentLength > 1000) return 20;     // 1000+ chars
+        if (contentLength > 500) return 12;      // 501-1000 chars
+        return 6;                               // Under 500 chars
+        
+      default:
+        return 10; // Default size
+    }
+  };
+
   // Convert nodes to Reagraph nodes
   const graphNodes = useMemo(() => {
     if (!filteredResults || filteredResults.length === 0) return [];
@@ -152,12 +190,12 @@ export function NetworkGraph() {
       id: node.id,
       label: node.label || node.id,
       fill: getNodeColor(node),
-      size: Math.max(4, Math.min(20, (node.score || 0.5) * 15)), // Ensure size is within bounds
+      size: getNodeSize(node), // Size is still used for the node object, even though we use nodeSize prop
       score: node.score || 0.5,
       category: node.category || '',
       data: node,
     }));
-  }, [filteredResults, colorMode]);
+  }, [filteredResults, colorMode, nodeSizeMode]);
 
   // Convert links to Reagraph edges
   const graphEdges = useMemo(() => {
@@ -341,6 +379,7 @@ export function NetworkGraph() {
         {graphNodes.length > 0 ? (
           <div className="absolute inset-0">
             <GraphCanvas
+              key={`graph-${refreshKey}`} // Force re-render when nodeSizeMode changes
               ref={graphRef}
               nodes={graphNodes}
               edges={graphEdges}
@@ -359,10 +398,8 @@ export function NetworkGraph() {
               onLasso={handleLasso}
               // @ts-ignore - onLassoEnd is available in reagraph but not in the types
               onLassoEnd={handleLassoEnd}
-              sizingType="attribute"
-              sizingAttribute={nodeSizeMode === 'none' ? 'score' : nodeSizeMode}
-              minNodeSize={4}
-              maxNodeSize={16}
+              // Use direct nodeSize prop to set custom sizes
+              nodeSize={(node) => getNodeSize(node.data)}
               labelType={showLabels ? "auto" : "none"}
               edgeStyle="curved"
               animated={true} // Enable animation for better visualization
