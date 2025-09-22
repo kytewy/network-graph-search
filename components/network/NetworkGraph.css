@@ -1,0 +1,59 @@
+/* Styles for the NetworkGraph component */
+
+/* Context menu positioning and styling */
+.custom-context-menu-wrapper {
+  /* Ensure the menu stays within the graph area */
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow: visible;
+  
+  /* Fixed vertical position - move the menu to a specific position */
+  position: relative;
+  top: -300px !important; /* Move the menu up significantly */
+  
+  /* Center horizontally if possible */
+  left: 50%;
+  transform: translateX(-50%);
+  
+  /* Add a subtle shadow for better visibility */
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+/* Override Reagraph's default positioning */
+.reagraph-context-menu {
+  position: fixed !important;
+  top: 150px !important; /* Fixed vertical position from the top of the screen */
+  transform: none !important;
+}
+
+/* Make sure the menu is always on top */
+.node-context-menu {
+  z-index: 9999 !important;
+}
+
+/* Add some styling to make the menu stand out */
+.custom-context-menu-wrapper {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Lasso Selection Menu Styling */
+.lasso-menu {
+  /* Fixed position styling */
+  position: fixed !important;
+  top: 150px !important; /* Same vertical position as context menu */
+  left: 50% !important; /* Center horizontally */
+  transform: translateX(-50%) !important;
+  
+  /* Override inline styles */
+  max-width: 500px !important;
+  width: 90% !important;
+  
+  /* Visual styling */
+  z-index: 9999 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+}

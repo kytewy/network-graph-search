@@ -28,6 +28,7 @@ interface NodeModalProps {
   node: Node
   onClose: () => void
   onNodeSelection?: (nodeIds: string[]) => void
+  className?: string
   selectedNodes?: string[]
   expandedNodes?: string[]
   onNodeExpand?: (nodeId: string) => void
@@ -40,6 +41,7 @@ export function NodeContextMenu({
   selectedNodes = [],
   expandedNodes = [],
   onNodeExpand,
+  className,
 }: NodeModalProps) {
   const [showModalDropdown, setShowModalDropdown] = useState(false)
   const [modalDropdownAnimating, setModalDropdownAnimating] = useState(false)
@@ -80,7 +82,7 @@ export function NodeContextMenu({
   return (
     <div 
       ref={modalRef}
-      className="relative bg-white border border-gray-200 shadow-xl rounded-lg max-w-2xl w-full overflow-hidden flex flex-col"
+      className={`relative bg-white border border-gray-200 shadow-xl rounded-lg max-w-2xl w-full overflow-hidden flex flex-col ${className || ''}`}
       style={{
         maxHeight: "80vh",
         zIndex: 1000,

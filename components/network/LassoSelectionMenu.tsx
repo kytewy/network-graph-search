@@ -10,6 +10,7 @@ interface LassoSelectionMenuProps {
   onNodeSelection?: (nodeIds: string[]) => void;
   onSendToContext?: (nodes: Node[]) => void;
   position: { x: number; y: number };
+  className?: string;
 }
 
 export function LassoSelectionMenu({
@@ -18,6 +19,7 @@ export function LassoSelectionMenu({
   onNodeSelection,
   onSendToContext,
   position,
+  className,
 }: LassoSelectionMenuProps) {
   const [expanded, setExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -53,7 +55,7 @@ export function LassoSelectionMenu({
   return (
     <div
       ref={menuRef}
-      className="absolute bg-white border border-gray-200 shadow-xl rounded-lg overflow-hidden z-50"
+      className={`absolute bg-white border border-gray-200 shadow-xl rounded-lg overflow-hidden z-50 ${className || ''}`}
       style={{
         top: position.y,
         left: position.x,
