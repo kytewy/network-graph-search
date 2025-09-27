@@ -458,7 +458,8 @@ export function NetworkGraph() {
 							}}
 							selections={selections || []}
 							onNodeClick={handleCustomNodeClick}
-							onCanvasClick={(e: any) => onCanvasClick?.(e)}
+							// @ts-ignore - onCanvasClick expects a MouseEvent parameter
+							onCanvasClick={onCanvasClick}
 							// @ts-ignore - lassoType is available in reagraph but not in the types
 							lassoType="node"
 							// @ts-ignore - onLasso is available in reagraph but not in the types
@@ -500,6 +501,8 @@ export function NetworkGraph() {
 												content: nodeData.content || nodeData.text || '',
 												similarity: nodeData.similarity || nodeData.score,
 												sourceType: nodeData.category || '',
+												continent: nodeData.continent || '',
+												country: nodeData.country || '',
 											}}
 											onClose={onClose}
 										/>
