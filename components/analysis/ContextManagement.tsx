@@ -66,11 +66,24 @@ export default function ContextManagement({
 	// State for the DocumentOverlay
 	const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 	const [showDocumentOverlay, setShowDocumentOverlay] = useState(false);
+	const [isNodeInContext, setIsNodeInContext] = useState(true); // Track if node is in context
+	
+	// Function to check if a node is in context
+	const checkIfNodeInContext = (nodeId: string) => {
+		return contextNodes.some(node => node.id === nodeId);
+	};
 	
 	// Function to open the DocumentOverlay
 	const openDocumentOverlay = (node: Node) => {
 		setSelectedNode(node);
+		setIsNodeInContext(true); // It's definitely in context when opened from here
 		setShowDocumentOverlay(true);
+	};
+	
+	// Function to handle toggling context
+	const handleToggleContext = (nodeId: string) => {
+		removeNodeFromContext(nodeId);
+		setIsNodeInContext(false);
 	};
 
 	// Create a simple summary object for the context nodes
@@ -173,18 +186,13 @@ export default function ContextManagement({
 					document={{
 						id: selectedNode.id,
 						title: selectedNode.label,
-						author: selectedNode.sourceType || 'Unknown source',
 						description: selectedNode.summary || '',
 						content: selectedNode.content || '',
-						category: selectedNode.type || 'Document',
-						readTime: selectedNode.content
-							? `${Math.ceil(selectedNode.content.length / 1000)} min read`
-							: undefined,
 						status: 'unread',
 					}}
 					onClose={() => setShowDocumentOverlay(false)}
-					isInContext={true} // It's already in context since we're selecting from context nodes
-					onToggleContext={() => removeNodeFromContext(selectedNode.id)}
+					isInContext={isNodeInContext}
+					onToggleContext={() => handleToggleContext(selectedNode.id)}
 				/>
 			)}
 		</div>
