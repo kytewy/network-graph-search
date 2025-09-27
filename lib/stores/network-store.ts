@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { type Node, type Link } from '@/lib/sample-data';
-// Sample data is still available in the project but not imported here
+import { type Node, type Link } from '@/lib/stores/app-state';
+// Using Node and Link types from app-state instead of sample-data
 
 interface NetworkState {
 	nodes: Node[];

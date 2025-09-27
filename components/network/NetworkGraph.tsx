@@ -22,6 +22,7 @@ interface ExtendedGraphCanvasRef extends GraphCanvasRef {
 // Define extended types for reagraph's useSelection hook to support lasso selection
 interface ExtendedUseSelectionResult {
 	selections: any;
+	clearSelections: (value?: string[]) => void;
 	onNodeClick: (node: GraphNode) => void;
 	onCanvasClick: (event: MouseEvent) => void;
 	onLasso?: (selections: string[]) => void;
@@ -104,6 +105,9 @@ export function NetworkGraph() {
 	const [lassoSelectedNodes, setLassoSelectedNodes] = useState<string[]>([]);
 	const [showLassoMenu, setShowLassoMenu] = useState(false);
 	const [lassoMenuPosition, setLassoMenuPosition] = useState({ x: 0, y: 0 });
+
+	// State to force re-render of the graph when needed
+	const [forceUpdate, setForceUpdate] = useState<number>(0);
 
 	// Node positions reference for maintaining positions during updates
 	const nodePositionsRef = useRef<
@@ -254,17 +258,32 @@ export function NetworkGraph() {
 			ref: graphRef as React.RefObject<GraphCanvasRef>,
 			nodes: graphNodes,
 			edges: graphEdges,
+			hotkeys: ['selectAll', 'deselect'], // Enable useful hotkeys
+			focusOnSelect: true, // Focus on selected nodes
+			type: 'multi', // Allow multi-selection
 		};
 	}, [graphNodes, graphEdges, graphRef]);
 
 	// Selection handling with extended types for lasso support
+	const selectionResult = useSelection(
+		selectionConfig
+	) as unknown as ExtendedUseSelectionResult;
+	console.log('Selection result from useSelection:', selectionResult);
+
 	const {
 		selections,
+		clearSelections,
 		onNodeClick: handleNodeClick,
 		onCanvasClick,
 		onLasso,
 		onLassoEnd,
-	} = useSelection(selectionConfig) as ExtendedUseSelectionResult;
+	} = selectionResult;
+
+	console.log('clearSelections function available:', !!clearSelections);
+	console.log('Current selections:', selections);
+
+	// Use the original canvas click handler
+	// We'll let Reagraph handle the selection clearing internally
 
 	// Custom node click handler
 	const handleCustomNodeClick = (node: GraphNode) => {
@@ -281,13 +300,20 @@ export function NetworkGraph() {
 
 	// Handle lasso selection
 	const handleLasso = (selectedIds: string[]) => {
+		console.log(
+			'Lasso selection in progress, current nodes:',
+			selectedIds.length
+		);
 		setLassoSelectedNodes(selectedIds);
+		// Let Reagraph handle the selection state internally
 	};
 
 	// Handle lasso end event
 	const handleLassoEnd = (selectedIds: string[], event?: MouseEvent) => {
+		console.log('Lasso end detected, selected nodes:', selectedIds.length);
 		// If nodes were selected, show the lasso menu
 		if (selectedIds.length > 0) {
+			console.log('Showing lasso menu for selected nodes');
 			setLassoSelectedNodes(selectedIds);
 
 			// Get mouse position for the menu or use center of screen
@@ -297,6 +323,10 @@ export function NetworkGraph() {
 			};
 			setLassoMenuPosition(mousePosition);
 			setShowLassoMenu(true);
+		} else {
+			console.log('No nodes selected in lasso');
+			// Just clear our local selection state
+			setLassoSelectedNodes([]);
 		}
 	};
 
@@ -322,12 +352,47 @@ export function NetworkGraph() {
 		);
 
 		addNodesToContext(nodes);
+
+		// Clear selections after sending to context
+		closeLassoMenu();
 	};
 
-	// Close lasso menu
+	// Close lasso menu and clear selections
 	const closeLassoMenu = () => {
+		console.log('Closing lasso menu');
+
+		// Store the previously selected nodes for cleanup
+		const nodesToClear = [...lassoSelectedNodes];
+		console.log('Nodes that need highlighting cleared:', nodesToClear);
+
+		// Clear our local state first
 		setShowLassoMenu(false);
 		setLassoSelectedNodes([]);
+
+		// Clear Reagraph selections if the function exists
+		if (clearSelections) {
+			console.log('Clearing selections on lasso menu close');
+
+			// First update the force update counter to ensure a re-render
+			// This ensures the component will re-render with the new state
+			setForceUpdate((prev: number) => prev + 1);
+
+			// Then clear the selections after the state update is queued
+			clearSelections();
+
+			// Similar to how layout changes update the store, update any relevant global state
+			// This ensures all sources of truth about selections are consistent
+			if (useNetworkStore.getState().setSelectedNodes) {
+				useNetworkStore.getState().setSelectedNodes([]);
+			}
+
+			// Log that we've completed the clearing process
+			console.log('Selection clearing and re-render triggered');
+		} else {
+			console.warn(
+				'clearSelections function is not available on lasso menu close'
+			);
+		}
 	};
 
 	// Create refs for advanced layout functions
@@ -443,7 +508,6 @@ export function NetworkGraph() {
 				{graphNodes.length > 0 ? (
 					<div className="absolute inset-0">
 						<GraphCanvas
-							key={`graph-${refreshKey}`} // Force re-render when nodeSizeMode changes
 							ref={graphRef}
 							nodes={graphNodes}
 							edges={graphEdges}
@@ -455,18 +519,22 @@ export function NetworkGraph() {
 							}}
 							selections={selections || []}
 							onNodeClick={handleCustomNodeClick}
-							// @ts-ignore - onCanvasClick expects a MouseEvent parameter
+							// Use our custom handler that clears selections
+							// @ts-ignore - Type mismatch with onCanvasClick handler
 							onCanvasClick={onCanvasClick}
 							// @ts-ignore - lassoType is available in reagraph but not in the types
 							lassoType="node"
 							// @ts-ignore - onLasso is available in reagraph but not in the types
 							onLasso={handleLasso}
-							// @ts-ignore - onLassoEnd is available in reagraph but not in the types
 							onLassoEnd={handleLassoEnd}
 							// Use direct nodeSize prop to set custom sizes
 							nodeSize={(node) => getNodeSize(node.data)}
 							// Use clusterAttribute if clusterMode is not 'none'
-							clusterAttribute={clusterMode !== 'none' ? clusterMode : undefined}
+							clusterAttribute={
+								clusterMode !== 'none' ? clusterMode : undefined
+							}
+							// Use forceUpdate to trigger re-renders when needed
+							key={`graph-${forceUpdate}`}
 							labelType={showLabels ? 'auto' : 'none'}
 							edgeStyle="curved"
 							animated={true} // Enable animation for better visualization
