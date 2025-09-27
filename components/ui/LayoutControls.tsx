@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Zap, Eye, EyeOff } from 'lucide-react';
-import { useLayoutStore } from '@/lib/stores/layout-store';
 import { useUIStore } from '@/lib/stores/ui-store';
 import { useAppStore } from '@/lib/stores/app-state';
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import LayoutControls from '@/components/ui/LayoutControls';
 import { ColorLegend } from '@/components/ui/ColorLegend';
 // Using enhanced NetworkGraph component
 import { NetworkGraph } from '@/components/network/NetworkGraph';
@@ -19,7 +18,6 @@ import { useNetworkStore } from '@/lib/stores/network-store';
 import { useFilterStore } from '@/lib/stores/filter-store';
 import { useUIStore } from '@/lib/stores/ui-store';
 import { useUnifiedSearchStore } from '@/lib/stores/unified-search-store';
-import { useLayoutStore } from '@/lib/stores/layout-store';
 import { useAppStore } from '@/lib/stores/app-state';
 import { getNodeColorByMode } from '@/lib/theme/colors';
 
@@ -357,31 +355,35 @@ export default function NetworkGraphApp() {
 
 		// Create minimal placeholder data for text analysis to ensure Analysis component works
 		const textAnalysis = {
-			commonWords: nodes.length > 0 
-				? [
-					{ word: 'data', count: 3 },
-					{ word: 'system', count: 2 },
-					{ word: 'content', count: 2 }
-				]
-				: [],
+			commonWords:
+				nodes.length > 0
+					? [
+							{ word: 'data', count: 3 },
+							{ word: 'system', count: 2 },
+							{ word: 'content', count: 2 },
+					  ]
+					: [],
 			themes: nodes.length > 0 ? ['Content', 'System'] : [],
-			summary: count > 0 ? `${count} selected nodes` : 'No nodes selected'
+			summary: count > 0 ? `${count} selected nodes` : 'No nodes selected',
 		};
 
 		// Create minimal placeholder data for theme analysis
 		const themeAnalysis = {
-			themes: nodes.length > 0 
-				? [{
-					name: 'Content Management',
-					keywords: ['content', 'data', 'management'],
-					nodes: nodes.slice(0, 3).map(node => ({
-						...node,
-						relevanceScore: 0.8,
-						matchedKeywords: ['content', 'data']
-					})),
-					score: 0.8
-				}]
-				: []
+			themes:
+				nodes.length > 0
+					? [
+							{
+								name: 'Content Management',
+								keywords: ['content', 'data', 'management'],
+								nodes: nodes.slice(0, 3).map((node) => ({
+									...node,
+									relevanceScore: 0.8,
+									matchedKeywords: ['content', 'data'],
+								})),
+								score: 0.8,
+							},
+					  ]
+					: [],
 		};
 
 		return {
@@ -389,10 +391,10 @@ export default function NetworkGraphApp() {
 			allSelectedNodes,
 			count,
 			types,
-			avgSize: 0,  // Simplified
-			totalConnections: 0,  // Simplified
-			internalConnections: 0,  // Simplified
-			externalConnections: 0,  // Simplified
+			avgSize: 0, // Simplified
+			totalConnections: 0, // Simplified
+			internalConnections: 0, // Simplified
+			externalConnections: 0, // Simplified
 			textAnalysis,
 			themeAnalysis,
 		};
@@ -546,9 +548,7 @@ export default function NetworkGraphApp() {
 						</div>
 
 						{/* Context Management */}
-						<ContextManagement
-							rightPanelExpanded={rightPanelExpanded}
-						/>
+						<ContextManagement rightPanelExpanded={rightPanelExpanded} />
 
 						{/* Analysis */}
 						{safeSelectedNodes.length > 0 && (
