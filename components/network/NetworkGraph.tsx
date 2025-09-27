@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useMemo, useState, useEffect } from 'react';
-import './NetworkGraph.css';
+// import './NetworkGraph.css'; // Temporarily commented out to see what it looks like without these styles
 import dynamic from 'next/dynamic';
 import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
 import { useSelection } from 'reagraph';
@@ -284,19 +284,16 @@ export function NetworkGraph() {
 		setLassoSelectedNodes(selectedIds);
 	};
 
-	// Handle lasso selection end
-	const handleLassoEnd = (selectedIds: string[]) => {
+	// Handle lasso end event
+	const handleLassoEnd = (selectedIds: string[], event?: MouseEvent) => {
+		// If nodes were selected, show the lasso menu
 		if (selectedIds.length > 0) {
-			// Get mouse position for the menu
+			setLassoSelectedNodes(selectedIds);
+
+			// Get mouse position for the menu or use center of screen
 			const mousePosition = {
-				x: Math.max(
-					100,
-					Math.min(window.innerWidth / 2, window.innerWidth - 400)
-				),
-				y: Math.max(
-					100,
-					Math.min(window.innerHeight / 3, window.innerHeight - 400)
-				),
+				x: window.innerWidth / 2 - 200, // Center horizontally, offset by half the menu width
+				y: 100, // Position near the top of the screen
 			};
 			setLassoMenuPosition(mousePosition);
 			setShowLassoMenu(true);
