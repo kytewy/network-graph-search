@@ -558,15 +558,6 @@ export default function NetworkGraphApp() {
 								themeAnalysis={selectedNodesSummary.themeAnalysis}
 							/>
 						)}
-
-						{/* Chat Input Interface */}
-						<ChatInterface
-							safeSelectedNodes={safeSelectedNodes.map((node) => node.id)}
-							networkState={networkState}
-							filterState={filterState}
-							rightPanelExpanded={rightPanelExpanded}
-							selectedNodesSummary={selectedNodesSummary}
-						/>
 					</div>
 				</div>
 			</div>
