@@ -11,38 +11,30 @@ import {
 	Network,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 
-interface VisualizationControlsProps {
-	currentLayout: string;
-	onLayoutChange: (layout: string) => void;
-	currentColorBy?: string;
-	onColorByChange?: (colorBy: string) => void;
-	currentSizeBy?: string;
-	onSizeByChange?: (sizeBy: string) => void;
-	currentClusterBy?: string;
-	onClusterByChange?: (clusterBy: string) => void;
-	showLabels?: boolean;
-	onShowLabelsChange?: (show: boolean) => void;
-	reorganizeLayoutRef?: React.MutableRefObject<(() => void) | null>;
-	arrangeAsTreeRef?: React.MutableRefObject<(() => void) | null>;
-	hasApiKey?: boolean;
-}
+// No props needed as we'll use context
+interface VisualizationControlsProps {}
 
-export function VisualizationControls({
-	currentLayout,
-	onLayoutChange,
-	currentColorBy = 'continent',
-	onColorByChange,
-	currentSizeBy = 'none',
-	onSizeByChange,
-	currentClusterBy = 'none',
-	onClusterByChange,
-	showLabels = true,
-	onShowLabelsChange,
-	reorganizeLayoutRef,
-	arrangeAsTreeRef,
-	hasApiKey = true,
-}: VisualizationControlsProps) {
+export function VisualizationControls({}: VisualizationControlsProps) {
+	// Get all the state and handlers from context
+	const {
+		layoutType: currentLayout,
+		handleLayoutChange: onLayoutChange,
+		colorMode: currentColorBy,
+		setColorMode: onColorByChange,
+		nodeSizeMode: currentSizeBy,
+		setNodeSizeMode: onSizeByChange,
+		clusterMode: currentClusterBy,
+		setClusterMode: onClusterByChange,
+		showLabels,
+		setShowLabels: onShowLabelsChange,
+		reorganizeLayoutRef,
+		arrangeAsTreeRef
+	} = useNetworkGraph();
+	
+	// Default value for API key
+	const hasApiKey = true;
 	// Layout options with descriptions
 	const layoutOptions = [
 		{
