@@ -88,14 +88,16 @@ export function NetworkGraphCanvas() {
 							onCanvasClick={onCanvasClick}
 							// Lasso selection for multi-node selection (hold Shift + drag)
 							lassoType="node"
-							onLasso={(selection: any) => handleLasso(selection.nodes)}
-							onLassoEnd={(selection: any) => handleLassoEnd(selection.nodes)}
+							onLasso={(selection: any) => handleLasso(selection?.nodes || selection || [])}
+							onLassoEnd={(selection: any) => handleLassoEnd(selection?.nodes || selection || [])}
 							// Use direct node size property
 							nodeSize={(node) => node.size || NODE_SIZE.default}
 							// Use clusterAttribute if clusterMode is not 'none'
 							clusterAttribute={
 								clusterMode !== 'none' ? clusterMode : undefined
 							}
+							// Enable node dragging
+							draggable={true}
 							labelType={showLabels ? PERFORMANCE_CONFIG.labelType : 'none'}
 							edgeStyle={PERFORMANCE_CONFIG.edgeStyle}
 							animated={PERFORMANCE_CONFIG.animated}
@@ -135,7 +137,12 @@ export function NetworkGraphCanvas() {
 									</div>
 								);
 							}}
-							getNodePosition={(id: string) => {
+							getNodePosition={(id: string, context?: { drags?: Record<string, { position: { x: number; y: number; z: number } }> }) => {
+								// Respect active drags first (Reagraph Playbook Rule #3)
+								if (context?.drags?.[id]?.position) {
+									return context.drags[id].position;
+								}
+								// Otherwise use stored position
 								return nodePositionsRef.current.get(id) || null;
 							}}
 							onNodeDragEnd={(

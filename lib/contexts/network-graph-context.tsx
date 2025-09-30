@@ -317,14 +317,9 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
   const handleLasso = useCallback((selectedIds: string[]) => {
     // Guard against undefined or null
     if (!selectedIds || !Array.isArray(selectedIds)) {
-      console.log('Lasso selection: invalid or empty selection');
       return;
     }
     
-    console.log(
-      'Lasso selection in progress, current nodes:',
-      selectedIds.length
-    );
     setLassoSelectedNodes(selectedIds);
     // Let Reagraph handle the selection state internally
   }, []);
@@ -333,15 +328,12 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
   const handleLassoEnd = useCallback((selectedIds: string[], event?: MouseEvent) => {
     // Guard against undefined or null
     if (!selectedIds || !Array.isArray(selectedIds)) {
-      console.log('Lasso end: invalid or empty selection');
       setLassoSelectedNodes([]);
       return;
     }
     
-    console.log('Lasso end detected, selected nodes:', selectedIds.length);
     // If nodes were selected, show the lasso menu
     if (selectedIds.length > 0) {
-      console.log('Showing lasso menu for selected nodes');
       setLassoSelectedNodes(selectedIds);
       
       // Get mouse position for the menu or use center of screen
@@ -352,7 +344,6 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
       setLassoMenuPosition(mousePosition);
       setShowLassoMenu(true);
     } else {
-      console.log('No nodes selected in lasso');
       // Just clear our local selection state
       setLassoSelectedNodes([]);
     }
