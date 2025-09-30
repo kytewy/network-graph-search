@@ -6,14 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { X } from 'lucide-react';
 import { Z_INDEX } from '@/lib/constants/graph-config';
+import { Node } from './NodeComponents';
 
+/**
+ * Document display interface for reading mode
+ * Maps from our Node interface for consistency
+ */
 interface ReadingItem {
 	id: string;
-	title: string;
+	title: string;        // Maps to Node.label
 	author?: string;
-	description: string;
-	content: string;
-	category?: string;
+	description: string;  // Maps to Node.summary
+	content: string;      // Maps to Node.content
+	category?: string;    // Maps to Node.sourceType
 	readTime?: string;
 	status: 'read' | 'unread' | 'reading';
 }
@@ -23,6 +28,21 @@ interface DocumentOverlayProps {
 	onClose: () => void;
 	isInContext: boolean;
 	onToggleContext: () => void;
+}
+
+/**
+ * Helper function to convert Node to ReadingItem format
+ * This is the single source of truth for the transformation
+ */
+export function nodeToReadingItem(node: Node): ReadingItem {
+	return {
+		id: node.id,
+		title: node.label,
+		description: node.summary || '',
+		content: node.content || '',
+		category: node.sourceType,
+		status: 'unread' as const,
+	};
 }
 
 // Memoized component to prevent re-splitting content on every render

@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useContextStore } from '@/lib/stores/context-store';
 import { toast } from 'sonner';
-import DocumentOverlay from './DocumentOverlay';
+import DocumentOverlay, { nodeToReadingItem } from './DocumentOverlay';
 import { Z_INDEX } from '@/lib/constants/graph-config';
 
 // Shared Node interface
@@ -111,16 +111,9 @@ export function NodeContextMenu({
 
   // If reading mode is active, show the document overlay directly
   if (showReadingMode) {
-    const readingItem = {
-      id: node.id,
-      title: node.label,
-      description: node.summary || '',
-      content: node.content || '',
-      status: 'unread' as const
-    };
+    // Use the helper function to transform Node → ReadingItem
+    const readingItem = nodeToReadingItem(node);
     
-    
-    // Return the DocumentOverlay component directly
     return (
       <DocumentOverlay 
         document={readingItem}
