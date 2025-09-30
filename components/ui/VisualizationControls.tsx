@@ -29,8 +29,6 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 		setClusterMode: onClusterByChange,
 		showLabels,
 		setShowLabels: onShowLabelsChange,
-		reorganizeLayoutRef,
-		arrangeAsTreeRef
 	} = useNetworkGraph();
 	
 	// Default value for API key

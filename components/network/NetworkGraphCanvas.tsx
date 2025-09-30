@@ -7,13 +7,7 @@ import { LassoSelectionMenu } from './LassoSelectionMenu';
 import { VisualizationControls } from '@/components/ui/VisualizationControls';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { NodeContextMenu, Node as NodeType } from './NodeComponents';
-import { GRAPH_LAYOUT_CONFIG, Z_INDEX, PERFORMANCE_CONFIG } from '@/lib/constants/graph-config';
-
-// Extend GraphCanvasRef to include the methods we need
-interface ExtendedGraphCanvasRef extends GraphCanvasRef {
-	reorganize?: () => void;
-	arrangeAsTree?: () => void;
-}
+import { GRAPH_LAYOUT_CONFIG, Z_INDEX, PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/constants/graph-config';
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
 const GraphCanvas = dynamic(
@@ -38,13 +32,10 @@ export function NetworkGraphCanvas() {
 		selections,
 		graphRef,
 		nodePositionsRef,
-		reorganizeLayoutRef,
-		arrangeAsTreeRef,
 		handleCustomNodeClick,
 		handleLasso,
 		handleLassoEnd,
 		onCanvasClick,
-		getNodeSize,
 		getNodeColor,
 		lassoSelectedNodes,
 		showLassoMenu,
@@ -85,7 +76,8 @@ export function NetworkGraphCanvas() {
 					    - contextMenu: Documented context menu API
 					    See: https://reagraph.dev/docs/advanced/Selection */}
 						<GraphCanvas
-							ref={graphRef as React.RefObject<GraphCanvasRef>}
+							key={`graph-${nodeSizeMode}-${colorMode}`}
+							ref={graphRef}
 							nodes={graphNodes}
 							edges={graphEdges}
 							layoutType={layoutType as any}
@@ -98,8 +90,8 @@ export function NetworkGraphCanvas() {
 							lassoType="node"
 							onLasso={(selection: any) => handleLasso(selection.nodes)}
 							onLassoEnd={(selection: any) => handleLassoEnd(selection.nodes)}
-							// Use direct nodeSize prop to set custom sizes
-							nodeSize={(node) => getNodeSize(node.data)}
+							// Use direct node size property
+							nodeSize={(node) => node.size || NODE_SIZE.default}
 							// Use clusterAttribute if clusterMode is not 'none'
 							clusterAttribute={
 								clusterMode !== 'none' ? clusterMode : undefined
@@ -129,7 +121,7 @@ export function NetworkGraphCanvas() {
 												id: nodeData.id,
 												label: nodeData.label,
 												type: nodeData.type || 'document',
-												size: getNodeSize(nodeData),
+												size: nodeData.size || NODE_SIZE.default,
 												color: getNodeColor(nodeData),
 												summary: nodeData.summary || '',
 												content: nodeData.content || nodeData.text || '',

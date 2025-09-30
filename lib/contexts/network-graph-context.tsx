@@ -19,12 +19,6 @@ type LayoutType =
   | 'concentric2d'
   | 'radialOut2d';
 
-// Extend GraphCanvasRef to include the methods we need
-interface ExtendedGraphCanvasRef extends GraphCanvasRef {
-  reorganize?: () => void;
-  arrangeAsTree?: () => void;
-}
-
 // Define extended types for reagraph's useSelection hook to support lasso selection
 interface ExtendedUseSelectionResult {
   selections: { nodes: GraphNode[]; edges: GraphEdge[] };
@@ -60,10 +54,8 @@ interface NetworkGraphContextType {
   lassoMenuPosition: { x: number; y: number };
   
   // Refs
-  graphRef: React.RefObject<ExtendedGraphCanvasRef>;
+  graphRef: React.RefObject<GraphCanvasRef>;
   nodePositionsRef: React.MutableRefObject<Map<string, { x: number; y: number; z: number }>>;
-  reorganizeLayoutRef: React.MutableRefObject<(() => void) | null>;
-  arrangeAsTreeRef: React.MutableRefObject<(() => void) | null>;
   
   // Actions
   handleLayoutChange: (layout: string) => void;
@@ -115,10 +107,8 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
   const addNodesToContext = useContextStore((state) => state.addNodesToContext);
   
   // Refs
-  const graphRef = useRef<ExtendedGraphCanvasRef | null>(null);
+  const graphRef = useRef<GraphCanvasRef | null>(null);
   const nodePositionsRef = useRef<Map<string, { x: number; y: number; z: number }>>(new Map());
-  const reorganizeLayoutRef = useRef<(() => void) | null>(null);
-  const arrangeAsTreeRef = useRef<(() => void) | null>(null);
   
   // Local state
   const [layoutType, setLayoutType] = useState<LayoutType>(getReagraphLayoutType());
@@ -152,21 +142,6 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     setRefreshKey((prev) => prev + 1);
   }, [nodeSizeMode]);
-  
-  // Set up reorganize layout function
-  useEffect(() => {
-    reorganizeLayoutRef.current = () => {
-      if (graphRef.current && graphRef.current.reorganize) {
-        graphRef.current.reorganize();
-      }
-    };
-    
-    arrangeAsTreeRef.current = () => {
-      if (graphRef.current && graphRef.current.arrangeAsTree) {
-        graphRef.current.arrangeAsTree();
-      }
-    };
-  }, [graphRef]);
   
   // Get color based on node property and colorMode
   const getNodeColor = useCallback((node: Node) => {
@@ -255,8 +230,9 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
         if (contentLength > 500) return 12; // 501-1000 chars
         return 6; // Under 500 chars
         
+      case 'none':
       default:
-        return 10; // Default size
+        return 10; // Default size for 'none' mode
     }
   }, [nodeSizeMode]);
   
@@ -268,12 +244,12 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
       id: node.id,
       label: node.label || node.id,
       fill: getNodeColor(node),
-      size: getNodeSize(node), // Size is still used for the node object, even though we use nodeSize prop
+      size: getNodeSize(node), // Size is used by Reagraph's sizingAttribute="size"
       score: node.score || 0.5,
       category: node.category || '',
       data: node,
     }));
-  }, [filteredResults, getNodeColor, getNodeSize]);
+  }, [filteredResults, getNodeColor, getNodeSize, nodeSizeMode, colorMode]);
   
   // Convert links to Reagraph edges
   const graphEdges = useMemo(() => {
@@ -339,6 +315,12 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
   
   // Handle lasso selection
   const handleLasso = useCallback((selectedIds: string[]) => {
+    // Guard against undefined or null
+    if (!selectedIds || !Array.isArray(selectedIds)) {
+      console.log('Lasso selection: invalid or empty selection');
+      return;
+    }
+    
     console.log(
       'Lasso selection in progress, current nodes:',
       selectedIds.length
@@ -349,6 +331,13 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
   
   // Handle lasso end event
   const handleLassoEnd = useCallback((selectedIds: string[], event?: MouseEvent) => {
+    // Guard against undefined or null
+    if (!selectedIds || !Array.isArray(selectedIds)) {
+      console.log('Lasso end: invalid or empty selection');
+      setLassoSelectedNodes([]);
+      return;
+    }
+    
     console.log('Lasso end detected, selected nodes:', selectedIds.length);
     // If nodes were selected, show the lasso menu
     if (selectedIds.length > 0) {
@@ -502,8 +491,6 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
     // Refs
     graphRef,
     nodePositionsRef,
-    reorganizeLayoutRef,
-    arrangeAsTreeRef,
     
     // Actions
     handleLayoutChange,
