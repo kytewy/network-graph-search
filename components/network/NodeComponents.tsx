@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useContextStore } from '@/lib/stores/context-store';
-import { toast } from 'sonner';
 import DocumentOverlay, { nodeToReadingItem } from './DocumentOverlay';
 import { Z_INDEX } from '@/lib/constants/graph-config';
 import { useClickOutside } from '@/hooks/use-click-outside';
+import { useNodeContextOperations } from '@/hooks/use-node-context-operations';
 
 // Shared Node interface
 export interface Node {
@@ -51,45 +50,10 @@ export function NodeContextMenu({
 }: NodeModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
   const [showReadingMode, setShowReadingMode] = useState(false)
-  const [isInContext, setIsInContext] = useState(false)
 
-  // Check if node is in context when component mounts
-  const contextNodes = useContextStore((state) => state.contextNodes);
-  const addNodesToContext = useContextStore((state) => state.addNodesToContext);
-  const removeNodeFromContext = useContextStore((state) => state.removeNodeFromContext);
-  
-  useEffect(() => {
-    setIsInContext(contextNodes.some((contextNode) => contextNode.id === node.id));
-  }, [node.id, contextNodes])
-
-  // Handle click outside to close using reusable hook
+  // Use reusable hooks
   useClickOutside(modalRef, onClose);
-
-  // Add node to context
-  const handleAddToContext = useCallback(() => {
-    addNodesToContext([node]);
-    setIsInContext(true);
-    
-    toast.success(`Added "${node.label}" to context`, {
-      description: 'Node added to Context Management panel',
-      duration: 2000
-    });
-  }, [node, addNodesToContext]);
-  
-  // Toggle context status (used in reading mode)
-  const handleToggleContext = useCallback(() => {
-    if (isInContext) {
-      // Remove from context
-      removeNodeFromContext(node.id);
-      setIsInContext(false);
-      toast.info(`Removed "${node.label}" from context`);
-    } else {
-      // Add to context
-      addNodesToContext([node]);
-      setIsInContext(true);
-      toast.success(`Added "${node.label}" to context`);
-    }
-  }, [isInContext, node, addNodesToContext, removeNodeFromContext]);
+  const { isInContext, addToContext, toggleContext } = useNodeContextOperations(node);
   
   // Open reading mode
   const handleOpenReadingMode = useCallback(() => {
@@ -111,7 +75,7 @@ export function NodeContextMenu({
           setShowReadingMode(false);
         }}
         isInContext={isInContext}
-        onToggleContext={handleToggleContext}
+        onToggleContext={toggleContext}
       />
     );
   }
@@ -159,7 +123,7 @@ export function NodeContextMenu({
         <div className="flex">
           <button
             className="flex-1 py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 transition-colors"
-            onClick={handleAddToContext}
+            onClick={addToContext}
           >
             Add to Context
           </button>

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Node } from './NodeComponents';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { useClickOutside } from '@/hooks/use-click-outside';
+import { useMultiNodeContextOperations } from '@/hooks/use-node-context-operations';
 
 interface LassoSelectionMenuProps {
 	className?: string;
@@ -17,7 +18,6 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 		showLassoMenu,
 		lassoMenuPosition: position,
 		closeLassoMenu: onClose,
-		handleSendToContext: onSendToContext,
 		filteredResults,
 	} = useNetworkGraph();
 
@@ -26,27 +26,17 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 		() => filteredResults.filter((node) => lassoSelectedNodes.includes(node.id)),
 		[filteredResults, lassoSelectedNodes]
 	);
+	
 	const [expanded, setExpanded] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 
-	// Handle click outside to close using reusable hook
+	// Use reusable hooks
 	useClickOutside(menuRef, onClose);
+	const { addAllToContext } = useMultiNodeContextOperations(selectedNodes);
 
 	const handleSendToContext = () => {
-		if (onSendToContext) {
-			// Ensure each node has a content property populated
-			const nodesWithContent = selectedNodes.map((node) => ({
-				...node,
-				// If content is missing, use summary or a default message
-				content:
-					node.content ||
-					node.summary ||
-					`No content available for ${node.label}`,
-			}));
-
-			onSendToContext(nodesWithContent);
-			onClose();
-		}
+		addAllToContext();
+		onClose();
 	};
 
 	const handleClearSelection = () => {
