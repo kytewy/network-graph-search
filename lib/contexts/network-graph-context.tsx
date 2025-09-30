@@ -26,6 +26,7 @@ import { useLassoSelection } from '@/hooks/use-lasso-selection';
 import { useGraphVisualizationSettings } from '@/hooks/use-graph-visualization-settings';
 import { useGraphLayout } from '@/hooks/use-graph-layout';
 import { useGraphSelection } from '@/hooks/use-graph-selection';
+import { useGraphCoordination } from '@/hooks/use-graph-coordination';
 
 // Use the ReagraphLayoutType from layout-mappers
 type LayoutType = ReagraphLayoutType;
@@ -126,24 +127,6 @@ export function NetworkGraphProvider({
 	// Hook: Layout management with cluster validation
 	const { layoutType, handleLayoutChange } = useGraphLayout();
 
-	// Access the context store
-	const addNodesToContext = useContextStore((state) => state.addNodesToContext);
-
-	// Refs
-	const graphRef = useRef<GraphCanvasRef | null>(null);
-	const nodePositionsRef = useRef<
-		Map<string, { x: number; y: number; z: number }>
-	>(new Map());
-
-	// Local state
-	const [forceUpdate, setForceUpdate] = useState<number>(0);
-	const [refreshKey, setRefreshKey] = useState(0);
-
-	// Update refresh key when nodeSizeMode changes to force re-render
-	useEffect(() => {
-		setRefreshKey((prev) => prev + 1);
-	}, [nodeSizeMode]);
-
 	// ============= CUSTOM HOOKS =============
 	// Hook 1: Graph data transformation
 	const { graphNodes, graphEdges, getNodeColor, getNodeSize } = useGraphData(
@@ -162,7 +145,15 @@ export function NetworkGraphProvider({
 		closeLassoMenu: closeLassoMenuFromHook,
 	} = useLassoSelection();
 
-	// Hook 3: Selection state management
+	// Hook 4: Coordination - provides refs first
+	const {
+		graphRef,
+		nodePositionsRef,
+	} = useGraphCoordination({
+		closeLassoMenuFromHook,
+	});
+
+	// Hook 3: Selection state management (needs graphRef from coordination hook)
 	const {
 		selections,
 		selectedNode,
@@ -171,57 +162,14 @@ export function NetworkGraphProvider({
 		clearSelections,
 	} = useGraphSelection({ graphNodes, graphEdges, graphRef });
 
-	// Wrap lasso handlers to integrate with Reagraph
-	const handleLassoEnd = useCallback(
-		(selectedIds: string[], event?: MouseEvent) => {
-			handleLassoEndFromHook(selectedIds, event);
-		},
-		[handleLassoEndFromHook]
-	);
-
-	// Handler for sending selected nodes to context
-	const handleSendToContext = useCallback(
-		(nodes: Node[]) => {
-			console.log('Sending nodes to context:', nodes.length);
-			console.log(
-				'Node content example:',
-				nodes[0]?.content?.substring(0, 50) + '...'
-			);
-
-			// Show toast notification
-			toast.success(
-				`Added ${nodes.length} node${nodes.length > 1 ? 's' : ''} to context`,
-				{
-					description:
-						'Node content is now available in the Context Management panel',
-					duration: 3000,
-				}
-			);
-
-			addNodesToContext(nodes);
-
-			// Clear selections after sending to context
-			closeLassoMenu();
-		},
-		[addNodesToContext]
-	);
-
-	// Close lasso menu and clear selections
-	const closeLassoMenu = useCallback(() => {
-		closeLassoMenuFromHook();
-
-		// Additional cleanup: force update and clear Reagraph selections
-		if (clearSelections) {
-			setForceUpdate((prev: number) => prev + 1);
-			clearSelections();
-
-			if (useNetworkStore.getState().setSelectedNodes) {
-				useNetworkStore.getState().setSelectedNodes([]);
-			}
-		}
-	}, [closeLassoMenuFromHook, clearSelections]);
-
-	// Note: Setter functions come directly from hooks, no wrappers needed
+	// Hook 4 continued: Coordination handlers (now with clearSelections available)
+	const {
+		handleSendToContext,
+		handleCloseLassoMenu: closeLassoMenu,
+	} = useGraphCoordination({
+		closeLassoMenuFromHook,
+		clearSelections,
+	});
 
 	// Create the context value
 	const contextValue = useMemo(
@@ -260,7 +208,9 @@ export function NetworkGraphProvider({
 			setClusterMode,
 			handleCustomNodeClick,
 			handleLasso,
-			handleLassoEnd,
+			handleLassoEnd: (ids: string[], event?: MouseEvent) => {
+				handleLassoEndFromHook(ids, event);
+			},
 			closeLassoMenu,
 			handleSendToContext,
 
@@ -295,7 +245,7 @@ export function NetworkGraphProvider({
 			setClusterMode,
 			handleCustomNodeClick,
 			handleLasso,
-			handleLassoEnd,
+			handleLassoEndFromHook,
 			closeLassoMenu,
 			handleSendToContext,
 			getNodeColor,
