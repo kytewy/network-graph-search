@@ -23,6 +23,7 @@ import {
 // Import our new hooks
 import { useGraphData, type ColorMode, type NodeSizeMode } from '@/hooks/use-graph-data';
 import { useLassoSelection } from '@/hooks/use-lasso-selection';
+import { useGraphVisualizationSettings } from '@/hooks/use-graph-visualization-settings';
 
 // Use the ReagraphLayoutType from layout-mappers
 type LayoutType = ReagraphLayoutType;
@@ -109,17 +110,10 @@ export function NetworkGraphProvider({
 	const filteredLinks = useAppStore((state) => state.filteredLinks);
 	const networkLayoutType = useNetworkStore((state) => state.layoutType);
 
-	// Get visualization settings from app store
-	const showLabels = useAppStore((state) => state.showLabels);
-	const colorMode = useAppStore((state) => state.colorMode);
-	const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
-	const clusterMode = useAppStore((state) => state.clusterMode);
-
-	// Get setters from app store
-	const setShowLabelsStore = useAppStore((state) => state.setShowLabels);
-	const setColorModeStore = useAppStore((state) => state.setColorMode);
-	const setNodeSizeModeStore = useAppStore((state) => state.setNodeSizeMode);
-	const setClusterModeStore = useAppStore((state) => state.setClusterMode);
+	// Hook: Visualization settings (replaces direct store access)
+	const visualSettings = useGraphVisualizationSettings();
+	const { showLabels, colorMode, nodeSizeMode, clusterMode } = visualSettings;
+	const { setShowLabels: setShowLabelsStore, setColorMode: setColorModeStore, setNodeSizeMode: setNodeSizeModeStore, setClusterMode: setClusterModeStore } = visualSettings;
 
 	// Access the context store
 	const addNodesToContext = useContextStore((state) => state.addNodesToContext);
