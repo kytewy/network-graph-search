@@ -1,0 +1,118 @@
+'use client';
+
+import { useMemo, useCallback } from 'react';
+import type { GraphNode, GraphEdge } from 'reagraph';
+import type { Node, Link } from '@/lib/stores/app-state';
+import { NodeColorCalculator } from '@/lib/utils/node-colors';
+import { NodeSizeCalculator } from '@/lib/utils/node-sizing';
+
+export type ColorMode =
+	| 'sourceType'
+	| 'continent'
+	| 'similarityRange'
+	| 'documentType'
+	| 'country';
+
+export type NodeSizeMode =
+	| 'none'
+	| 'contentLength'
+	| 'summaryLength'
+	| 'similarity';
+
+interface UseGraphDataOptions {
+	colorMode: ColorMode;
+	nodeSizeMode: NodeSizeMode;
+}
+
+interface UseGraphDataReturn {
+	graphNodes: GraphNode[];
+	graphEdges: GraphEdge[];
+	getNodeColor: (node: Node) => string;
+	getNodeSize: (node: Node) => number;
+}
+
+/**
+ * useGraphData Hook
+ * 
+ * Transforms application nodes and links into Reagraph-compatible format.
+ * Handles color and size calculations based on visualization mode settings.
+ * 
+ * This hook encapsulates all data transformation logic, making it:
+ * - Testable in isolation
+ * - Reusable across different graph implementations
+ * - Independent of Context API
+ * 
+ * @param nodes - Array of application nodes to transform
+ * @param links - Array of application links to transform
+ * @param options - Visualization settings (color mode, size mode)
+ * 
+ * @example
+ * ```tsx
+ * const { graphNodes, graphEdges, getNodeColor } = useGraphData(
+ *   filteredResults,
+ *   filteredLinks,
+ *   { colorMode: 'continent', nodeSizeMode: 'contentLength' }
+ * );
+ * 
+ * <GraphCanvas nodes={graphNodes} edges={graphEdges} />
+ * ```
+ */
+export function useGraphData(
+	nodes: Node[],
+	links: Link[],
+	options: UseGraphDataOptions
+): UseGraphDataReturn {
+	const { colorMode, nodeSizeMode } = options;
+
+	// Memoized color calculation function
+	const getNodeColor = useCallback(
+		(node: Node) => {
+			return NodeColorCalculator.getColor(node, colorMode);
+		},
+		[colorMode]
+	);
+
+	// Memoized size calculation function
+	const getNodeSize = useCallback(
+		(node: Node) => {
+			return NodeSizeCalculator.getSize(node, nodeSizeMode);
+		},
+		[nodeSizeMode]
+	);
+
+	// Transform nodes to Reagraph format
+	const graphNodes = useMemo(() => {
+		if (!nodes || nodes.length === 0) return [];
+
+		return nodes.map((node) => ({
+			id: node.id,
+			label: node.label || node.id,
+			fill: getNodeColor(node),
+			size: getNodeSize(node),
+			score: node.score || 0.5,
+			category: node.category || '',
+			data: node as any, // Store original node data for context menu and interactions
+		}));
+	}, [nodes, getNodeColor, getNodeSize]);
+
+	// Transform links to Reagraph edges
+	const graphEdges = useMemo(() => {
+		if (!links || links.length === 0) return [];
+
+		return links.map((link) => ({
+			id: link.id || `${link.source}-${link.target}`,
+			source: link.source,
+			target: link.target,
+			label: link.label || '',
+			type: link.type || 'default',
+			data: link as any,
+		}));
+	}, [links]);
+
+	return {
+		graphNodes,
+		graphEdges,
+		getNodeColor,
+		getNodeSize,
+	};
+}
