@@ -80,6 +80,10 @@ export function NetworkGraphCanvas() {
 
 				{graphNodes.length > 0 ? (
 					<div className="absolute inset-0">
+						{/* @ts-expect-error - Reagraph types are incomplete. These props exist but aren't in the type definitions:
+					    - lassoType, onLasso, onLassoEnd: Documented lasso selection API
+					    - contextMenu: Documented context menu API
+					    See: https://reagraph.dev/docs/advanced/Selection */}
 						<GraphCanvas
 							ref={graphRef as React.RefObject<GraphCanvasRef>}
 							nodes={graphNodes}
@@ -88,14 +92,12 @@ export function NetworkGraphCanvas() {
 							layoutOverrides={GRAPH_LAYOUT_CONFIG}
 							selections={selections}
 							onNodeClick={handleCustomNodeClick}
-							// Use our custom handler that clears selections
-							// @ts-ignore - Type mismatch with onCanvasClick handler
+							// Custom canvas click handler that clears selections
 							onCanvasClick={onCanvasClick}
-							// @ts-ignore - lassoType is available in reagraph but not in the types
+							// Lasso selection for multi-node selection (hold Shift + drag)
 							lassoType="node"
-							// @ts-ignore - onLasso is available in reagraph but not in the types
-							onLasso={handleLasso}
-							onLassoEnd={handleLassoEnd}
+							onLasso={(selection: any) => handleLasso(selection.nodes)}
+							onLassoEnd={(selection: any) => handleLassoEnd(selection.nodes)}
 							// Use direct nodeSize prop to set custom sizes
 							nodeSize={(node) => getNodeSize(node.data)}
 							// Use clusterAttribute if clusterMode is not 'none'

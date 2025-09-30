@@ -31,6 +31,26 @@ declare module 'reagraph' {
     setNodePosition: (id: string, position: { x: number; y: number; z: number }) => void;
   }
 
+  /**
+   * Lasso selection types - documented in Reagraph but missing from official types
+   * @see https://reagraph.dev/docs/advanced/Selection
+   */
+  export type LassoType = 'node' | 'path' | 'none';
+
+  export interface LassoSelection {
+    nodes: string[];
+    edges: string[];
+  }
+
+  /**
+   * Context menu callback data
+   */
+  export interface ContextMenuData {
+    data: any;
+    onClose: () => void;
+    additional?: any;
+  }
+
   export interface GraphCanvasProps {
     // Core props
     nodes: GraphNode[];
@@ -41,7 +61,12 @@ declare module 'reagraph' {
     // Selection props
     selections?: { nodes: GraphNode[]; edges: GraphEdge[] };
     onNodeClick?: (node: GraphNode) => void;
-    onCanvasClick?: () => void;
+    onCanvasClick?: (event?: any) => void;
+    
+    // Lasso selection (undocumented in types but exists in library)
+    lassoType?: LassoType;
+    onLasso?: (selection: LassoSelection) => void;
+    onLassoEnd?: (selection: LassoSelection) => void;
     
     // Styling props
     nodeColor?: string | ((node: GraphNode) => string);
@@ -89,6 +114,9 @@ declare module 'reagraph' {
     onClusterDragStart?: (cluster: any) => void;
     onClusterDrag?: (cluster: any, position: { x: number; y: number; z: number }) => void;
     onClusterDragEnd?: (cluster: any, position: { x: number; y: number; z: number }) => void;
+    
+    // Context menu (undocumented in types but exists in library)
+    contextMenu?: (data: ContextMenuData) => React.ReactElement | null;
     
     // Other props
     ref?: RefObject<GraphCanvasRef>;
