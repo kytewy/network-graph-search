@@ -11,11 +11,11 @@ interface UIState {
   showMethodology: { [key: string]: boolean }
   showFilterTypes: boolean
   showActiveNodes: boolean
-  rightPanelExpanded: boolean
+  // rightPanelExpanded: boolean - DUPLICATE! Already in app-state (Phase 1)
   histogramExpanded: boolean
   showSearchHistory: boolean
-  hasSearched: boolean
-  searchStatus: string
+  // hasSearched: boolean - MOVED to app-state (Phase 1)
+  // searchStatus: string - MOVED to app-state (Phase 1)
   apiKey: string
 
   // Actions
@@ -29,11 +29,11 @@ interface UIState {
   toggleMethodology: (key: string) => void
   setShowFilterTypes: (show: boolean) => void
   setShowActiveNodes: (show: boolean) => void
-  setRightPanelExpanded: (expanded: boolean) => void
+  // setRightPanelExpanded - DUPLICATE! Already in app-state (Phase 1)
   setHistogramExpanded: (expanded: boolean) => void
   setShowSearchHistory: (show: boolean) => void
-  setHasSearched: (searched: boolean) => void
-  setSearchStatus: (status: string) => void
+  // setHasSearched - MOVED to app-state (Phase 1)
+  // setSearchStatus - MOVED to app-state (Phase 1)
   setApiKey: (key: string) => void
 }
 
@@ -48,11 +48,11 @@ export const useUIStore = create<UIState>((set, get) => ({
   showMethodology: {},
   showFilterTypes: false,
   showActiveNodes: false,
-  rightPanelExpanded: false,
+  // rightPanelExpanded - DUPLICATE! Already in app-state (Phase 1)
   histogramExpanded: true,
   showSearchHistory: false,
-  hasSearched: false,
-  searchStatus: "",
+  // hasSearched - MOVED to app-state (Phase 1)
+  // searchStatus - MOVED to app-state (Phase 1)
   apiKey: "",
 
   setShowLabels: (show) => set({ showLabels: show }),
@@ -76,10 +76,10 @@ export const useUIStore = create<UIState>((set, get) => ({
     })),
   setShowFilterTypes: (show) => set({ showFilterTypes: show }),
   setShowActiveNodes: (show) => set({ showActiveNodes: show }),
-  setRightPanelExpanded: (expanded) => set({ rightPanelExpanded: expanded }),
+  // setRightPanelExpanded - DUPLICATE! Already in app-state (Phase 1)
   setHistogramExpanded: (expanded) => set({ histogramExpanded: expanded }),
   setShowSearchHistory: (show) => set({ showSearchHistory: show }),
-  setHasSearched: (searched) => set({ hasSearched: searched }),
-  setSearchStatus: (status) => set({ searchStatus: status }),
+  // setHasSearched - MOVED to app-state (Phase 1)
+  // setSearchStatus - MOVED to app-state (Phase 1)
   setApiKey: (key) => set({ apiKey: key }),
 }))

@@ -38,6 +38,8 @@ interface AppState {
 	isLoading: boolean;
 	error: string | null;
 	topK: number;
+	hasSearched: boolean; // Moved from ui-store (Phase 1)
+	searchStatus: string; // Moved from ui-store (Phase 1)
 
 	// Results state
 	searchResults: Node[];
@@ -65,6 +67,8 @@ interface AppState {
 	setIsLoading: (isLoading: boolean) => void;
 	setError: (error: string | null) => void;
 	setTopK: (topK: number) => void;
+	setHasSearched: (searched: boolean) => void; // Moved from ui-store (Phase 1)
+	setSearchStatus: (status: string) => void; // Moved from ui-store (Phase 1)
 	setSearchResults: (results: Node[]) => void;
 	setLinks: (links: Link[]) => void;
 	setColorMode: (
@@ -114,6 +118,8 @@ export const useAppStore = create<AppState>()(devtools((set, get) => ({
 	isLoading: false,
 	error: null,
 	topK: 10,
+	hasSearched: false, // Moved from ui-store (Phase 1)
+	searchStatus: '', // Moved from ui-store (Phase 1)
 	searchResults: [],
 	filteredResults: [],
 	links: [],
@@ -134,6 +140,8 @@ export const useAppStore = create<AppState>()(devtools((set, get) => ({
 	setIsLoading: (isLoading) => set({ isLoading }),
 	setError: (error) => set({ error }),
 	setTopK: (topK) => set({ topK }),
+	setHasSearched: (searched) => set({ hasSearched: searched }), // Moved from ui-store (Phase 1)
+	setSearchStatus: (status) => set({ searchStatus: status }), // Moved from ui-store (Phase 1)
 	setSearchResults: (searchResults) => {
 		set({
 			searchResults,
