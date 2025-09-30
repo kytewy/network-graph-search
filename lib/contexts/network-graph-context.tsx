@@ -24,6 +24,8 @@ import {
 import { useGraphData, type ColorMode, type NodeSizeMode } from '@/hooks/use-graph-data';
 import { useLassoSelection } from '@/hooks/use-lasso-selection';
 import { useGraphVisualizationSettings } from '@/hooks/use-graph-visualization-settings';
+import { useGraphLayout } from '@/hooks/use-graph-layout';
+import { useGraphSelection } from '@/hooks/use-graph-selection';
 
 // Use the ReagraphLayoutType from layout-mappers
 type LayoutType = ReagraphLayoutType;
@@ -108,12 +110,14 @@ export function NetworkGraphProvider({
 	// Get data from Zustand stores
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	const filteredLinks = useAppStore((state) => state.filteredLinks);
-	const networkLayoutType = useNetworkStore((state) => state.layoutType);
 
 	// Hook: Visualization settings (replaces direct store access)
 	const visualSettings = useGraphVisualizationSettings();
 	const { showLabels, colorMode, nodeSizeMode, clusterMode } = visualSettings;
 	const { setShowLabels: setShowLabelsStore, setColorMode: setColorModeStore, setNodeSizeMode: setNodeSizeModeStore, setClusterMode: setClusterModeStore } = visualSettings;
+
+	// Hook: Layout management with cluster validation
+	const { layoutType, handleLayoutChange } = useGraphLayout();
 
 	// Access the context store
 	const addNodesToContext = useContextStore((state) => state.addNodesToContext);
@@ -125,17 +129,8 @@ export function NetworkGraphProvider({
 	>(new Map());
 
 	// Local state
-	const [layoutType, setLayoutType] = useState<LayoutType>(
-		LayoutMapper.toReagraph(networkLayoutType)
-	);
-	const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 	const [forceUpdate, setForceUpdate] = useState<number>(0);
 	const [refreshKey, setRefreshKey] = useState(0);
-
-	// Update layout when network store changes
-	useEffect(() => {
-		setLayoutType(LayoutMapper.toReagraph(networkLayoutType));
-	}, [networkLayoutType]);
 
 	// Update refresh key when nodeSizeMode changes to force re-render
 	useEffect(() => {
@@ -160,56 +155,14 @@ export function NetworkGraphProvider({
 		closeLassoMenu: closeLassoMenuFromHook,
 	} = useLassoSelection();
 
-	// Selection configuration
-	const selectionConfig = useMemo(() => {
-		if (graphNodes.length === 0) {
-			// Return a dummy config that won't be used
-			return {
-				ref: graphRef as React.RefObject<GraphCanvasRef>,
-				nodes: [],
-				edges: [],
-			};
-		}
-
-		return {
-			ref: graphRef as React.RefObject<GraphCanvasRef>,
-			nodes: graphNodes,
-			edges: graphEdges,
-			hotkeys: ['selectAll', 'deselect'], // Enable useful hotkeys
-			focusOnSelect: true, // Focus on selected nodes
-			type: 'multi', // Allow multi-selection
-		};
-	}, [graphNodes, graphEdges]);
-
-	// Selection handling with extended types for lasso support
-	const selectionResult = useSelection(
-		selectionConfig
-	) as unknown as ExtendedUseSelectionResult;
-
+	// Hook 3: Selection state management
 	const {
 		selections,
-		clearSelections,
-		onNodeClick: handleNodeClick,
+		selectedNode,
+		onNodeClick: handleCustomNodeClick,
 		onCanvasClick,
-		onLasso,
-		onLassoEnd,
-	} = selectionResult;
-
-	// Custom node click handler
-	const handleCustomNodeClick = useCallback(
-		(node: GraphNode) => {
-			// Call the built-in handler
-			if (graphRef.current) {
-				handleNodeClick(node);
-			}
-
-			// Update selected node if data exists
-			if (node.data) {
-				setSelectedNode(node.data as Node);
-			}
-		},
-		[handleNodeClick]
-	);
+		clearSelections,
+	} = useGraphSelection({ graphNodes, graphEdges, graphRef });
 
 	// Wrap lasso handlers to integrate with Reagraph
 	const handleLassoEnd = useCallback(
@@ -261,27 +214,7 @@ export function NetworkGraphProvider({
 		}
 	}, [closeLassoMenuFromHook, clearSelections]);
 
-	// Handle layout change
-	const handleLayoutChange = useCallback(
-		(layout: string) => {
-			const reagraphLayout = layout as LayoutType;
-			setLayoutType(reagraphLayout);
-
-			// Map Reagraph layout type to network store layout type using the utility
-			const networkLayout = LayoutMapper.fromReagraph(reagraphLayout);
-
-			// Reset cluster mode when switching to a non-force-directed layout
-			if (
-				!LayoutMapper.supportsCluster(reagraphLayout) &&
-				clusterMode !== 'none'
-			) {
-				setClusterModeStore('none');
-			}
-
-			useNetworkStore.getState().setLayoutType(networkLayout);
-		},
-		[clusterMode, setClusterModeStore]
-	);
+	// Layout change is now handled by useGraphLayout hook
 
 	// Wrapper functions for setters
 	const setShowLabels = useCallback(
@@ -357,11 +290,9 @@ export function NetworkGraphProvider({
 			getNodeColor,
 			getNodeSize,
 
-			// Selection handlers
-			onNodeClick: handleNodeClick,
+			// Selection handlers (from useGraphSelection hook)
+			onNodeClick: handleCustomNodeClick,
 			onCanvasClick,
-			onLasso,
-			onLassoEnd,
 			clearSelections,
 		}),
 		[
@@ -391,10 +322,7 @@ export function NetworkGraphProvider({
 			handleSendToContext,
 			getNodeColor,
 			getNodeSize,
-			handleNodeClick,
 			onCanvasClick,
-			onLasso,
-			onLassoEnd,
 			clearSelections,
 		]
 	);
