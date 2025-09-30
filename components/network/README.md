@@ -18,13 +18,26 @@ This directory contains components for visualizing and interacting with network 
 - **`lib/utils/node-colors.ts`**: Node color calculation utilities (5 modes)
 - **`lib/utils/node-sizing.ts`**: Node size calculation utilities (3 modes)
 - **`lib/utils/layout-mappers.ts`**: Layout type mapping and conversion utilities
+**Graph Hooks:**
 - **`hooks/use-graph-data.ts`**: Hook for transforming nodes/edges to Reagraph format
-- **`hooks/use-lasso-selection.ts`**: Hook for managing lasso multi-node selection state
 - **`hooks/use-graph-visualization-settings.ts`**: Hook for visual settings (labels, colors, sizes, clusters)
 - **`hooks/use-graph-layout.ts`**: Hook for layout management with cluster validation
 - **`hooks/use-graph-selection.ts`**: Hook for Reagraph selection state and click handling
-- **`hooks/use-click-outside.ts`**: Reusable hook for detecting clicks outside elements
+- **`hooks/use-graph-coordination.ts`**: Hook for coordinating refs and multi-system interactions
+- **`hooks/use-lasso-selection.ts`**: Hook for managing lasso multi-node selection state
+
+**Analysis & Context Hooks:**
+- **`hooks/use-analysis-chat.ts`**: Hook for AI-powered chat analysis with context
+- **`hooks/use-selected-nodes-analysis.ts`**: Hook for analyzing selected graph nodes
 - **`hooks/use-node-context-operations.ts`**: Hook for managing node context operations
+- **`hooks/use-node-filtering.ts`**: Hook for filtering nodes based on criteria
+
+**Search & Similarity Hooks:**
+- **`hooks/use-search.ts`**: Hook for search functionality
+- **`hooks/use-similarity-calculation.ts`**: Hook for calculating node similarity
+
+**Utility Hooks:**
+- **`hooks/use-click-outside.ts`**: Reusable hook for detecting clicks outside elements
 
 ## Data Flow
 
@@ -65,17 +78,43 @@ The network graph uses a combination of custom hooks, React Context, and Zustand
 
 ### **Custom Hooks** (Business Logic)
 Focused hooks that handle specific responsibilities:
-- **`use-graph-data`**: Transforms nodes/edges to Reagraph format
-- **`use-graph-visualization-settings`**: Visual settings (labels, colors, sizes, clusters)
-- **`use-graph-layout`**: Layout type management with cluster validation
-- **`use-graph-selection`**: Reagraph selection state and click handling
-- **`use-lasso-selection`**: Multi-node lasso selection state
 
-### **NetworkGraphContext** (Coordination)
-Composes hooks and manages coordination:
-- Integrates multiple hooks into unified API
-- Handles complex interactions (lasso + context operations)
-- Manages refs (graphRef, nodePositionsRef)
+1. **`use-graph-data.ts`** (~120 lines)
+   - Transforms nodes/edges to Reagraph format
+   - Calculates node colors based on mode (5 color schemes)
+   - Calculates node sizes based on mode (3 sizing strategies)
+
+2. **`use-graph-visualization-settings.ts`** (97 lines)
+   - Manages visual settings (labels, colors, sizes, clusters)
+   - Direct access to app store settings
+   - Provides setters for all visual options
+
+3. **`use-graph-layout.ts`** (110 lines)
+   - Layout type management with cluster validation
+   - Auto-resets cluster mode for non-force-directed layouts
+   - Syncs with network store
+
+4. **`use-graph-selection.ts`** (159 lines)
+   - Reagraph selection state and click handling
+   - Configures useSelection hook with hotkeys (Ctrl+A, Esc)
+   - Tracks currently selected node for detail views
+
+5. **`use-lasso-selection.ts`** (148 lines)
+   - Multi-node lasso selection state
+   - Lasso menu positioning and visibility
+   - Selected node IDs tracking
+
+6. **`use-graph-coordination.ts`** (156 lines)
+   - Coordinates interactions between multiple systems
+   - Manages refs (graphRef, nodePositionsRef)
+   - Handles "send to context" with toast notifications
+   - Cleanup across lasso + selection + store
+
+### **NetworkGraphContext** (Pure Composition)
+Context now purely composes hooks (~295 lines, down from 473):
+- Integrates 6 hooks into unified API
+- No business logic, only composition
+- Minimal state management
 - Provides error boundary
 
 ### **Zustand Stores** (Persistent State)
@@ -182,9 +221,58 @@ The refactored structure follows these principles:
 - **DRY (Don't Repeat Yourself)**: Reusable hooks and utilities
 - **Type Safety**: Minimal use of `any`, proper TypeScript types throughout
 
+## Hook Usage Examples
+
+### Using Individual Hooks
+
+```tsx
+// 1. Graph data transformation
+const { graphNodes, graphEdges, getNodeColor, getNodeSize } = useGraphData(
+  filteredResults,
+  filteredLinks,
+  { colorMode: 'continent', nodeSizeMode: 'contentLength' }
+);
+
+// 2. Visualization settings
+const {
+  showLabels,
+  colorMode,
+  setShowLabels,
+  setColorMode
+} = useGraphVisualizationSettings();
+
+// 3. Layout management
+const { layoutType, handleLayoutChange } = useGraphLayout();
+
+// 4. Selection handling
+const {
+  selections,
+  selectedNode,
+  onNodeClick,
+  clearSelections
+} = useGraphSelection({ graphNodes, graphEdges, graphRef });
+
+// 5. Lasso selection
+const {
+  lassoSelectedNodes,
+  showLassoMenu,
+  handleLasso
+} = useLassoSelection();
+
+// 6. Coordination
+const {
+  graphRef,
+  handleSendToContext,
+  closeLassoMenu
+} = useGraphCoordination({
+  closeLassoMenuFromHook,
+  clearSelections
+});
+```
+
 ### Architecture Improvements (Recent Refactor)
 
-The context was refactored from 473→373 lines by extracting logic into focused hooks:
+The context was refactored from 473→295 lines by extracting logic into focused hooks:
 
 **Benefits:**
 - ✅ Each hook handles one responsibility (SRP)
