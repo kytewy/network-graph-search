@@ -36,32 +36,9 @@
 
 ---
 
-### **filter-store.ts** - Filter Criteria
-**Responsibility:** User's current filter selections
-
-**Owns:**
-- Filter criteria (`selectedNodeTypes`, `selectedContinents`, `selectedCountries`, `selectedSourceTypes`, `deselectedNodeTypes`)
-- Filter UI state (`expandedContinents`, `countrySearchTerm`, `minNodeSize`, `maxNodeSize`)
-- Search term (`searchTerm`) - ⚠️ **DUPLICATE with unified-search-store**
-
-**Size:** 5.5KB
-
-**⚠️ Future cleanup:** Remove visualization settings (already in app-state)
-
----
-
-### **unified-search-store.ts** - Search Orchestration
-**Responsibility:** Perform vector search and manage search workflow
-
-**Owns:**
-- Search parameters (`searchTerm`, `topResults`, `searchHistory`)
-- Search status (`isSearching`, `searchStatus`, `hasSearched`)
-- Search results (`searchResultNodes`, `searchResultLinks`)
-- Vector search action (`performVectorSearch()`)
-
-**Size:** 9.2KB
-
-**⚠️ Future cleanup:** Merge into app-state (Phase 2)
+**✅ DELETED - Phase 2 Complete:**
+- ~~filter-store.ts~~ - Deleted! FilterPanel is self-contained with local state
+- ~~unified-search-store.ts~~ - Deleted! Merged into app-state
 
 ---
 

@@ -12,7 +12,6 @@ import FilterPanel from '@/components/filters/FilterPanel';
 import ContextManagement from '@/components/analysis/ContextManagement';
 
 import { useNetworkStore } from '@/lib/stores/network-store';
-import { useFilterStore } from '@/lib/stores/filter-store';
 import { useAppStore } from '@/lib/stores/app-state'; // Now using for filteredResults + filteredLinks!
 import { getNodeColorByMode } from '@/lib/theme/colors';
 
@@ -59,19 +58,8 @@ export default function NetworkGraphApp() {
 
 	// Use app-state's query for highlighting (was unified-search searchTerm)
 	const searchTerm = useAppStore((state) => state.query);
-	const deselectedNodeTypes = useFilterStore(
-		(state) => state.deselectedNodeTypes
-	);
 	const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
 	const colorMode = useAppStore((state) => state.colorMode);
-	const expandedContinents = useFilterStore(
-		(state) => state.expandedContinents
-	);
-
-	const setExpandedContinents = useFilterStore(
-		(state) => state.setExpandedContinents
-	);
-	const countrySearchTerm = useFilterStore((state) => state.countrySearchTerm);
 
 	const rightPanelExpanded = useAppStore((state) => state.rightPanelExpanded);
 
@@ -191,9 +179,7 @@ export default function NetworkGraphApp() {
 		const allSelectedNodes = filteredNodes.filter((node) =>
 			safeSelectedNodes.includes(node.id)
 		);
-		const nodes = allSelectedNodes.filter(
-			(node) => !deselectedNodeTypes.includes(node.type)
-		);
+		const nodes = allSelectedNodes;
 
 		// Basic node information
 		const types = [...new Set(nodes.map((n) => n.type))];
@@ -244,48 +230,9 @@ export default function NetworkGraphApp() {
 			textAnalysis,
 			themeAnalysis,
 		};
-	}, [safeSelectedNodes, filteredNodes, deselectedNodeTypes]);
+	}, [safeSelectedNodes, filteredNodes]);
 
-	const toggleExpandedContinent = (continent: string) => {
-		const currentExpanded = expandedContinents || [];
-		if (currentExpanded.includes(continent)) {
-			setExpandedContinents(currentExpanded.filter((c) => c !== continent));
-		} else {
-			setExpandedContinents([...currentExpanded, continent]);
-		}
-	};
-
-	const continentCountries = useMemo(() => {
-		const grouping: Record<string, string[]> = {};
-		safeNodes.forEach((node) => {
-			if (!grouping[node.continent]) {
-				grouping[node.continent] = [];
-			}
-			if (!grouping[node.continent].includes(node.country)) {
-				grouping[node.continent].push(node.country);
-			}
-		});
-		// Sort countries alphabetically within each continent
-		Object.keys(grouping).forEach((continent) => {
-			grouping[continent].sort();
-		});
-		return grouping;
-	}, [safeNodes]);
-
-	const filteredContinentCountries = useMemo(() => {
-		if (!countrySearchTerm) return continentCountries;
-
-		const filtered: Record<string, string[]> = {};
-		Object.entries(continentCountries).forEach(([continent, countries]) => {
-			const matchingCountries = countries.filter((country) =>
-				country.toLowerCase().includes(countrySearchTerm.toLowerCase())
-			);
-			if (matchingCountries.length > 0) {
-				filtered[continent] = matchingCountries;
-			}
-		});
-		return filtered;
-	}, [continentCountries, countrySearchTerm]);
+	// FilterPanel is now self-contained - no state management needed here
 
 	// Using the centralized color system from lib/theme/colors.ts
 
@@ -331,17 +278,7 @@ export default function NetworkGraphApp() {
 
 					{/* <SearchResults /> */}
 
-					<FilterPanel
-						filteredNodes={filteredNodes}
-						filteredLinks={filteredLinks}
-						safeNodes={safeNodes}
-						sourceTypes={sourceTypes}
-						safeHighlightedNodes={safeHighlightedNodes}
-						safeExpandedNodes={safeExpandedNodes}
-						toggleExpandedContinent={toggleExpandedContinent}
-						continentCountries={continentCountries}
-						filteredContinentCountries={filteredContinentCountries}
-					/>
+					<FilterPanel />
 				</div>
 			</div>
 
