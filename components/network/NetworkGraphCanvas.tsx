@@ -7,6 +7,7 @@ import { LassoSelectionMenu } from './LassoSelectionMenu';
 import { VisualizationControls } from '@/components/ui/VisualizationControls';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { NodeContextMenu, Node as NodeType } from './NodeComponents';
+import { GRAPH_LAYOUT_CONFIG, Z_INDEX, PERFORMANCE_CONFIG } from '@/lib/constants/graph-config';
 
 // Extend GraphCanvasRef to include the methods we need
 interface ExtendedGraphCanvasRef extends GraphCanvasRef {
@@ -63,7 +64,7 @@ export function NetworkGraphCanvas() {
 				{/* Instruction for lasso selection */}
 				<div
 					style={{
-						zIndex: 9,
+						zIndex: Z_INDEX.graphOverlay,
 						userSelect: 'none',
 						position: 'absolute',
 						bottom: 10,
@@ -84,11 +85,7 @@ export function NetworkGraphCanvas() {
 							nodes={graphNodes}
 							edges={graphEdges}
 							layoutType={layoutType as any}
-							layoutOverrides={{
-								linkDistance: 80,
-								nodeStrength: -250,
-								gravity: 0.5,
-							}}
+							layoutOverrides={GRAPH_LAYOUT_CONFIG}
 							selections={selections}
 							onNodeClick={handleCustomNodeClick}
 							// Use our custom handler that clears selections
@@ -105,10 +102,10 @@ export function NetworkGraphCanvas() {
 							clusterAttribute={
 								clusterMode !== 'none' ? clusterMode : undefined
 							}
-							labelType={showLabels ? 'auto' : 'none'}
-							edgeStyle="curved"
-							animated={true} // Enable animation for better visualization
-							cameraMode="pan"
+							labelType={showLabels ? PERFORMANCE_CONFIG.labelType : 'none'}
+							edgeStyle={PERFORMANCE_CONFIG.edgeStyle}
+							animated={PERFORMANCE_CONFIG.animated}
+							cameraMode={PERFORMANCE_CONFIG.cameraMode}
 							contextMenu={({
 								data,
 								onClose,
@@ -161,20 +158,8 @@ export function NetworkGraphCanvas() {
 					</div>
 				)}
 
-				{/* Lasso Selection Menu */}
-				{showLassoMenu && lassoSelectedNodes.length > 0 && (
-					<LassoSelectionMenu
-						position={lassoMenuPosition}
-						selectedNodes={
-							filteredResults.filter((node) =>
-								lassoSelectedNodes.includes(node.id)
-							) as any
-						}
-						onClose={closeLassoMenu}
-						onSendToContext={handleSendToContext}
-						className="lasso-menu"
-					/>
-				)}
+				{/* Lasso Selection Menu - Gets data from context */}
+				<LassoSelectionMenu className="lasso-menu" />
 			</div>
 		</div>
 	);

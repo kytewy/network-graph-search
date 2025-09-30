@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Node } from './NodeComponents';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
@@ -20,9 +20,10 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 		filteredResults,
 	} = useNetworkGraph();
 
-	// Get selected nodes from filtered results
-	const selectedNodes = filteredResults.filter((node) =>
-		lassoSelectedNodes.includes(node.id)
+	// Get selected nodes from filtered results - memoized for performance
+	const selectedNodes = useMemo(
+		() => filteredResults.filter((node) => lassoSelectedNodes.includes(node.id)),
+		[filteredResults, lassoSelectedNodes]
 	);
 	const [expanded, setExpanded] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);

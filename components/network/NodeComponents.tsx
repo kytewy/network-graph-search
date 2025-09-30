@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { useState, useRef, useEffect } from "react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { useContextStore } from "@/lib/stores/context-store"
-import { toast } from "sonner"
-import DocumentOverlay from "./DocumentOverlay"
+import { useState, useRef, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useContextStore } from '@/lib/stores/context-store';
+import { toast } from 'sonner';
+import DocumentOverlay from './DocumentOverlay';
 
 // Shared Node interface
 export interface Node {
@@ -52,10 +52,13 @@ export function NodeContextMenu({
   const [isInContext, setIsInContext] = useState(false)
 
   // Check if node is in context when component mounts
+  const contextNodes = useContextStore((state) => state.contextNodes);
+  const addNodesToContext = useContextStore((state) => state.addNodesToContext);
+  const removeNodeFromContext = useContextStore((state) => state.removeNodeFromContext);
+  
   useEffect(() => {
-    const contextNodes = useContextStore.getState().contextNodes;
     setIsInContext(contextNodes.some((contextNode) => contextNode.id === node.id));
-  }, [node.id])
+  }, [node.id, contextNodes])
 
   // Handle click outside to close
   useEffect(() => {
@@ -73,28 +76,25 @@ export function NodeContextMenu({
 
   // Add node to context
   const handleAddToContext = () => {
-    const addNodeToContext = useContextStore.getState().addNodesToContext;
-    addNodeToContext([node]);
+    addNodesToContext([node]);
     setIsInContext(true);
     
     toast.success(`Added "${node.label}" to context`, {
-      description: "Node added to Context Management panel",
+      description: 'Node added to Context Management panel',
       duration: 2000
     });
   }
   
   // Toggle context status (used in reading mode)
   const handleToggleContext = () => {
-    const contextStore = useContextStore.getState();
-    
     if (isInContext) {
       // Remove from context
-      contextStore.removeNodeFromContext(node.id);
+      removeNodeFromContext(node.id);
       setIsInContext(false);
       toast.info(`Removed "${node.label}" from context`);
     } else {
       // Add to context
-      contextStore.addNodesToContext([node]);
+      addNodesToContext([node]);
       setIsInContext(true);
       toast.success(`Added "${node.label}" to context`);
     }
@@ -113,9 +113,9 @@ export function NodeContextMenu({
     const readingItem = {
       id: node.id,
       title: node.label,
-      description: node.summary || "",
-      content: node.content || "",
-      status: "unread" as const
+      description: node.summary || '',
+      content: node.content || '',
+      status: 'unread' as const
     };
     
     

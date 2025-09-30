@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -23,6 +23,19 @@ interface DocumentOverlayProps {
 	isInContext: boolean;
 	onToggleContext: () => void;
 }
+
+// Memoized component to prevent re-splitting content on every render
+const ContentParagraphs = React.memo(({ content }: { content: string }) => {
+	const paragraphs = useMemo(() => content.split('\n'), [content]);
+	
+	return (
+		<div className="prose prose-sm max-w-none dark:prose-invert">
+			{paragraphs.map((paragraph, index) => (
+				<p key={index}>{paragraph}</p>
+			))}
+		</div>
+	);
+});
 
 export default function DocumentOverlay({
 	document: documentItem,
@@ -107,11 +120,7 @@ export default function DocumentOverlay({
 						</div>
 					)}
 
-					<div className="prose prose-sm max-w-none dark:prose-invert">
-						{documentItem.content.split('\n').map((paragraph, index) => (
-							<p key={index}>{paragraph}</p>
-						))}
-					</div>
+					<ContentParagraphs content={documentItem.content} />
 				</CardContent>
 			</Card>
 		</div>,
