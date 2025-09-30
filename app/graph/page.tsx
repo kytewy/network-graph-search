@@ -1,23 +1,20 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ColorLegend } from '@/components/ui/ColorLegend';
 // Using enhanced NetworkGraph component
 import { NetworkGraph } from '@/components/network/NetworkGraph';
 import Analysis from '@/components/analysis';
 import { SearchInput } from '@/components/search/SearchInput';
-import { SearchResults } from '@/components/search/SearchResults';
 import FilterPanel from '@/components/filters/FilterPanel';
 import ContextManagement from '@/components/analysis/ContextManagement';
-import ChatInterface from '@/components/analysis/ChatInterface';
 import { SimilarityHistogram } from '@/components/visualization/SimilarityHistogram';
 
 import { useNetworkStore } from '@/lib/stores/network-store';
 import { useFilterStore } from '@/lib/stores/filter-store';
-import { useUIStore } from '@/lib/stores/ui-store';
 import { useUnifiedSearchStore } from '@/lib/stores/unified-search-store';
-import { useAppStore } from '@/lib/stores/app-state';
+import { useAppStore } from '@/lib/stores/app-state'; // Now using for filteredResults + filteredLinks!
 import { getNodeColorByMode } from '@/lib/theme/colors';
 
 // Node interface definition
@@ -36,33 +33,6 @@ interface Node {
 	stateProvince?: string;
 }
 
-interface NetworkState {
-	nodes: Node[];
-	links: any[];
-	selectedNodes: string[];
-	expandedNodes: string[];
-	highlightedNodes: string[];
-	highlightedLinks: string[];
-	layoutType: 'forceDirected' | 'concentric' | 'radial';
-}
-
-interface NetworkGraphProps {
-	nodes: Node[];
-	links: any[];
-	highlightedNodes: string[];
-	highlightedLinks: string[];
-	showLabels: boolean;
-	onNodeClick?: (node: Node) => void;
-	onNodeSelection?: (nodeIds: string[]) => void;
-	selectedNodes?: string[];
-	expandedNodes?: string[];
-	onNodeExpand?: (nodeId: string) => void;
-	layoutType?: string;
-	onReorganizeLayout?: React.MutableRefObject<(() => void) | null>;
-	onArrangeAsTree?: React.MutableRefObject<(() => void) | null>;
-	onSendToContext?: (nodes: Node[]) => void;
-}
-
 export default function NetworkGraphApp() {
 	console.log(
 		'[v0] NetworkGraphApp render started at:',
@@ -72,12 +42,13 @@ export default function NetworkGraphApp() {
 
 	const nodes = useNetworkStore((state) => state.nodes);
 	const links = useNetworkStore((state) => state.links);
+	
+	// Use app-state's pre-filtered results
+	const filteredResults = useAppStore((state) => state.filteredResults);
+	const filteredLinks = useAppStore((state) => state.filteredLinks);
+	
 	const selectedNodes = useNetworkStore((state) => state.selectedNodes);
 	const expandedNodes = useNetworkStore((state) => state.expandedNodes);
-	const layoutType = useNetworkStore((state) => state.layoutType) as
-		| 'forceDirected'
-		| 'concentric'
-		| 'radial';
 	const setHighlightedNodes = useNetworkStore(
 		(state) => state.setHighlightedNodes
 	);
@@ -86,27 +57,11 @@ export default function NetworkGraphApp() {
 	);
 	const highlightedNodes = useNetworkStore((state) => state.highlightedNodes);
 	const highlightedLinks = useNetworkStore((state) => state.highlightedLinks);
-	const setSelectedNodes = useNetworkStore((state) => state.setSelectedNodes);
-	const removeSelectedNode = useNetworkStore(
-		(state) => state.removeSelectedNode
-	);
-	const toggleNodeExpansion = useNetworkStore(
-		(state) => state.toggleNodeExpansion
-	);
 
 	const searchTerm = useUnifiedSearchStore((state) => state.searchTerm);
-	const selectedNodeTypes = useFilterStore((state) => state.selectedNodeTypes);
-	const selectedContinents = useFilterStore(
-		(state) => state.selectedContinents
-	);
-	const selectedCountries = useFilterStore((state) => state.selectedCountries);
-	const selectedSourceTypes = useFilterStore(
-		(state) => state.selectedSourceTypes
-	);
 	const deselectedNodeTypes = useFilterStore(
 		(state) => state.deselectedNodeTypes
 	);
-	const minNodeSize = useFilterStore((state) => state.minNodeSize);
 	const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
 	const colorMode = useAppStore((state) => state.colorMode);
 	const expandedContinents = useFilterStore(
@@ -117,8 +72,6 @@ export default function NetworkGraphApp() {
 		(state) => state.setExpandedContinents
 	);
 	const countrySearchTerm = useFilterStore((state) => state.countrySearchTerm);
-
-	const apiKey = useUIStore((state) => state.apiKey);
 
 	const rightPanelExpanded = useAppStore((state) => state.rightPanelExpanded);
 
@@ -157,93 +110,9 @@ export default function NetworkGraphApp() {
 
 	const sourceTypes = [...new Set(safeNodes.map((node) => node.sourceType))];
 
-	// Vector search is now used instead of TF-IDF calculation
-
-	const filteredNodes = useMemo(() => {
-		const filterStart = performance.now();
-		console.log('[v0] Filtering nodes started, input count:', safeNodes.length);
-		console.log('[v0] Filter conditions:', {
-			searchTerm: searchTerm?.length || 0,
-			selectedNodeTypes: selectedNodeTypes?.length || 0,
-			selectedContinents: selectedContinents?.length || 0,
-			selectedCountries: selectedCountries?.length || 0,
-			selectedSourceTypes: selectedSourceTypes?.length || 0,
-			minNodeSize: minNodeSize?.[0] || 0,
-		});
-
-		const searchLower = searchTerm?.trim()?.toLowerCase();
-		const hasSearch = Boolean(searchLower);
-		const hasTypeFilters = selectedNodeTypes?.length > 0;
-		const hasContinentFilters = selectedContinents?.length > 0;
-		const hasCountryFilters = selectedCountries?.length > 0;
-		const hasSourceFilters = selectedSourceTypes?.length > 0;
-		const hasSizeFilter = minNodeSize?.[0] > 0;
-		const needsSimilarity = false;
-
-		const result = safeNodes
-			.filter((node) => {
-				// Early return for search filter
-				if (hasSearch) {
-					const nodeText =
-						`${node.label} ${node.summary} ${node.content} ${node.type} ${node.continent} ${node.country} ${node.sourceType}`.toLowerCase();
-					if (!nodeText.includes(searchLower)) return false;
-				}
-
-				// Type filters with early returns
-				if (hasTypeFilters && !selectedNodeTypes.includes(node.type))
-					return false;
-				if (hasContinentFilters && !selectedContinents.includes(node.continent))
-					return false;
-				if (hasCountryFilters && !selectedCountries.includes(node.country))
-					return false;
-				if (hasSourceFilters && !selectedSourceTypes.includes(node.sourceType))
-					return false;
-
-				// Size filter
-				if (hasSizeFilter && (node.size || 10) < minNodeSize[0]) return false;
-
-				return true;
-			})
-			.map((node) => {
-				if (!needsSimilarity) return node;
-
-				return node;
-			});
-
-		const filterEnd = performance.now();
-		console.log('[v0] Filtering completed:', {
-			inputCount: safeNodes.length,
-			outputCount: result.length,
-			duration: `${(filterEnd - filterStart).toFixed(2)}ms`,
-		});
-
-		return result;
-	}, [
-		safeNodes,
-		searchTerm,
-		selectedNodeTypes,
-		selectedContinents,
-		selectedCountries,
-		selectedSourceTypes,
-		minNodeSize,
-	]);
-
-	const filteredLinks = useMemo(() => {
-		const linkStart = performance.now();
-		const nodeIds = new Set(filteredNodes.map((node) => node.id));
-		const result = safeLinks.filter(
-			(link) => nodeIds.has(link.source) && nodeIds.has(link.target)
-		);
-		const linkEnd = performance.now();
-
-		console.log('[v0] Link filtering completed:', {
-			inputCount: safeLinks.length,
-			outputCount: result.length,
-			duration: `${(linkEnd - linkStart).toFixed(2)}ms`,
-		});
-
-		return result;
-	}, [safeLinks, filteredNodes]);
+	// Use filtered results from app-state (already filtered by applyFilters())
+	const filteredNodes = filteredResults;
+	// filteredLinks already defined from app-state above
 
 	useEffect(() => {
 		console.log('[v0] Highlight effect triggered:', {
@@ -281,7 +150,7 @@ export default function NetworkGraphApp() {
 		}, 100);
 
 		return () => clearTimeout(timeoutId);
-	}, [searchTerm, filteredNodes, filteredLinks]);
+	}, [searchTerm, filteredNodes, filteredLinks, setHighlightedNodes, setHighlightedLinks]);
 
 	useEffect(() => {
 		const renderEnd = performance.now();
@@ -310,34 +179,6 @@ export default function NetworkGraphApp() {
 			console.log('[v0] NetworkGraphApp unmounting');
 		};
 	}, []);
-
-	const handleNodeSelection = useCallback(
-		(nodeIds: string[]) => {
-			try {
-				console.log('[v0] Node selection:', nodeIds.length);
-				setSelectedNodes(nodeIds);
-			} catch (error) {
-				console.error('[v0] Error in handleNodeSelection:', error);
-			}
-		},
-		[setSelectedNodes]
-	);
-
-	const onNodeExpand = useCallback(
-		(nodeId: string) => {
-			try {
-				console.log('[v0] Node expand:', nodeId);
-				toggleNodeExpansion(nodeId);
-			} catch (error) {
-				console.error('[v0] Error in onNodeExpand:', error);
-			}
-		},
-		[toggleNodeExpansion]
-	);
-
-	const removeNodeFromSelection = (nodeId: string) => {
-		removeSelectedNode(nodeId);
-	};
 
 	const selectedNodesSummary = useMemo(() => {
 		// Get selected nodes
@@ -462,17 +303,6 @@ export default function NetworkGraphApp() {
 	const safeHighlightedLinks = Array.isArray(highlightedLinks)
 		? highlightedLinks
 		: [];
-
-	const transformedNodes = useMemo(() => {
-		return filteredNodes.map((node) => ({
-			...node,
-			color: getNodeColorByMode(node, colorMode),
-			size: getNodeSize(node),
-		}));
-	}, [filteredNodes, colorMode, nodeSizeMode]);
-
-	const networkState = useNetworkStore();
-	const filterState = useFilterStore();
 
 	return (
 		<div className="flex h-screen overflow-hidden bg-background">
