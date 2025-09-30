@@ -112,9 +112,16 @@ export function NetworkGraphProvider({
 	const filteredLinks = useAppStore((state) => state.filteredLinks);
 
 	// Hook: Visualization settings (replaces direct store access)
-	const visualSettings = useGraphVisualizationSettings();
-	const { showLabels, colorMode, nodeSizeMode, clusterMode } = visualSettings;
-	const { setShowLabels: setShowLabelsStore, setColorMode: setColorModeStore, setNodeSizeMode: setNodeSizeModeStore, setClusterMode: setClusterModeStore } = visualSettings;
+	const {
+		showLabels,
+		colorMode,
+		nodeSizeMode,
+		clusterMode,
+		setShowLabels,
+		setColorMode,
+		setNodeSizeMode,
+		setClusterMode,
+	} = useGraphVisualizationSettings();
 
 	// Hook: Layout management with cluster validation
 	const { layoutType, handleLayoutChange } = useGraphLayout();
@@ -214,36 +221,7 @@ export function NetworkGraphProvider({
 		}
 	}, [closeLassoMenuFromHook, clearSelections]);
 
-	// Layout change is now handled by useGraphLayout hook
-
-	// Wrapper functions for setters
-	const setShowLabels = useCallback(
-		(show: boolean) => {
-			setShowLabelsStore(show);
-		},
-		[setShowLabelsStore]
-	);
-
-	const setColorMode = useCallback(
-		(mode: ColorMode) => {
-			setColorModeStore(mode);
-		},
-		[setColorModeStore]
-	);
-
-	const setNodeSizeMode = useCallback(
-		(mode: NodeSizeMode) => {
-			setNodeSizeModeStore(mode);
-		},
-		[setNodeSizeModeStore]
-	);
-
-	const setClusterMode = useCallback(
-		(mode: 'none' | 'type' | 'continent' | 'country' | 'sourceType') => {
-			setClusterModeStore(mode);
-		},
-		[setClusterModeStore]
-	);
+	// Note: Setter functions come directly from hooks, no wrappers needed
 
 	// Create the context value
 	const contextValue = useMemo(

@@ -20,6 +20,9 @@ This directory contains components for visualizing and interacting with network 
 - **`lib/utils/layout-mappers.ts`**: Layout type mapping and conversion utilities
 - **`hooks/use-graph-data.ts`**: Hook for transforming nodes/edges to Reagraph format
 - **`hooks/use-lasso-selection.ts`**: Hook for managing lasso multi-node selection state
+- **`hooks/use-graph-visualization-settings.ts`**: Hook for visual settings (labels, colors, sizes, clusters)
+- **`hooks/use-graph-layout.ts`**: Hook for layout management with cluster validation
+- **`hooks/use-graph-selection.ts`**: Hook for Reagraph selection state and click handling
 - **`hooks/use-click-outside.ts`**: Reusable hook for detecting clicks outside elements
 - **`hooks/use-node-context-operations.ts`**: Hook for managing node context operations
 
@@ -58,18 +61,27 @@ This directory contains components for visualizing and interacting with network 
 
 ## State Management
 
-The network graph uses a combination of React Context and Zustand stores:
+The network graph uses a combination of custom hooks, React Context, and Zustand stores:
 
-1. **NetworkGraphContext**: Manages temporary UI state like:
-   - Current selections
-   - Hover state
-   - Lasso selection
-   - Layout preferences
+### **Custom Hooks** (Business Logic)
+Focused hooks that handle specific responsibilities:
+- **`use-graph-data`**: Transforms nodes/edges to Reagraph format
+- **`use-graph-visualization-settings`**: Visual settings (labels, colors, sizes, clusters)
+- **`use-graph-layout`**: Layout type management with cluster validation
+- **`use-graph-selection`**: Reagraph selection state and click handling
+- **`use-lasso-selection`**: Multi-node lasso selection state
 
-2. **Zustand Stores**: Handle persistent application state:
-   - `networkStore`: Core graph data (nodes, edges)
-   - `filterStore`: Filter criteria
-   - `appStore`: Global app settings
+### **NetworkGraphContext** (Coordination)
+Composes hooks and manages coordination:
+- Integrates multiple hooks into unified API
+- Handles complex interactions (lasso + context operations)
+- Manages refs (graphRef, nodePositionsRef)
+- Provides error boundary
+
+### **Zustand Stores** (Persistent State)
+- `networkStore`: Core graph data (nodes, edges)
+- `filterStore`: Filter criteria
+- `appStore`: Global app settings
 
 ## Layout Types
 
@@ -169,3 +181,35 @@ The refactored structure follows these principles:
 - **Separation of Concerns**: Business logic separated from UI components
 - **DRY (Don't Repeat Yourself)**: Reusable hooks and utilities
 - **Type Safety**: Minimal use of `any`, proper TypeScript types throughout
+
+### Architecture Improvements (Recent Refactor)
+
+The context was refactored from 473→373 lines by extracting logic into focused hooks:
+
+**Benefits:**
+- ✅ Each hook handles one responsibility (SRP)
+- ✅ Independently testable units
+- ✅ Reduced complexity in context (10+ → 4-5 responsibilities)
+- ✅ No unnecessary wrapper functions
+- ✅ Simplified dependency tracking (32→20 dependencies)
+
+**Pattern:**
+```tsx
+// Context composes hooks
+const visualSettings = useGraphVisualizationSettings();
+const layout = useGraphLayout();
+const selection = useGraphSelection({ graphNodes, graphEdges, graphRef });
+
+// Provides unified API
+return <NetworkGraphContext.Provider value={{
+  ...visualSettings,
+  ...layout,
+  ...selection,
+  // + coordination logic
+}} />
+```
+
+This pattern makes it easy to:
+- Add new hooks without touching existing code
+- Test hooks in isolation
+- Understand data flow (hook → context → components)
