@@ -18,6 +18,8 @@ This directory contains components for visualizing and interacting with network 
 - **`lib/utils/node-colors.ts`**: Node color calculation utilities (5 modes)
 - **`lib/utils/node-sizing.ts`**: Node size calculation utilities (3 modes)
 - **`lib/utils/layout-mappers.ts`**: Layout type mapping and conversion utilities
+- **`hooks/use-graph-data.ts`**: Hook for transforming nodes/edges to Reagraph format
+- **`hooks/use-lasso-selection.ts`**: Hook for managing lasso multi-node selection state
 - **`hooks/use-click-outside.ts`**: Reusable hook for detecting clicks outside elements
 - **`hooks/use-node-context-operations.ts`**: Hook for managing node context operations
 
