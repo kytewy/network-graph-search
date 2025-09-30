@@ -6,8 +6,7 @@ import { ColorLegend } from '@/components/ui/ColorLegend';
 // Using enhanced NetworkGraph component
 import { NetworkGraph } from '@/components/network/NetworkGraph';
 import Analysis from '@/components/analysis';
-// Using enhanced VectorSearchPanel component
-import { VectorSearchPanel } from '@/components/search/VectorSearchPanel';
+import { SearchInput } from '@/components/search/SearchInput';
 import { SearchResults } from '@/components/search/SearchResults';
 import FilterPanel from '@/components/filters/FilterPanel';
 import ContextManagement from '@/components/analysis/ContextManagement';
@@ -490,7 +489,7 @@ export default function NetworkGraphApp() {
 						</p>
 					</div>
 
-					<VectorSearchPanel />
+					<SearchInput />
 
 					<SimilarityHistogram />
 

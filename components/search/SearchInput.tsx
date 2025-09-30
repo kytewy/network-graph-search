@@ -6,10 +6,16 @@ import { Card } from '@/components/ui/card';
 import { useAppStore } from '@/lib/stores/app-state';
 
 /**
- * Vector Search Panel component
- * Provides a search interface with query input and results count control
+ * SearchInput - Main search interface component
+ * 
+ * Provides:
+ * - Search query input field
+ * - Search button with loading state
+ * - Result count control (topK parameter)
+ * 
+ * Uses app store for state management
  */
-export function VectorSearchPanel() {
+export function SearchInput() {
   // Get state and actions from app store
   const query = useAppStore((state) => state.query);
   const setQuery = useAppStore((state) => state.setQuery);
