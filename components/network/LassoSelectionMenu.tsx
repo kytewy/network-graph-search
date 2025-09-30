@@ -2,16 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Node } from './NewNodeComponents';
+import { Node } from './NodeComponents';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 
 interface LassoSelectionMenuProps {
 	className?: string;
 }
 
-export function LassoSelectionMenu({
-	className,
-}: LassoSelectionMenuProps) {
+export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 	// Get lasso selection state and handlers from context
 	const {
 		lassoSelectedNodes,
@@ -19,11 +17,11 @@ export function LassoSelectionMenu({
 		lassoMenuPosition: position,
 		closeLassoMenu: onClose,
 		handleSendToContext: onSendToContext,
-		filteredResults
+		filteredResults,
 	} = useNetworkGraph();
-	
+
 	// Get selected nodes from filtered results
-	const selectedNodes = filteredResults.filter(node => 
+	const selectedNodes = filteredResults.filter((node) =>
 		lassoSelectedNodes.includes(node.id)
 	);
 	const [expanded, setExpanded] = useState(false);
