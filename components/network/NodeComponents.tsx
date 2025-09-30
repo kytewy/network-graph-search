@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useContextStore } from '@/lib/stores/context-store';
@@ -76,7 +76,7 @@ export function NodeContextMenu({
   }, [onClose])
 
   // Add node to context
-  const handleAddToContext = () => {
+  const handleAddToContext = useCallback(() => {
     addNodesToContext([node]);
     setIsInContext(true);
     
@@ -84,10 +84,10 @@ export function NodeContextMenu({
       description: 'Node added to Context Management panel',
       duration: 2000
     });
-  }
+  }, [node, addNodesToContext]);
   
   // Toggle context status (used in reading mode)
-  const handleToggleContext = () => {
+  const handleToggleContext = useCallback(() => {
     if (isInContext) {
       // Remove from context
       removeNodeFromContext(node.id);
@@ -99,12 +99,12 @@ export function NodeContextMenu({
       setIsInContext(true);
       toast.success(`Added "${node.label}" to context`);
     }
-  }
+  }, [isInContext, node, addNodesToContext, removeNodeFromContext]);
   
   // Open reading mode
-  const handleOpenReadingMode = () => {
+  const handleOpenReadingMode = useCallback(() => {
     setShowReadingMode(true);
-  }
+  }, []);
 
   // If reading mode is active, show the document overlay
 // Otherwise, show the context menu
