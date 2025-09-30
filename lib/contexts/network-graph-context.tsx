@@ -1,24 +1,8 @@
 'use client';
 
-import React, {
-	createContext,
-	useContext,
-	useRef,
-	useState,
-	useMemo,
-	useCallback,
-	useEffect,
-} from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
-import { useSelection } from 'reagraph';
 import { useAppStore, type Node, type Link } from '@/lib/stores/app-state';
-import { useNetworkStore } from '@/lib/stores/network-store';
-import { useContextStore } from '@/lib/stores/context-store';
-import { toast } from 'sonner';
-import {
-	LayoutMapper,
-	type ReagraphLayoutType,
-} from '@/lib/utils/layout-mappers';
 
 // Import our new hooks
 import { useGraphData, type ColorMode, type NodeSizeMode } from '@/hooks/use-graph-data';
@@ -27,19 +11,6 @@ import { useGraphVisualizationSettings } from '@/hooks/use-graph-visualization-s
 import { useGraphLayout } from '@/hooks/use-graph-layout';
 import { useGraphSelection } from '@/hooks/use-graph-selection';
 import { useGraphCoordination } from '@/hooks/use-graph-coordination';
-
-// Use the ReagraphLayoutType from layout-mappers
-type LayoutType = ReagraphLayoutType;
-
-// Define extended types for reagraph's useSelection hook to support lasso selection
-interface ExtendedUseSelectionResult {
-	selections: { nodes: GraphNode[]; edges: GraphEdge[] };
-	clearSelections: (value?: string[]) => void;
-	onNodeClick: (node: GraphNode) => void;
-	onCanvasClick: (event: MouseEvent) => void;
-	onLasso?: (selections: string[]) => void;
-	onLassoEnd?: (selections: string[], event?: MouseEvent) => void;
-}
 
 // Define the context interface
 interface NetworkGraphContextType {
@@ -50,7 +21,7 @@ interface NetworkGraphContextType {
 	filteredLinks: Link[];
 
 	// Graph state
-	layoutType: LayoutType;
+	layoutType: string;
 	showLabels: boolean;
 	colorMode: ColorMode;
 	nodeSizeMode: NodeSizeMode;
@@ -92,8 +63,6 @@ interface NetworkGraphContextType {
 	// Selection handlers
 	onNodeClick: (node: GraphNode) => void;
 	onCanvasClick: (event: MouseEvent) => void;
-	onLasso?: (selections: string[]) => void;
-	onLassoEnd?: (selections: string[], event?: MouseEvent) => void;
 	clearSelections: (value?: string[]) => void;
 }
 
