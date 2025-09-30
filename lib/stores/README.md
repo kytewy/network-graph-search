@@ -4,15 +4,15 @@
 
 ## 📁 Store Files
 
-| Store | Size | Purpose | Status |
-|-------|------|---------|--------|
-| **app-state.ts** | 14KB | Core app data & logic | ✅ Primary store |
-| **network-store.ts** | 2.1KB | Graph display state | ✅ Active |
-| **filter-store.ts** | 5.5KB | Filter criteria | ⚠️ Has duplicates |
-| **unified-search-store.ts** | 9.2KB | Search orchestration | ⚠️ To merge (Phase 2) |
-| **context-store.ts** | 1KB | Analysis workspace | ✅ Active |
-| **ui-store.ts** | 3.1KB | UI toggles | ✅ Active (Phase 1 done) |
-| **country_map.ts** | 801B | Geographic data | ✅ Data file |
+| Store                       | Size  | Purpose               | Status                   |
+| --------------------------- | ----- | --------------------- | ------------------------ |
+| **app-state.ts**            | 14KB  | Core app data & logic | ✅ Primary store         |
+| **network-store.ts**        | 2.1KB | Graph display state   | ✅ Active                |
+| **filter-store.ts**         | 5.5KB | Filter criteria       | ⚠️ Has duplicates        |
+| **unified-search-store.ts** | 9.2KB | Search orchestration  | ⚠️ To merge (Phase 2)    |
+| **context-store.ts**        | 1KB   | Analysis workspace    | ✅ Active                |
+| **ui-store.ts**             | 3.1KB | UI toggles            | ✅ Active (Phase 1 done) |
+| **country_map.ts**          | 801B  | Geographic data       | ✅ Data file             |
 
 **Total:** 7 stores (6 state + 1 data)
 
@@ -26,24 +26,24 @@
 import { useAppStore } from '@/lib/stores/app-state';
 
 function MyComponent() {
-  // Read state
-  const query = useAppStore((state) => state.query);
-  const isLoading = useAppStore((state) => state.isLoading);
-  
-  // Get actions
-  const performSearch = useAppStore((state) => state.performSearch);
-  
-  // Use them
-  const handleSearch = () => performSearch(query);
-  
-  return (
-    <div>
-      <input value={query} onChange={(e) => setQuery(e.target.value)} />
-      <button onClick={handleSearch} disabled={isLoading}>
-        {isLoading ? 'Searching...' : 'Search'}
-      </button>
-    </div>
-  );
+	// Read state
+	const query = useAppStore((state) => state.query);
+	const isLoading = useAppStore((state) => state.isLoading);
+
+	// Get actions
+	const performSearch = useAppStore((state) => state.performSearch);
+
+	// Use them
+	const handleSearch = () => performSearch(query);
+
+	return (
+		<div>
+			<input value={query} onChange={(e) => setQuery(e.target.value)} />
+			<button onClick={handleSearch} disabled={isLoading}>
+				{isLoading ? 'Searching...' : 'Search'}
+			</button>
+		</div>
+	);
 }
 ```
 
@@ -62,6 +62,7 @@ const query = useAppStore((state) => state.query);
 ## 📋 Store Responsibilities
 
 ### **1. app-state** - Your Main Store
+
 **When to use:** Search, results, filtering, visualization settings
 
 ```tsx
@@ -77,7 +78,9 @@ const filteredResults = useAppStore((state) => state.filteredResults);
 
 // Filtering
 const applyFilters = useAppStore((state) => state.applyFilters);
-const toggleSimilarityRange = useAppStore((state) => state.toggleSimilarityRange);
+const toggleSimilarityRange = useAppStore(
+	(state) => state.toggleSimilarityRange
+);
 
 // Visualization
 const colorMode = useAppStore((state) => state.colorMode);
@@ -87,6 +90,7 @@ const setColorMode = useAppStore((state) => state.setColorMode);
 ---
 
 ### **2. network-store** - Graph Display
+
 **When to use:** Graph interactions (selection, highlighting, layout)
 
 ```tsx
@@ -102,7 +106,9 @@ const setSelectedNodes = useNetworkStore((state) => state.setSelectedNodes);
 
 // Highlighting
 const highlightedNodes = useNetworkStore((state) => state.highlightedNodes);
-const setHighlightedNodes = useNetworkStore((state) => state.setHighlightedNodes);
+const setHighlightedNodes = useNetworkStore(
+	(state) => state.setHighlightedNodes
+);
 
 // Layout
 const layoutType = useNetworkStore((state) => state.layoutType);
@@ -112,6 +118,7 @@ const setLayoutType = useNetworkStore((state) => state.setLayoutType);
 ---
 
 ### **3. filter-store** - Filter Criteria
+
 **When to use:** Filter UI components (checkboxes, dropdowns)
 
 ```tsx
@@ -133,6 +140,7 @@ const countrySearchTerm = useFilterStore((state) => state.countrySearchTerm);
 ---
 
 ### **4. ui-store** - UI Toggles
+
 **When to use:** Panel visibility, show/hide toggles
 
 ```tsx
@@ -154,6 +162,7 @@ const setHistogramExpanded = useUIStore((state) => state.setHistogramExpanded);
 ---
 
 ### **5. context-store** - Analysis Workspace
+
 **When to use:** Managing nodes in analysis context
 
 ```tsx
@@ -164,13 +173,16 @@ const contextNodes = useContextStore((state) => state.contextNodes);
 
 // Actions
 const addNodesToContext = useContextStore((state) => state.addNodesToContext);
-const removeNodeFromContext = useContextStore((state) => state.removeNodeFromContext);
+const removeNodeFromContext = useContextStore(
+	(state) => state.removeNodeFromContext
+);
 const clearContext = useContextStore((state) => state.clearContext);
 ```
 
 ---
 
 ### **6. unified-search-store** - Search Workflow
+
 **When to use:** Vector search operations
 
 ```tsx
@@ -181,10 +193,14 @@ const searchTerm = useUnifiedSearchStore((state) => state.searchTerm);
 const isSearching = useUnifiedSearchStore((state) => state.isSearching);
 
 // Perform search
-const performVectorSearch = useUnifiedSearchStore((state) => state.performVectorSearch);
+const performVectorSearch = useUnifiedSearchStore(
+	(state) => state.performVectorSearch
+);
 
 // Results
-const searchResultNodes = useUnifiedSearchStore((state) => state.searchResultNodes);
+const searchResultNodes = useUnifiedSearchStore(
+	(state) => state.searchResultNodes
+);
 ```
 
 ⚠️ **Note:** This will be merged into app-state in Phase 2
@@ -221,7 +237,7 @@ Need to add state? Ask yourself:
 ```tsx
 // ❌ BAD - Creating duplicate state
 interface MyStore {
-  searchTerm: string; // This already exists in app-state!
+	searchTerm: string; // This already exists in app-state!
 }
 
 // ✅ GOOD - Check STORE_OWNERSHIP.md first
@@ -233,15 +249,15 @@ interface MyStore {
 ```tsx
 // ❌ BAD - UI store with business logic
 interface UIState {
-  showPanel: boolean; // ✅ OK
-  searchResults: Node[]; // ❌ This is business data!
+	showPanel: boolean; // ✅ OK
+	searchResults: Node[]; // ❌ This is business data!
 }
 
 // ✅ GOOD - Keep UI pure
 interface UIState {
-  showPanel: boolean;
-  showLabels: boolean;
-  collapsedSections: string[];
+	showPanel: boolean;
+	showLabels: boolean;
+	collapsedSections: string[];
 }
 ```
 
@@ -250,14 +266,14 @@ interface UIState {
 ```tsx
 // ❌ BAD - Direct cross-store mutation
 const myAction = () => {
-  const otherStore = useOtherStore.getState();
-  otherStore.setData(newData); // Tight coupling!
+	const otherStore = useOtherStore.getState();
+	otherStore.setData(newData); // Tight coupling!
 };
 
 // ✅ GOOD - Each store manages its own data
 const myAction = () => {
-  set({ myData: newData });
-  // Let other stores subscribe and react
+	set({ myData: newData });
+	// Let other stores subscribe and react
 };
 ```
 
@@ -301,13 +317,11 @@ const myAction = () => {
 
 ```tsx
 // Use selectors for derived state
-const filteredNodeCount = useAppStore((state) => 
-  state.filteredResults.length
-);
+const filteredNodeCount = useAppStore((state) => state.filteredResults.length);
 
 // Or create a selector function
-const selectHighSimilarityNodes = (state) => 
-  state.searchResults.filter(node => node.similarity > 0.8);
+const selectHighSimilarityNodes = (state) =>
+	state.searchResults.filter((node) => node.similarity > 0.8);
 
 const highSimNodes = useAppStore(selectHighSimilarityNodes);
 ```
@@ -317,31 +331,31 @@ const highSimNodes = useAppStore(selectHighSimilarityNodes);
 ```tsx
 // Complex actions live in the store
 export const useAppStore = create((set, get) => ({
-  performSearch: async (query) => {
-    set({ isLoading: true });
-    
-    try {
-      const results = await fetch('/api/search', { 
-        body: JSON.stringify({ query }) 
-      });
-      
-      set({ 
-        searchResults: results,
-        hasSearched: true,
-        searchStatus: `Found ${results.length} results`
-      });
-      
-      // Apply filters automatically
-      get().applyFilters();
-    } catch (error) {
-      set({ 
-        error: error.message,
-        searchStatus: 'Search failed'
-      });
-    } finally {
-      set({ isLoading: false });
-    }
-  }
+	performSearch: async (query) => {
+		set({ isLoading: true });
+
+		try {
+			const results = await fetch('/api/search', {
+				body: JSON.stringify({ query }),
+			});
+
+			set({
+				searchResults: results,
+				hasSearched: true,
+				searchStatus: `Found ${results.length} results`,
+			});
+
+			// Apply filters automatically
+			get().applyFilters();
+		} catch (error) {
+			set({
+				error: error.message,
+				searchStatus: 'Search failed',
+			});
+		} finally {
+			set({ isLoading: false });
+		}
+	},
 }));
 ```
 
@@ -350,10 +364,10 @@ export const useAppStore = create((set, get) => ({
 ```tsx
 // Subscribe to store changes outside React
 const unsubscribe = useAppStore.subscribe(
-  (state) => state.searchResults,
-  (results) => {
-    console.log('Results changed:', results.length);
-  }
+	(state) => state.searchResults,
+	(results) => {
+		console.log('Results changed:', results.length);
+	}
 );
 
 // Don't forget to cleanup!
@@ -370,12 +384,15 @@ unsubscribe();
 // Already enabled in app-state!
 import { devtools } from 'zustand/middleware';
 
-export const useAppStore = create()(devtools((set, get) => ({
-  // Your store...
-})));
+export const useAppStore = create()(
+	devtools((set, get) => ({
+		// Your store...
+	}))
+);
 ```
 
 **Then open Redux DevTools in browser to see:**
+
 - State changes
 - Time-travel debugging
 - Action history
@@ -385,10 +402,10 @@ export const useAppStore = create()(devtools((set, get) => ({
 ```tsx
 // Temporary debugging
 const MyComponent = () => {
-  const state = useAppStore();
-  console.log('Current app state:', state);
-  
-  return <div>...</div>;
+	const state = useAppStore();
+	console.log('Current app state:', state);
+
+	return <div>...</div>;
 };
 ```
 
@@ -405,15 +422,17 @@ const MyComponent = () => {
 ## 🚨 Need Help?
 
 **Before adding new state:**
+
 1. Check `STORE_OWNERSHIP.md` - Does it already exist?
 2. Check this README - Which store is responsible?
 3. Ask: "Is this UI state or business logic?"
 
 **Common Questions:**
+
 - "Where does X state live?" → Check `STORE_OWNERSHIP.md`
 - "Can I add Y to Z store?" → Use the decision tree above
 - "Why are there duplicates?" → Phase 2 will fix them
 
 ---
 
-*Last updated: 2025-09-30 (Phase 1 complete)*
+_Last updated: 2025-09-30 (Phase 1 complete)_

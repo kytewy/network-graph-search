@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ColorLegend } from '@/components/ui/ColorLegend';
+import { ColorLegend } from '@/components/network/ColorLegend';
 // Using enhanced NetworkGraph component
 import { NetworkGraph } from '@/components/network/NetworkGraph';
 import Analysis from '@/components/analysis';
@@ -41,11 +41,11 @@ export default function NetworkGraphApp() {
 
 	const nodes = useNetworkStore((state) => state.nodes);
 	const links = useNetworkStore((state) => state.links);
-	
+
 	// Use app-state's pre-filtered results
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	const filteredLinks = useAppStore((state) => state.filteredLinks);
-	
+
 	const selectedNodes = useNetworkStore((state) => state.selectedNodes);
 	const expandedNodes = useNetworkStore((state) => state.expandedNodes);
 	const setHighlightedNodes = useNetworkStore(
@@ -150,7 +150,13 @@ export default function NetworkGraphApp() {
 		}, 100);
 
 		return () => clearTimeout(timeoutId);
-	}, [searchTerm, filteredNodes, filteredLinks, setHighlightedNodes, setHighlightedLinks]);
+	}, [
+		searchTerm,
+		filteredNodes,
+		filteredLinks,
+		setHighlightedNodes,
+		setHighlightedLinks,
+	]);
 
 	useEffect(() => {
 		const renderEnd = performance.now();

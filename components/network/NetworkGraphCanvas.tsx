@@ -1,14 +1,16 @@
 'use client';
 
-import { useRef } from 'react';
 import dynamic from 'next/dynamic';
-import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
 import { LassoSelectionMenu } from './LassoSelectionMenu';
-import { VisualizationControls } from '@/components/ui/VisualizationControls';
+import { VisualizationControls } from '@/components/network/VisualizationControls';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { NodeContextMenu } from './NodeContextMenu';
-import type { Node as NodeType } from '@/lib/types/node';
-import { GRAPH_LAYOUT_CONFIG, Z_INDEX, PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/constants/graph-config';
+import {
+	GRAPH_LAYOUT_CONFIG,
+	Z_INDEX,
+	PERFORMANCE_CONFIG,
+	NODE_SIZE,
+} from '@/lib/constants/graph-config';
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
 const GraphCanvas = dynamic(
@@ -89,8 +91,12 @@ export function NetworkGraphCanvas() {
 							onCanvasClick={onCanvasClick}
 							// Lasso selection for multi-node selection (hold Shift + drag)
 							lassoType="node"
-							onLasso={(selection: any) => handleLasso(selection?.nodes || selection || [])}
-							onLassoEnd={(selection: any) => handleLassoEnd(selection?.nodes || selection || [])}
+							onLasso={(selection: any) =>
+								handleLasso(selection?.nodes || selection || [])
+							}
+							onLassoEnd={(selection: any) =>
+								handleLassoEnd(selection?.nodes || selection || [])
+							}
 							// Use direct node size property
 							nodeSize={(node) => node.size || NODE_SIZE.default}
 							// Use clusterAttribute if clusterMode is not 'none'
@@ -138,7 +144,15 @@ export function NetworkGraphCanvas() {
 									</div>
 								);
 							}}
-							getNodePosition={(id: string, context?: { drags?: Record<string, { position: { x: number; y: number; z: number } }> }) => {
+							getNodePosition={(
+								id: string,
+								context?: {
+									drags?: Record<
+										string,
+										{ position: { x: number; y: number; z: number } }
+									>;
+								}
+							) => {
 								// Respect active drags first (Reagraph Playbook Rule #3)
 								if (context?.drags?.[id]?.position) {
 									return context.drags[id].position;
