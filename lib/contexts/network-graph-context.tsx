@@ -7,17 +7,12 @@ import { useAppStore, type Node, type Link } from '@/lib/stores/app-state';
 import { useNetworkStore } from '@/lib/stores/network-store';
 import { useContextStore } from '@/lib/stores/context-store';
 import { toast } from 'sonner';
+import { NodeColorCalculator } from '@/lib/utils/node-colors';
+import { NodeSizeCalculator } from '@/lib/utils/node-sizing';
+import { LayoutMapper, type ReagraphLayoutType } from '@/lib/utils/layout-mappers';
 
-// Define the allowed layout types for Reagraph
-type LayoutType =
-  | 'forceDirected2d'
-  | 'forceDirected3d'
-  | 'hierarchical'
-  | 'radial'
-  | 'forceAtlas2'
-  | 'noOverlap'
-  | 'concentric2d'
-  | 'radialOut2d';
+// Use the ReagraphLayoutType from layout-mappers
+type LayoutType = ReagraphLayoutType;
 
 // Define extended types for reagraph's useSelection hook to support lasso selection
 interface ExtendedUseSelectionResult {
@@ -111,7 +106,9 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
   const nodePositionsRef = useRef<Map<string, { x: number; y: number; z: number }>>(new Map());
   
   // Local state
-  const [layoutType, setLayoutType] = useState<LayoutType>(getReagraphLayoutType());
+  const [layoutType, setLayoutType] = useState<LayoutType>(
+    LayoutMapper.toReagraph(networkLayoutType)
+  );
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [lassoSelectedNodes, setLassoSelectedNodes] = useState<string[]>([]);
   const [showLassoMenu, setShowLassoMenu] = useState(false);
@@ -119,23 +116,9 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
   const [forceUpdate, setForceUpdate] = useState<number>(0);
   const [refreshKey, setRefreshKey] = useState(0);
   
-  // Map network store layout type to Reagraph layout type
-  function getReagraphLayoutType(): LayoutType {
-    switch (networkLayoutType) {
-      case 'forceDirected':
-        return 'forceDirected2d';
-      case 'concentric':
-        return 'concentric2d';
-      case 'radial':
-        return 'radialOut2d';
-      default:
-        return 'forceDirected2d';
-    }
-  }
-  
   // Update layout when network store changes
   useEffect(() => {
-    setLayoutType(getReagraphLayoutType());
+    setLayoutType(LayoutMapper.toReagraph(networkLayoutType));
   }, [networkLayoutType]);
   
   // Update refresh key when nodeSizeMode changes to force re-render
@@ -143,97 +126,14 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
     setRefreshKey((prev) => prev + 1);
   }, [nodeSizeMode]);
   
-  // Get color based on node property and colorMode
+  // Get color based on node property and colorMode using the utility
   const getNodeColor = useCallback((node: Node) => {
-    switch (colorMode) {
-      case 'sourceType':
-        return node.type === 'article'
-          ? '#4f46e5'
-          : node.type === 'document'
-          ? '#10b981'
-          : node.type === 'webpage'
-          ? '#f59e0b'
-          : node.type === 'pdf'
-          ? '#ef4444'
-          : '#a855f7';
-      case 'continent':
-        return node.continent === 'North America'
-          ? '#4f46e5'
-          : node.continent === 'Europe'
-          ? '#10b981'
-          : node.continent === 'Asia'
-          ? '#f59e0b'
-          : node.continent === 'Africa'
-          ? '#ef4444'
-          : node.continent === 'South America'
-          ? '#a855f7'
-          : '#6b7280'; // Unknown/Other
-      case 'country':
-        // Specific colors for important countries, gray for others
-        return node.country === 'USA'
-          ? '#1e40af' // Dark blue
-          : node.country === 'Canada'
-          ? '#ef4444' // Red
-          : node.country === 'European Union'
-          ? '#60a5fa' // Light blue
-          : '#6b7280'; // Gray for other countries
-      case 'similarityRange':
-        // Color by similarity percentage (using score) matching the histogram ranges
-        if (node.score !== undefined) {
-          // Convert score to percentage (0-1 to 0-100)
-          const similarityPercent = Math.round(node.score * 100);
-          
-          if (similarityPercent >= 81) return '#22c55e'; // Green for 81-100%
-          if (similarityPercent >= 61) return '#84cc16'; // Light green for 61-80%
-          if (similarityPercent >= 41) return '#eab308'; // Yellow for 41-60%
-          if (similarityPercent >= 20) return '#f97316'; // Orange for 20-40%
-          return '#ef4444'; // Red for <20%
-        }
-        return '#6b7280'; // Default gray if no score
-      case 'documentType':
-        return node.type === 'article'
-          ? '#4f46e5'
-          : node.type === 'document'
-          ? '#10b981'
-          : node.type === 'webpage'
-          ? '#f59e0b'
-          : node.type === 'pdf'
-          ? '#ef4444'
-          : '#a855f7';
-      default:
-        return node.category === 'article' ? '#4f46e5' : '#10b981';
-    }
+    return NodeColorCalculator.getColor(node, colorMode);
   }, [colorMode]);
   
-  // Get node size based on nodeSizeMode
+  // Get node size based on nodeSizeMode using the utility
   const getNodeSize = useCallback((node: Node) => {
-    switch (nodeSizeMode) {
-      case 'similarity':
-        // Use score for similarity (0-1 value)
-        if (node.score !== undefined) {
-          const similarityPercent = Math.round(node.score * 100);
-          
-          // 5 different size buckets based on similarity
-          if (similarityPercent >= 81) return 20; // Largest
-          if (similarityPercent >= 61) return 16;
-          if (similarityPercent >= 41) return 12;
-          if (similarityPercent >= 20) return 8;
-          return 4; // Smallest
-        }
-        return 10; // Default size
-        
-      case 'contentLength':
-        // Size based on content length
-        const contentLength = (node.content || '').length;
-        
-        if (contentLength > 1000) return 20; // 1000+ chars
-        if (contentLength > 500) return 12; // 501-1000 chars
-        return 6; // Under 500 chars
-        
-      case 'none':
-      default:
-        return 10; // Default size for 'none' mode
-    }
+    return NodeSizeCalculator.getSize(node, nodeSizeMode);
   }, [nodeSizeMode]);
   
   // Convert nodes to Reagraph nodes
@@ -413,26 +313,15 @@ export function NetworkGraphProvider({ children }: { children: React.ReactNode }
   
   // Handle layout change
   const handleLayoutChange = useCallback((layout: string) => {
-    setLayoutType(layout as LayoutType);
+    const reagraphLayout = layout as LayoutType;
+    setLayoutType(reagraphLayout);
     
-    // Map Reagraph layout type to network store layout type
-    let networkLayout: 'forceDirected' | 'concentric' | 'radial';
-    if (layout === 'forceDirected2d') {
-      networkLayout = 'forceDirected';
-    } else if (layout === 'concentric2d') {
-      networkLayout = 'concentric';
-      // Reset cluster mode when switching to a non-force-directed layout
-      if (clusterMode !== 'none') {
-        setClusterModeStore('none');
-      }
-    } else if (layout === 'radialOut2d') {
-      networkLayout = 'radial';
-      // Reset cluster mode when switching to a non-force-directed layout
-      if (clusterMode !== 'none') {
-        setClusterModeStore('none');
-      }
-    } else {
-      networkLayout = 'forceDirected';
+    // Map Reagraph layout type to network store layout type using the utility
+    const networkLayout = LayoutMapper.fromReagraph(reagraphLayout);
+    
+    // Reset cluster mode when switching to a non-force-directed layout
+    if (!LayoutMapper.supportsCluster(reagraphLayout) && clusterMode !== 'none') {
+      setClusterModeStore('none');
     }
     
     useNetworkStore.getState().setLayoutType(networkLayout);
