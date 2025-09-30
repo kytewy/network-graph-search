@@ -6,7 +6,8 @@ import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
 import { LassoSelectionMenu } from './LassoSelectionMenu';
 import { VisualizationControls } from '@/components/ui/VisualizationControls';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
-import { NodeContextMenu, Node as NodeType } from './NodeComponents';
+import { NodeContextMenu } from './NodeContextMenu';
+import type { Node as NodeType } from '@/lib/types/node';
 import { GRAPH_LAYOUT_CONFIG, Z_INDEX, PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/constants/graph-config';
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility

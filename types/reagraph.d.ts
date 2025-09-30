@@ -4,8 +4,8 @@ declare module 'reagraph' {
   export interface GraphNode {
     id: string;
     label?: string;
-    data?: any;
-    [key: string]: any;
+    data?: Record<string, unknown>;
+    [key: string]: unknown;
   }
 
   export interface GraphEdge {
@@ -13,8 +13,23 @@ declare module 'reagraph' {
     source: string;
     target: string;
     label?: string;
-    data?: any;
-    [key: string]: any;
+    data?: Record<string, unknown>;
+    [key: string]: unknown;
+  }
+
+  export interface Camera {
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number };
+  }
+
+  export interface Controls {
+    enabled: boolean;
+    update: () => void;
+  }
+
+  export interface Graph {
+    nodes: GraphNode[];
+    edges: GraphEdge[];
   }
 
   export interface GraphCanvasRef {
@@ -22,9 +37,9 @@ declare module 'reagraph' {
     resetCamera: () => void;
     zoomToFit: (options?: { duration?: number }) => void;
     centerGraph: (options?: { duration?: number }) => void;
-    getCamera: () => any;
-    getControls: () => any;
-    getGraph: () => any;
+    getCamera: () => Camera;
+    getControls: () => Controls;
+    getGraph: () => Graph;
     getNodes: () => GraphNode[];
     getEdges: () => GraphEdge[];
     getNodePosition: (id: string) => { x: number; y: number; z: number } | null;
@@ -44,24 +59,36 @@ declare module 'reagraph' {
 
   /**
    * Context menu callback data
+   * The 'data' property contains the clicked node or edge
    */
-  export interface ContextMenuData {
-    data: any;
+  export interface ContextMenuData<T = GraphNode | GraphEdge> {
+    data: T;
     onClose: () => void;
-    additional?: any;
+    additional?: {
+      collapsed?: boolean;
+      [key: string]: unknown;
+    };
+  }
+
+  export interface LayoutOverrides {
+    linkDistance?: number;
+    nodeStrength?: number;
+    edgeStrength?: number;
+    iterations?: number;
+    [key: string]: unknown;
   }
 
   export interface GraphCanvasProps {
     // Core props
     nodes: GraphNode[];
     edges: GraphEdge[];
-    layoutType?: 'forceDirected2d' | 'forceDirected3d' | 'hierarchical' | 'radial' | 'forceAtlas2' | 'noOverlap';
-    layoutOverrides?: any;
+    layoutType?: 'forceDirected2d' | 'forceDirected3d' | 'hierarchical' | 'radial' | 'forceAtlas2' | 'noOverlap' | 'concentric2d' | 'radialOut2d';
+    layoutOverrides?: LayoutOverrides;
     
     // Selection props
     selections?: { nodes: GraphNode[]; edges: GraphEdge[] };
     onNodeClick?: (node: GraphNode) => void;
-    onCanvasClick?: (event?: any) => void;
+    onCanvasClick?: (event?: MouseEvent) => void;
     
     // Lasso selection (undocumented in types but exists in library)
     lassoType?: LassoType;
@@ -109,19 +136,25 @@ declare module 'reagraph' {
     onNodeDragEnd?: (node: GraphNode, position: { x: number; y: number; z: number }) => void;
     onEdgeClick?: (edge: GraphEdge) => void;
     onEdgeHover?: (edge: GraphEdge | null) => void;
-    onClusterClick?: (cluster: any) => void;
-    onClusterHover?: (cluster: any | null) => void;
-    onClusterDragStart?: (cluster: any) => void;
-    onClusterDrag?: (cluster: any, position: { x: number; y: number; z: number }) => void;
-    onClusterDragEnd?: (cluster: any, position: { x: number; y: number; z: number }) => void;
+    onClusterClick?: (cluster: { id: string; nodes: GraphNode[] }) => void;
+    onClusterHover?: (cluster: { id: string; nodes: GraphNode[] } | null) => void;
+    onClusterDragStart?: (cluster: { id: string; nodes: GraphNode[] }) => void;
+    onClusterDrag?: (cluster: { id: string; nodes: GraphNode[] }, position: { x: number; y: number; z: number }) => void;
+    onClusterDragEnd?: (cluster: { id: string; nodes: GraphNode[] }, position: { x: number; y: number; z: number }) => void;
     
     // Context menu (undocumented in types but exists in library)
-    contextMenu?: (data: ContextMenuData) => React.ReactElement | null;
+    contextMenu?: (data: ContextMenuData<GraphNode | GraphEdge>) => React.ReactElement | null;
     
     // Other props
     ref?: RefObject<GraphCanvasRef>;
     aggregateEdges?: boolean;
-    theme?: any;
+    theme?: {
+      canvas?: { background?: string };
+      node?: { fill?: string; stroke?: string };
+      edge?: { fill?: string; stroke?: string };
+      cluster?: { fill?: string; stroke?: string };
+      [key: string]: unknown;
+    };
     backgroundColor?: string;
     children?: ReactNode;
   }

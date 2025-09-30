@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { X } from 'lucide-react';
 import { Z_INDEX } from '@/lib/constants/graph-config';
-import { Node } from './NodeComponents';
+import type { Node } from '@/lib/types/node';
 
 /**
  * Document display interface for reading mode

@@ -7,36 +7,33 @@ import DocumentOverlay, { nodeToReadingItem } from './DocumentOverlay';
 import { Z_INDEX } from '@/lib/constants/graph-config';
 import { useClickOutside } from '@/hooks/use-click-outside';
 import { useNodeContextOperations } from '@/hooks/use-node-context-operations';
+import type { Node } from '@/lib/types/node';
 
-// Shared Node interface
-export interface Node {
-  id: string
-  label: string
-  type: string
-  size: number
-  color: string
-  summary: string // Brief description for tooltip
-  content: string // Full article content for modal
-  similarity?: number
-  url?: string
-  x?: number
-  y?: number
-  vx?: number
-  vy?: number
-  sourceType?: string
-  continent?: string
-  country?: string
-}
+/**
+ * NodeContextMenu Component
+ * 
+ * Context menu that appears when right-clicking a node in the graph.
+ * Provides actions like "Add to Context", "Reading Mode", and "Open Link".
+ * 
+ * @example
+ * ```tsx
+ * <GraphCanvas
+ *   contextMenu={({ data, onClose }) => (
+ *     <NodeContextMenu node={data} onClose={onClose} />
+ *   )}
+ * />
+ * ```
+ */
 
-// NodeModal Component for use with reagraph's contextMenu
-interface NodeModalProps {
-  node: Node
-  onClose: () => void
-  onNodeSelection?: (nodeIds: string[]) => void
-  className?: string
-  selectedNodes?: string[]
-  expandedNodes?: string[]
-  onNodeExpand?: (nodeId: string) => void
+// NodeContextMenu props
+interface NodeContextMenuProps {
+  node: Node;
+  onClose: () => void;
+  onNodeSelection?: (nodeIds: string[]) => void;
+  className?: string;
+  selectedNodes?: string[];
+  expandedNodes?: string[];
+  onNodeExpand?: (nodeId: string) => void;
 }
 
 export function NodeContextMenu({
@@ -47,9 +44,9 @@ export function NodeContextMenu({
   expandedNodes = [],
   onNodeExpand,
   className,
-}: NodeModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null)
-  const [showReadingMode, setShowReadingMode] = useState(false)
+}: NodeContextMenuProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [showReadingMode, setShowReadingMode] = useState(false);
 
   // Use reusable hooks
   useClickOutside(modalRef, onClose);
@@ -59,9 +56,6 @@ export function NodeContextMenu({
   const handleOpenReadingMode = useCallback(() => {
     setShowReadingMode(true);
   }, []);
-
-  // If reading mode is active, show the document overlay
-// Otherwise, show the context menu
 
   // If reading mode is active, show the document overlay directly
   if (showReadingMode) {
@@ -82,18 +76,18 @@ export function NodeContextMenu({
   
   // Otherwise, show the context menu
   return (
-        <div 
-          ref={modalRef}
-          className={`fixed bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden flex flex-col ${className || ''}`}
-          style={{
-            zIndex: Z_INDEX.contextMenu,
-            width: '320px',
-            maxHeight: '400px',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)'
-          }}
-        >
+    <div 
+      ref={modalRef}
+      className={`fixed bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden flex flex-col ${className || ''}`}
+      style={{
+        zIndex: Z_INDEX.contextMenu,
+        width: '320px',
+        maxHeight: '400px',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      }}
+    >
       {/* Header with close button */}
       <div className="flex justify-between items-center p-3 border-b border-gray-200">
         <h2 className="text-base font-medium text-gray-800">{node.label}</h2>
@@ -106,8 +100,6 @@ export function NodeContextMenu({
           </svg>
         </button>
       </div>
-
-      {/* Content section without metadata */}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-3">
@@ -143,5 +135,5 @@ export function NodeContextMenu({
         </Button>
       </div>
     </div>
-  )
+  );
 }
