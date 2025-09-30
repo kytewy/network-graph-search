@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { X } from 'lucide-react';
+import { Z_INDEX } from '@/lib/constants/graph-config';
 
 interface ReadingItem {
 	id: string;
@@ -71,7 +72,7 @@ export default function DocumentOverlay({
 	// Use createPortal to render at the document body level
 	return createPortal(
 		<div
-			className="fixed inset-0 bg-black/50 backdrop-blur-md z-[9999] flex items-center justify-center p-4"
+			className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4"
 			style={{
 				position: 'fixed',
 				top: 0,
@@ -81,10 +82,11 @@ export default function DocumentOverlay({
 				width: '100vw',
 				height: '100vh',
 				pointerEvents: 'auto',
+				zIndex: Z_INDEX.overlay,
 			}}>
 			<Card
 				className="w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl"
-				style={{ position: 'relative', zIndex: 10001 }}>
+				style={{ position: 'relative', zIndex: Z_INDEX.modal }}>
 				<CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
 					<div className="flex-1">
 						<div className="flex items-center gap-2">
@@ -124,6 +126,6 @@ export default function DocumentOverlay({
 				</CardContent>
 			</Card>
 		</div>,
-		typeof window !== 'undefined' ? window.document.body : null
+		typeof window !== 'undefined' ? window.document.body : document.createElement('div')
 	);
 }

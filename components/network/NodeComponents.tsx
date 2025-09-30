@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useContextStore } from '@/lib/stores/context-store';
 import { toast } from 'sonner';
 import DocumentOverlay from './DocumentOverlay';
+import { Z_INDEX } from '@/lib/constants/graph-config';
 
 // Shared Node interface
 export interface Node {
@@ -138,12 +139,12 @@ export function NodeContextMenu({
           ref={modalRef}
           className={`fixed bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden flex flex-col ${className || ''}`}
           style={{
-            zIndex: 1000,
-            width: "320px",
-            maxHeight: "400px",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)"
+            zIndex: Z_INDEX.contextMenu,
+            width: '320px',
+            maxHeight: '400px',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)'
           }}
         >
       {/* Header with close button */}
