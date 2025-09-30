@@ -7,13 +7,12 @@ import { ColorLegend } from '@/components/ui/ColorLegend';
 import { NetworkGraph } from '@/components/network/NetworkGraph';
 import Analysis from '@/components/analysis';
 import { SearchInput } from '@/components/search/SearchInput';
+import { SimilarityHistogram } from '@/components/search/SimilarityHistogram';
 import FilterPanel from '@/components/filters/FilterPanel';
 import ContextManagement from '@/components/analysis/ContextManagement';
-import { SimilarityHistogram } from '@/components/visualization/SimilarityHistogram';
 
 import { useNetworkStore } from '@/lib/stores/network-store';
 import { useFilterStore } from '@/lib/stores/filter-store';
-import { useUnifiedSearchStore } from '@/lib/stores/unified-search-store';
 import { useAppStore } from '@/lib/stores/app-state'; // Now using for filteredResults + filteredLinks!
 import { getNodeColorByMode } from '@/lib/theme/colors';
 
@@ -58,7 +57,8 @@ export default function NetworkGraphApp() {
 	const highlightedNodes = useNetworkStore((state) => state.highlightedNodes);
 	const highlightedLinks = useNetworkStore((state) => state.highlightedLinks);
 
-	const searchTerm = useUnifiedSearchStore((state) => state.searchTerm);
+	// Use app-state's query for highlighting (was unified-search searchTerm)
+	const searchTerm = useAppStore((state) => state.query);
 	const deselectedNodeTypes = useFilterStore(
 		(state) => state.deselectedNodeTypes
 	);
