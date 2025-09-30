@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Node } from './NodeComponents';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
+import { useClickOutside } from '@/hooks/use-click-outside';
 
 interface LassoSelectionMenuProps {
 	className?: string;
@@ -28,22 +29,8 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 	const [expanded, setExpanded] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 
-	// Handle click outside to close
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (
-				menuRef.current &&
-				!menuRef.current.contains(event.target as Element)
-			) {
-				onClose();
-			}
-		};
-
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, [onClose]);
+	// Handle click outside to close using reusable hook
+	useClickOutside(menuRef, onClose);
 
 	const handleSendToContext = () => {
 		if (onSendToContext) {

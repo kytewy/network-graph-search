@@ -7,6 +7,7 @@ import { useContextStore } from '@/lib/stores/context-store';
 import { toast } from 'sonner';
 import DocumentOverlay, { nodeToReadingItem } from './DocumentOverlay';
 import { Z_INDEX } from '@/lib/constants/graph-config';
+import { useClickOutside } from '@/hooks/use-click-outside';
 
 // Shared Node interface
 export interface Node {
@@ -61,19 +62,8 @@ export function NodeContextMenu({
     setIsInContext(contextNodes.some((contextNode) => contextNode.id === node.id));
   }, [node.id, contextNodes])
 
-  // Handle click outside to close
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Element)) {
-        onClose()
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [onClose])
+  // Handle click outside to close using reusable hook
+  useClickOutside(modalRef, onClose);
 
   // Add node to context
   const handleAddToContext = useCallback(() => {
