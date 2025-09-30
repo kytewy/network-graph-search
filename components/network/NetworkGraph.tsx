@@ -1,7 +1,7 @@
 'use client';
 
 import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
-import { NetworkGraphWithContext } from './NetworkGraphWithContext';
+import { NetworkGraphCanvas } from './NetworkGraphCanvas';
 
 /**
  * NetworkGraph component
@@ -10,7 +10,7 @@ import { NetworkGraphWithContext } from './NetworkGraphWithContext';
 export function NetworkGraph() {
 	return (
 		<NetworkGraphProvider>
-			<NetworkGraphWithContext />
+			<NetworkGraphCanvas />
 		</NetworkGraphProvider>
 	);
 }

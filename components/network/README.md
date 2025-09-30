@@ -6,8 +6,8 @@ This directory contains components for visualizing and interacting with network 
 
 ### Core Components
 
-- **`NetworkGraph.tsx`**: Main entry point that wraps `NetworkGraphWithContext` with the provider
-- **`NetworkGraphWithContext.tsx`**: Renders the actual graph visualization using Reagraph
+- **`NetworkGraph.tsx`**: Main entry point that wraps `NetworkGraphCanvas` with the provider
+- **`NetworkGraphCanvas.tsx`**: Renders the actual graph visualization using Reagraph
 - **`NodeComponents.tsx`**: Defines the core Node interface and node-related components
 - **`LassoSelectionMenu.tsx`**: UI for interacting with multiple selected nodes
 - **`DocumentOverlay.tsx`**: Displays detailed information about a selected node
@@ -27,7 +27,7 @@ This directory contains components for visualizing and interacting with network 
             │
             ▼
 ┌─────────────────────────┐
-│ NetworkGraphWithContext │◄────┐
+│ NetworkGraphCanvas      │◄────┐
 └───────────┬─────────────┘     │
             │                   │
             ▼                   │

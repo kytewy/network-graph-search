@@ -21,10 +21,10 @@ const GraphCanvas = dynamic(
 );
 
 /**
- * NetworkGraphWithContext component
+ * NetworkGraphCanvas component
  * Visualizes search results as a network graph using Reagraph and the NetworkGraphProvider context
  */
-export function NetworkGraphWithContext() {
+export function NetworkGraphCanvas() {
 	// Get all the data and functions from the context
 	const {
 		graphNodes,
