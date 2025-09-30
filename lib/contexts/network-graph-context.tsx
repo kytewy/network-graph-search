@@ -20,8 +20,9 @@ import {
 	type ReagraphLayoutType,
 } from '@/lib/utils/layout-mappers';
 
-// Import our new hook
+// Import our new hooks
 import { useGraphData, type ColorMode, type NodeSizeMode } from '@/hooks/use-graph-data';
+import { useLassoSelection } from '@/hooks/use-lasso-selection';
 
 // Use the ReagraphLayoutType from layout-mappers
 type LayoutType = ReagraphLayoutType;
@@ -134,9 +135,6 @@ export function NetworkGraphProvider({
 		LayoutMapper.toReagraph(networkLayoutType)
 	);
 	const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-	const [lassoSelectedNodes, setLassoSelectedNodes] = useState<string[]>([]);
-	const [showLassoMenu, setShowLassoMenu] = useState(false);
-	const [lassoMenuPosition, setLassoMenuPosition] = useState({ x: 0, y: 0 });
 	const [forceUpdate, setForceUpdate] = useState<number>(0);
 	const [refreshKey, setRefreshKey] = useState(0);
 
@@ -150,13 +148,23 @@ export function NetworkGraphProvider({
 		setRefreshKey((prev) => prev + 1);
 	}, [nodeSizeMode]);
 
-	// ============= USE GRAPH DATA HOOK =============
-	// Extract all data transformation logic into a focused hook
+	// ============= CUSTOM HOOKS =============
+	// Hook 1: Graph data transformation
 	const { graphNodes, graphEdges, getNodeColor, getNodeSize } = useGraphData(
 		filteredResults,
 		filteredLinks,
 		{ colorMode, nodeSizeMode }
 	);
+
+	// Hook 2: Lasso selection state management
+	const {
+		lassoSelectedNodes,
+		showLassoMenu,
+		lassoMenuPosition,
+		handleLasso,
+		handleLassoEnd: handleLassoEndFromHook,
+		closeLassoMenu: closeLassoMenuFromHook,
+	} = useLassoSelection();
 
 	// Selection configuration
 	const selectionConfig = useMemo(() => {
@@ -209,43 +217,12 @@ export function NetworkGraphProvider({
 		[handleNodeClick]
 	);
 
-	// Handle lasso selection
-	const handleLasso = useCallback((selectedIds: string[]) => {
-		// Guard against undefined or null
-		if (!selectedIds || !Array.isArray(selectedIds)) {
-			return;
-		}
-
-		setLassoSelectedNodes(selectedIds);
-		// Let Reagraph handle the selection state internally
-	}, []);
-
-	// Handle lasso end event
+	// Wrap lasso handlers to integrate with Reagraph
 	const handleLassoEnd = useCallback(
 		(selectedIds: string[], event?: MouseEvent) => {
-			// Guard against undefined or null
-			if (!selectedIds || !Array.isArray(selectedIds)) {
-				setLassoSelectedNodes([]);
-				return;
-			}
-
-			// If nodes were selected, show the lasso menu
-			if (selectedIds.length > 0) {
-				setLassoSelectedNodes(selectedIds);
-
-				// Get mouse position for the menu or use center of screen
-				const mousePosition = {
-					x: window.innerWidth / 2 - 200, // Center horizontally, offset by half the menu width
-					y: 100, // Position near the top of the screen
-				};
-				setLassoMenuPosition(mousePosition);
-				setShowLassoMenu(true);
-			} else {
-				// Just clear our local selection state
-				setLassoSelectedNodes([]);
-			}
+			handleLassoEndFromHook(selectedIds, event);
 		},
-		[]
+		[handleLassoEndFromHook]
 	);
 
 	// Handler for sending selected nodes to context
@@ -277,41 +254,18 @@ export function NetworkGraphProvider({
 
 	// Close lasso menu and clear selections
 	const closeLassoMenu = useCallback(() => {
-		console.log('Closing lasso menu');
+		closeLassoMenuFromHook();
 
-		// Store the previously selected nodes for cleanup
-		const nodesToClear = [...lassoSelectedNodes];
-		console.log('Nodes that need highlighting cleared:', nodesToClear);
-
-		// Clear our local state first
-		setShowLassoMenu(false);
-		setLassoSelectedNodes([]);
-
-		// Clear Reagraph selections if the function exists
+		// Additional cleanup: force update and clear Reagraph selections
 		if (clearSelections) {
-			console.log('Clearing selections on lasso menu close');
-
-			// First update the force update counter to ensure a re-render
-			// This ensures the component will re-render with the new state
 			setForceUpdate((prev: number) => prev + 1);
-
-			// Then clear the selections after the state update is queued
 			clearSelections();
 
-			// Similar to how layout changes update the store, update any relevant global state
-			// This ensures all sources of truth about selections are consistent
 			if (useNetworkStore.getState().setSelectedNodes) {
 				useNetworkStore.getState().setSelectedNodes([]);
 			}
-
-			// Log that we've completed the clearing process
-			console.log('Selection clearing and re-render triggered');
-		} else {
-			console.warn(
-				'clearSelections function is not available on lasso menu close'
-			);
 		}
-	}, [lassoSelectedNodes, clearSelections]);
+	}, [closeLassoMenuFromHook, clearSelections]);
 
 	// Handle layout change
 	const handleLayoutChange = useCallback(
