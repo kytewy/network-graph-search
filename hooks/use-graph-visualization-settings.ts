@@ -38,7 +38,7 @@ import type { ColorMode, NodeSizeMode } from './use-graph-data';
  * ```
  */
 
-export type ClusterMode = 'none' | 'type' | 'continent' | 'country' | 'sourceType';
+export type ClusterMode = 'none' | 'type' | 'continent' | 'country' | 'sourceType' | 'ai_clusters';
 
 interface UseGraphVisualizationSettingsReturn {
 	// Visual state

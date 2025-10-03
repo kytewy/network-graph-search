@@ -76,26 +76,26 @@ def perform_cluster_analysis(nodes: List[Dict[str, Any]]) -> Dict[str, Any]:
     clusters = []
     for cid, data in clusters_data.items():
         clusters.append({
-            'id': data['id'],
+            'cluster_id': data['id'],
             'label': f"Topic {cid}",
-            'nodeCount': len(data['nodeIds']),
-            'topicWords': data['keywords'],
+            'size': len(data['nodeIds']),
+            'top_terms': data['keywords'],
             'description': f"Documents about: {', '.join(data['keywords'][:3])}",
-            'nodeIds': data['nodeIds']
+            'node_ids': data['nodeIds']
         })
     
     # Summary
     summary = f"# Cluster Analysis\n\nFound **{len(clusters)} clusters** from {len(documents)} nodes.\n\n"
     for c in clusters:
-        summary += f"- **{c['label']}** ({c['nodeCount']} nodes): {', '.join(c['topicWords'][:3])}\n"
+        summary += f"- **{c['label']}** ({c['size']} nodes): {', '.join(c['top_terms'][:3])}\n"
     
     return {
         'success': True,
-        'clusterAssignments': cluster_assignments,
+        'cluster_assignments': cluster_assignments,
         'clusters': clusters,
-        'executiveSummary': summary,
+        'executive_summary': summary,
         'metadata': {
-            'totalNodes': len(documents),
-            'numClusters': len(clusters)
+            'total_nodes': len(documents),
+            'num_clusters': len(clusters)
         }
     }

@@ -1,11 +1,15 @@
 'use client';
 
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
 import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
 import { useAppStore, type Node, type Link } from '@/lib/stores/app-state';
 
 // Import our new hooks
-import { useGraphData, type ColorMode, type NodeSizeMode } from '@/hooks/use-graph-data';
+import {
+	useGraphData,
+	type ColorMode,
+	type NodeSizeMode,
+} from '@/hooks/use-graph-data';
 import { useLassoSelection } from '@/hooks/use-lasso-selection';
 import { useGraphVisualizationSettings } from '@/hooks/use-graph-visualization-settings';
 import { useGraphLayout } from '@/hooks/use-graph-layout';
@@ -25,7 +29,13 @@ interface NetworkGraphContextType {
 	showLabels: boolean;
 	colorMode: ColorMode;
 	nodeSizeMode: NodeSizeMode;
-	clusterMode: 'none' | 'type' | 'continent' | 'country' | 'sourceType';
+	clusterMode: 'none' | 'type' | 'continent' | 'country' | 'sourceType' | 'ai_clusters';
+
+	// AI Cluster analysis state
+	hasAiClusters: boolean;
+	aiClusterAssignments: Record<string, string>; // nodeId -> clusterId
+	applyAiClusters: (assignments: Record<string, string>) => void;
+	clearAiClusters: () => void;
 
 	// Selection state
 	selections: { nodes: GraphNode[]; edges: GraphEdge[] };
@@ -48,13 +58,15 @@ interface NetworkGraphContextType {
 	setColorMode: (mode: ColorMode) => void;
 	setNodeSizeMode: (mode: NodeSizeMode) => void;
 	setClusterMode: (
-		mode: 'none' | 'type' | 'continent' | 'country' | 'sourceType'
+		mode: 'none' | 'type' | 'continent' | 'country' | 'sourceType' | 'ai_clusters'
 	) => void;
 	handleCustomNodeClick: (node: GraphNode) => void;
 	handleLasso: (selectedIds: string[]) => void;
 	handleLassoEnd: (selectedIds: string[], event?: MouseEvent) => void;
 	closeLassoMenu: () => void;
 	handleSendToContext: (nodes: Node[]) => void;
+	applyClusterAssignments: (assignments: Record<string, string>) => void;
+	clearClusterAssignments: () => void;
 
 	// Computed properties
 	getNodeColor: (node: Node) => string;
@@ -81,6 +93,10 @@ export function NetworkGraphProvider({
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	const filteredLinks = useAppStore((state) => state.filteredLinks);
 
+	// AI Cluster analysis state (separate from manual clustering)
+	const [hasAiClusters, setHasAiClusters] = useState<boolean>(false);
+	const [aiClusterAssignments, setAiClusterAssignments] = useState<Record<string, string>>({});
+
 	// Hook: Visualization settings (replaces direct store access)
 	const {
 		showLabels,
@@ -93,6 +109,20 @@ export function NetworkGraphProvider({
 		setClusterMode,
 	} = useGraphVisualizationSettings();
 
+	// AI Cluster functions
+	const applyAiClusters = useCallback((assignments: Record<string, string>) => {
+		console.log('[NetworkGraph] Applying AI clusters:', assignments);
+		setAiClusterAssignments(assignments);
+		setHasAiClusters(Object.keys(assignments).length > 0);
+	}, []);
+
+	const clearAiClusters = useCallback(() => {
+		console.log('[NetworkGraph] Clearing AI clusters');
+		setAiClusterAssignments({});
+		setHasAiClusters(false);
+	}, []);
+
+
 	// Hook: Layout management with cluster validation
 	const { layoutType, handleLayoutChange } = useGraphLayout();
 
@@ -101,7 +131,7 @@ export function NetworkGraphProvider({
 	const { graphNodes, graphEdges, getNodeColor, getNodeSize } = useGraphData(
 		filteredResults,
 		filteredLinks,
-		{ colorMode, nodeSizeMode }
+		{ colorMode, nodeSizeMode, clusterAssignments: aiClusterAssignments, clusterMode }
 	);
 
 	// Hook 2: Lasso selection state management
@@ -115,10 +145,7 @@ export function NetworkGraphProvider({
 	} = useLassoSelection();
 
 	// Hook 4: Coordination - provides refs first
-	const {
-		graphRef,
-		nodePositionsRef,
-	} = useGraphCoordination({
+	const { graphRef, nodePositionsRef } = useGraphCoordination({
 		closeLassoMenuFromHook,
 	});
 
@@ -132,13 +159,11 @@ export function NetworkGraphProvider({
 	} = useGraphSelection({ graphNodes, graphEdges, graphRef });
 
 	// Hook 4 continued: Coordination handlers (now with clearSelections available)
-	const {
-		handleSendToContext,
-		handleCloseLassoMenu: closeLassoMenu,
-	} = useGraphCoordination({
-		closeLassoMenuFromHook,
-		clearSelections,
-	});
+	const { handleSendToContext, handleCloseLassoMenu: closeLassoMenu } =
+		useGraphCoordination({
+			closeLassoMenuFromHook,
+			clearSelections,
+		});
 
 	// Create the context value
 	const contextValue = useMemo(
@@ -155,6 +180,9 @@ export function NetworkGraphProvider({
 			colorMode,
 			nodeSizeMode,
 			clusterMode,
+
+			// Cluster analysis state
+			aiClusterAssignments,
 
 			// Selection state
 			selections,
@@ -191,6 +219,12 @@ export function NetworkGraphProvider({
 			onNodeClick: handleCustomNodeClick,
 			onCanvasClick,
 			clearSelections,
+
+			// AI Clustering functions
+			hasAiClusters,
+			aiClusterAssignments,
+			applyAiClusters,
+			clearAiClusters,
 		}),
 		[
 			graphNodes,
@@ -221,6 +255,10 @@ export function NetworkGraphProvider({
 			getNodeSize,
 			onCanvasClick,
 			clearSelections,
+			hasAiClusters,
+			aiClusterAssignments,
+			applyAiClusters,
+			clearAiClusters,
 		]
 	);
 

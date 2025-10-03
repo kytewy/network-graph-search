@@ -55,7 +55,7 @@ interface AppState {
 		| 'documentType'
 		| 'country';
 	nodeSizeMode: 'none' | 'contentLength' | 'summaryLength' | 'similarity';
-	clusterMode: 'none' | 'type' | 'continent' | 'country' | 'sourceType';
+	clusterMode: 'none' | 'type' | 'continent' | 'country' | 'sourceType' | 'ai_clusters';
 	showLabels: boolean;
 	rightPanelExpanded: boolean;
 

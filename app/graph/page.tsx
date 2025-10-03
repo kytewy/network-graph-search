@@ -2,7 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { ColorLegend } from '@/components/network/ColorLegend';
-import { NetworkGraph } from '@/components/network/NetworkGraph';
+import { NetworkGraphCanvas } from '@/components/network/NetworkGraphCanvas';
+import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
 import { SearchInput } from '@/components/search/SearchInput';
 import { SimilarityHistogram } from '@/components/search/SimilarityHistogram';
 import FilterPanel from '@/components/filters/FilterPanel';
@@ -20,6 +21,7 @@ export default function NetworkGraphApp() {
 	const filteredNodes = filteredResults;
 
 	return (
+		<NetworkGraphProvider>
 		<div className="flex h-screen overflow-hidden bg-background">
 			{/* Sidebar */}
 			<div className="w-96 bg-sidebar border-r border-sidebar-border p-6 overflow-y-auto">
@@ -45,7 +47,7 @@ export default function NetworkGraphApp() {
 			{/* Main Graph Area */}
 			<div className="flex-1 relative h-screen overflow-hidden">
 				<div className="w-full h-full">
-					<NetworkGraph />
+					<NetworkGraphCanvas />
 				</div>
 				<ColorLegend filteredNodes={filteredNodes} />
 			</div>
@@ -83,5 +85,6 @@ export default function NetworkGraphApp() {
 				</div>
 			</div>
 		</div>
+		</NetworkGraphProvider>
 	);
 }

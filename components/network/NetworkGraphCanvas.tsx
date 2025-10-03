@@ -32,6 +32,7 @@ export function NetworkGraphCanvas() {
 		colorMode,
 		nodeSizeMode,
 		clusterMode,
+		clusterAssignments,
 		selections,
 		graphRef,
 		nodePositionsRef,
@@ -47,6 +48,15 @@ export function NetworkGraphCanvas() {
 		handleSendToContext,
 		filteredResults,
 	} = useNetworkGraph();
+
+	// Determine which cluster attribute to use
+	// Priority: cluster assignments from API > manual clusterMode
+	const hasClusterAssignments = Object.keys(clusterAssignments || {}).length > 0;
+	const activeClusterAttribute = hasClusterAssignments
+		? 'cluster' // Use 'cluster' property when we have API assignments
+		: clusterMode !== 'none'
+			? clusterMode // Fall back to manual clustering
+			: undefined;
 
 	return (
 		<div className="flex flex-col h-full">
@@ -84,7 +94,6 @@ export function NetworkGraphCanvas() {
 							nodes={graphNodes}
 							edges={graphEdges}
 							layoutType={layoutType as any}
-							layoutOverrides={GRAPH_LAYOUT_CONFIG}
 							selections={selections}
 							onNodeClick={handleCustomNodeClick}
 							// Custom canvas click handler that clears selections
@@ -99,10 +108,8 @@ export function NetworkGraphCanvas() {
 							}
 							// Use direct node size property
 							nodeSize={(node) => node.size || NODE_SIZE.default}
-							// Use clusterAttribute if clusterMode is not 'none'
-							clusterAttribute={
-								clusterMode !== 'none' ? clusterMode : undefined
-							}
+							// Use 'cluster' for API assignments, or clusterMode for manual clustering
+							clusterAttribute={activeClusterAttribute}
 							// Enable node dragging
 							draggable={true}
 							labelType={showLabels ? PERFORMANCE_CONFIG.labelType : 'none'}
@@ -110,11 +117,11 @@ export function NetworkGraphCanvas() {
 							animated={PERFORMANCE_CONFIG.animated}
 							cameraMode={PERFORMANCE_CONFIG.cameraMode}
 							contextMenu={({
-								data,
-								onClose,
-							}: {
-								data: any;
-								onClose: () => void;
+									data,
+									onClose,
+								}: {
+									data: any;
+									onClose: () => void;
 							}) => {
 								// Only show context menu for nodes, not edges
 								if (!data || !data.data) return null;

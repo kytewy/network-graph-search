@@ -29,6 +29,7 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 		setClusterMode: onClusterByChange,
 		showLabels,
 		setShowLabels: onShowLabelsChange,
+		hasAiClusters,
 	} = useNetworkGraph();
 	
 	// Default value for API key
@@ -77,6 +78,7 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 		{ id: 'continent', name: 'Continent' },
 		{ id: 'country', name: 'Country' },
 		{ id: 'sourceType', name: 'Source Type' },
+		...(hasAiClusters ? [{ id: 'ai_clusters', name: '🤖 AI Clusters' }] : []),
 	];
 
 	// Get display name for current layout

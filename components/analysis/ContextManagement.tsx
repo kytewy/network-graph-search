@@ -21,6 +21,7 @@ import { useUIStore } from '@/lib/stores/ui-store';
 import { useContextStore } from '@/lib/stores/context-store';
 import DocumentOverlay from '@/components/network/DocumentOverlay';
 import ChatInterface from '@/components/analysis/ChatInterface';
+import ClusteringInterface from '@/components/analysis/ClusteringInterface';
 
 interface Node {
 	id: string;
@@ -86,7 +87,7 @@ export default function ContextManagement({
 	const [searchQuery, setSearchQuery] = useState('');
 
 	// State for tabs view
-	const [activeTab, setActiveTab] = useState<'nodes' | 'analysis'>('nodes');
+	const [activeTab, setActiveTab] = useState<'nodes' | 'analysis' | 'clustering'>('nodes');
 
 	// State for bulk selection
 	const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
@@ -321,7 +322,7 @@ export default function ContextManagement({
 				</div>
 			</div>
 
-			{/* Tab navigation for nodes/analysis views */}
+			{/* Tab navigation for nodes/analysis/clustering views */}
 			<div className="flex items-center gap-2 mb-4">
 				<Button
 					variant={activeTab === 'nodes' ? 'default' : 'outline'}
@@ -338,6 +339,14 @@ export default function ContextManagement({
 					className="text-xs h-8 px-3">
 					<MessageSquare className="h-3 w-3 mr-1" />
 					Analysis
+				</Button>
+				<Button
+					variant={activeTab === 'clustering' ? 'default' : 'outline'}
+					size="sm"
+					onClick={() => setActiveTab('clustering')}
+					className="text-xs h-8 px-3">
+					<BarChart4 className="h-3 w-3 mr-1" />
+					Clustering
 				</Button>
 			</div>
 
@@ -530,7 +539,7 @@ export default function ContextManagement({
 						</div>
 					</div>
 				</>
-			) : (
+			) : activeTab === 'analysis' ? (
 				// Analysis tab content
 				<div className="mt-4">
 					<ChatInterface
@@ -539,6 +548,14 @@ export default function ContextManagement({
 						filterState={filterState}
 						rightPanelExpanded={rightPanelExpanded}
 						selectedNodesSummary={selectedNodesSummary}
+					/>
+				</div>
+			) : (
+				// Clustering tab content
+				<div className="mt-4">
+					<ClusteringInterface
+						contextNodes={contextNodes}
+						rightPanelExpanded={rightPanelExpanded}
 					/>
 				</div>
 			)}
