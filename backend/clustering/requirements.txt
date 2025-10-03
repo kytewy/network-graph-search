@@ -1,0 +1,6 @@
+# Python dependencies for BERTopic clustering
+# Install with: pip install -r requirements.txt
+
+bertopic 
+sentence-transformers 
+openai 
