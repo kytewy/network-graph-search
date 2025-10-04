@@ -69,7 +69,7 @@ interface UseGraphSelectionReturn {
 	/** Handler for node click events */
 	onNodeClick: (node: GraphNode) => void;
 	/** Handler for canvas background click */
-	onCanvasClick: (event: MouseEvent) => void;
+	onCanvasClick: (event?: MouseEvent) => void;
 	/** Function to clear all selections */
 	clearSelections: (value?: string[]) => void;
 }
@@ -147,7 +147,9 @@ export function useGraphSelection(
 		selections,
 		selectedNode,
 		onNodeClick: handleCustomNodeClick,
-		onCanvasClick,
+		onCanvasClick: (event?: MouseEvent) => {
+			if (event) onCanvasClick(event);
+		},
 		clearSelections,
 	};
 }

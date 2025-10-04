@@ -50,13 +50,8 @@ export function NetworkGraphCanvas() {
 	} = useNetworkGraph();
 
 	// Determine which cluster attribute to use
-	// Priority: cluster assignments from API > manual clusterMode
-	const hasClusterAssignments = Object.keys(clusterAssignments || {}).length > 0;
-	const activeClusterAttribute = hasClusterAssignments
-		? 'cluster' // Use 'cluster' property when we have API assignments
-		: clusterMode !== 'none'
-			? clusterMode // Fall back to manual clustering
-			: undefined;
+	// Simply use the clusterMode as the attribute name since all properties are attached to nodes
+	const activeClusterAttribute = clusterMode !== 'none' ? clusterMode : undefined;
 
 	return (
 		<div className="flex flex-col h-full">
@@ -83,98 +78,96 @@ export function NetworkGraphCanvas() {
 				</div>
 
 				{graphNodes.length > 0 ? (
-					<div className="absolute inset-0">
-						{/* @ts-expect-error - Reagraph types are incomplete. These props exist but aren't in the type definitions:
-					    - lassoType, onLasso, onLassoEnd: Documented lasso selection API
-					    - contextMenu: Documented context menu API
-					    See: https://reagraph.dev/docs/advanced/Selection */}
-						<GraphCanvas
-							key={`graph-${nodeSizeMode}-${colorMode}`}
-							ref={graphRef}
-							nodes={graphNodes}
-							edges={graphEdges}
-							layoutType={layoutType as any}
-							selections={selections}
-							onNodeClick={handleCustomNodeClick}
-							// Custom canvas click handler that clears selections
-							onCanvasClick={onCanvasClick}
-							// Lasso selection for multi-node selection (hold Shift + drag)
-							lassoType="node"
-							onLasso={(selection: any) =>
-								handleLasso(selection?.nodes || selection || [])
-							}
-							onLassoEnd={(selection: any) =>
-								handleLassoEnd(selection?.nodes || selection || [])
-							}
-							// Use direct node size property
-							nodeSize={(node) => node.size || NODE_SIZE.default}
-							// Use 'cluster' for API assignments, or clusterMode for manual clustering
-							clusterAttribute={activeClusterAttribute}
-							// Enable node dragging
-							draggable={true}
-							labelType={showLabels ? PERFORMANCE_CONFIG.labelType : 'none'}
-							edgeStyle={PERFORMANCE_CONFIG.edgeStyle}
-							animated={PERFORMANCE_CONFIG.animated}
-							cameraMode={PERFORMANCE_CONFIG.cameraMode}
-							contextMenu={({
-									data,
-									onClose,
-								}: {
-									data: any;
-									onClose: () => void;
-							}) => {
-								// Only show context menu for nodes, not edges
-								if (!data || !data.data) return null;
+					<GraphCanvas
+						key={`graph-${nodeSizeMode}-${colorMode}-${clusterMode}`}
+						ref={graphRef}
+						nodes={graphNodes}
+						edges={graphEdges}
+						layoutType={layoutType as any}
+						layoutOverrides={{
+							clusterStrength: activeClusterAttribute ? 0.8 : 0,
+							linkDistance: 100,
+							nodeStrength: -150,
+						}}
+						selections={selections}
+						onNodeClick={handleCustomNodeClick}
+						onCanvasClick={onCanvasClick}
+						// Lasso selection for multi-node selection (hold Shift + drag)
+						lassoType="node"
+						onLasso={(selection: any) =>
+							handleLasso(selection?.nodes || selection || [])
+						}
+						onLassoEnd={(selection: any, event?: MouseEvent) =>
+							handleLassoEnd(selection?.nodes || selection || [], event)
+						}
+						// Use direct node size property
+						nodeSize={(node) => (node.size as number) || NODE_SIZE.default}
+						// Use 'cluster' for API assignments, or clusterMode for manual clustering
+						clusterAttribute={activeClusterAttribute}
+						// Enable node dragging
+						draggable={true}
+						labelType={showLabels ? PERFORMANCE_CONFIG.labelType : 'none'}
+						edgeStyle={PERFORMANCE_CONFIG.edgeStyle}
+						animated={PERFORMANCE_CONFIG.animated}
+						cameraMode={PERFORMANCE_CONFIG.cameraMode}
+						contextMenu={({
+							data,
+							onClose,
+						}: {
+							data: any;
+							onClose: () => void;
+						}) => {
+							// Only show context menu for nodes, not edges
+							if (!data || !data.data) return null;
 
-								// Get the node data from the graph node
-								const nodeData = data.data;
+							// Get the node data from the graph node
+							const nodeData = data.data;
 
-								return (
-									<div className="custom-context-menu-wrapper">
-										<NodeContextMenu
-											className="node-context-menu"
-											node={{
-												id: nodeData.id,
-												label: nodeData.label,
-												type: nodeData.type || 'document',
-												size: nodeData.size || NODE_SIZE.default,
-												color: getNodeColor(nodeData),
-												summary: nodeData.summary || '',
-												content: nodeData.content || nodeData.text || '',
-												similarity: nodeData.similarity || nodeData.score,
-												sourceType: nodeData.category || '',
-												continent: nodeData.continent || '',
-												country: nodeData.country || '',
-											}}
-											onClose={onClose}
-										/>
-									</div>
-								);
-							}}
-							getNodePosition={(
-								id: string,
-								context?: {
-									drags?: Record<
-										string,
-										{ position: { x: number; y: number; z: number } }
-									>;
-								}
-							) => {
-								// Respect active drags first (Reagraph Playbook Rule #3)
-								if (context?.drags?.[id]?.position) {
-									return context.drags[id].position;
-								}
-								// Otherwise use stored position
-								return nodePositionsRef.current.get(id) || null;
-							}}
-							onNodeDragEnd={(
-								node: any,
-								position: { x: number; y: number; z: number }
-							) => {
-								nodePositionsRef.current.set(node.id, position);
-							}}
-						/>
-					</div>
+							return (
+								<div className="custom-context-menu-wrapper">
+									<NodeContextMenu
+										className="node-context-menu"
+										node={{
+											id: nodeData.id,
+											label: nodeData.label,
+											type: nodeData.type || 'document',
+											size: nodeData.size || NODE_SIZE.default,
+											color: getNodeColor(nodeData),
+											summary: nodeData.summary || '',
+											content: nodeData.content || nodeData.text || '',
+											similarity: nodeData.similarity || nodeData.score,
+											sourceType: nodeData.category || '',
+											continent: nodeData.continent || '',
+											country: nodeData.country || '',
+										}}
+										onClose={onClose}
+									/>
+								</div>
+							);
+						}}
+						getNodePosition={(
+							id: string,
+							context?: {
+								drags?: Record<
+									string,
+									{ position: { x: number; y: number; z: number } }
+								>;
+							}
+						) => {
+							// Respect active drags first (Reagraph Playbook Rule #3)
+							if (context?.drags?.[id]?.position) {
+								return context.drags[id].position;
+							}
+							// Otherwise use stored position
+							return nodePositionsRef.current.get(id) || null;
+						}}
+						onNodeDragEnd={(
+							node: any,
+							position: { x: number; y: number; z: number }
+						) => {
+							nodePositionsRef.current.set(node.id, position);
+						}}
+					/>
 				) : (
 					<div className="flex items-center justify-center h-full text-gray-500">
 						No graph data available. Try a different search query.

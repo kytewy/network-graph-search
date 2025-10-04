@@ -13,6 +13,7 @@ interface ClusterResult {
 	cluster_id: string;
 	size: number;
 	top_terms: string[];
+	node_ids: string[];
 }
 
 interface ClusterAnalysisResponse {
@@ -153,21 +154,41 @@ export default function ClusteringInterface({
 										{cluster.size} {cluster.size === 1 ? 'node' : 'nodes'}
 									</span>
 								</div>
-								<div className="flex flex-wrap gap-2">
-									{cluster.top_terms && cluster.top_terms.length > 0 ? (
-										cluster.top_terms.map((term, idx) => (
-											<span
-												key={idx}
-												className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
-												{term}
+								{/* Top Terms */}
+								<div className="mb-3">
+									<p className="text-xs font-medium text-gray-600 mb-1">Top Terms:</p>
+									<div className="flex flex-wrap gap-2">
+										{cluster.top_terms && cluster.top_terms.length > 0 ? (
+											cluster.top_terms.map((term, idx) => (
+												<span
+													key={idx}
+													className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+													{term}
+												</span>
+											))
+										) : (
+											<span className="text-xs text-gray-500 italic">
+												No top terms available
 											</span>
-										))
-									) : (
-										<span className="text-xs text-gray-500 italic">
-											No top terms available
-										</span>
-									)}
+										)}
+									</div>
 								</div>
+
+								{/* Node IDs */}
+								{cluster.node_ids && cluster.node_ids.length > 0 && (
+									<div>
+										<p className="text-xs font-medium text-gray-600 mb-1">Nodes:</p>
+										<div className="flex flex-wrap gap-1">
+											{cluster.node_ids.map((nodeId) => (
+												<span
+													key={nodeId}
+													className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-mono">
+													{nodeId}
+												</span>
+											))}
+										</div>
+									</div>
+								)}
 							</div>
 						))}
 					</div>

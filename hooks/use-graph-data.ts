@@ -22,8 +22,7 @@ export type NodeSizeMode =
 interface UseGraphDataOptions {
 	colorMode: ColorMode;
 	nodeSizeMode: NodeSizeMode;
-	clusterAssignments?: Record<string, string>; // nodeId -> clusterId (AI clusters)
-	clusterMode?: string; // Manual cluster mode
+	clusterMode?: string; // Cluster mode
 }
 
 interface UseGraphDataReturn {
@@ -62,7 +61,7 @@ interface UseGraphDataReturn {
 export function useGraphData(
 	nodes: Node[],
 	links: Link[],
-	{ colorMode, nodeSizeMode, clusterAssignments, clusterMode }: UseGraphDataOptions
+	{ colorMode, nodeSizeMode, clusterMode }: UseGraphDataOptions
 ): UseGraphDataReturn {
 	const getNodeColor = useCallback(
 		(node: Node) => {
@@ -79,29 +78,13 @@ export function useGraphData(
 		[nodeSizeMode]
 	);
 
-	// Smart cluster assignment with priority logic
-	const getClusterValue = useCallback((node: Node) => {
-		// Priority 1: AI clusters if they exist
-		if (clusterAssignments && clusterAssignments[node.id]) {
-			console.log('[useGraphData] Using AI cluster for node:', node.id, '→', clusterAssignments[node.id]);
-			return clusterAssignments[node.id];
-		}
-		// Priority 2: Manual clusters if clusterMode is set
-		if (clusterMode && clusterMode !== 'none') {
-			const manualCluster = (node as any)[clusterMode];
-			if (manualCluster) {
-				console.log('[useGraphData] Using manual cluster for node:', node.id, '→', manualCluster);
-				return manualCluster;
-			}
-		}
-		return undefined;
-	}, [clusterAssignments, clusterMode]);
-
 	// Transform nodes to Reagraph format
 	const graphNodes = useMemo(() => {
 		if (!nodes || nodes.length === 0) return [];
 
 		const transformed = nodes.map((node) => {
+			const nodeData = node as any;
+			
 			const graphNode = {
 				id: node.id,
 				label: node.label || node.id,
@@ -109,20 +92,28 @@ export function useGraphData(
 				size: getNodeSize(node),
 				score: node.score || 0.5,
 				category: node.category || '',
-				cluster: getClusterValue(node), // Smart cluster assignment with priority
 				data: node as any, // Store original node data for context menu and interactions
+				
+				// Attach all possible cluster properties to the node
+				// Reagraph will use the one specified by clusterAttribute
+				type: nodeData.type,
+				continent: nodeData.continent,
+				country: nodeData.country,
+				sourceType: nodeData.sourceType,
+				ai_clusters: nodeData.ai_clusters, // AI cluster assignment (e.g., "cluster_0") - stored directly on node
 			};
 			return graphNode;
 		});
 
-		// Log cluster assignments for debugging
-		const clusteredNodes = transformed.filter(n => n.cluster);
-		if (clusteredNodes.length > 0) {
-			console.log('[useGraphData] Nodes with cluster assignments:', clusteredNodes.length, '/', transformed.length);
-			console.log('[useGraphData] Cluster distribution:', 
+		// Log AI cluster assignments for debugging
+		const aiClusteredNodes = transformed.filter(n => n.ai_clusters);
+		if (aiClusteredNodes.length > 0) {
+			console.log('[useGraphData] Nodes with AI cluster assignments:', aiClusteredNodes.length, '/', transformed.length);
+			console.log('[useGraphData] AI Cluster distribution:', 
 				Object.entries(
-					clusteredNodes.reduce((acc, node) => {
-						acc[node.cluster!] = (acc[node.cluster!] || 0) + 1;
+					aiClusteredNodes.reduce((acc, node) => {
+						const cluster = node.ai_clusters!;
+						acc[cluster] = (acc[cluster] || 0) + 1;
 						return acc;
 					}, {} as Record<string, number>)
 				)
@@ -130,7 +121,7 @@ export function useGraphData(
 		}
 
 		return transformed;
-	}, [nodes, getNodeColor, getNodeSize, clusterAssignments]);
+	}, [nodes, getNodeColor, getNodeSize]);
 
 	// Transform links to Reagraph edges
 	const graphEdges = useMemo(() => {

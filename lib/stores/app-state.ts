@@ -16,6 +16,7 @@ export interface Node {
 	// Direct properties for easier access and consistent data structure
 	country?: string;
 	continent?: string;
+	ai_clusters?: string; // AI cluster assignment (e.g., "cluster_0", "cluster_1")
 	// Keep fields for backward compatibility and other metadata
 	fields?: any;
 	data?: any;
@@ -83,7 +84,7 @@ interface AppState {
 		mode: 'none' | 'contentLength' | 'summaryLength' | 'similarity'
 	) => void;
 	setClusterMode: (
-		mode: 'none' | 'type' | 'continent' | 'country' | 'sourceType'
+		mode: 'none' | 'type' | 'continent' | 'country' | 'sourceType' | 'ai_clusters'
 	) => void;
 	setShowLabels: (show: boolean) => void;
 	setRightPanelExpanded: (expanded: boolean) => void;
@@ -270,6 +271,7 @@ export const useAppStore = create<AppState>()(
 						// Add normalized direct properties
 						country,
 						continent,
+						ai_clusters: undefined, // Will be assigned by AI clustering API
 						// Keep original fields for backward compatibility
 						fields: hit.fields || {},
 					};
