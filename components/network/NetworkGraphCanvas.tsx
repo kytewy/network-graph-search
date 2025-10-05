@@ -105,7 +105,6 @@ export function NetworkGraphCanvas() {
 						// Use 'cluster' for API assignments, or clusterMode for manual clustering
 						clusterAttribute={activeClusterAttribute}
 						// Enable node dragging
-						draggable={true}
 						labelType={showLabels ? PERFORMANCE_CONFIG.labelType : 'none'}
 						edgeStyle={PERFORMANCE_CONFIG.edgeStyle}
 						animated={PERFORMANCE_CONFIG.animated}
@@ -121,28 +120,27 @@ export function NetworkGraphCanvas() {
 							// Get the node data from the graph node
 							const nodeData = data.data;
 
+							/**
+							 * ✅ BEST PRACTICE: Pass the full node data using spread operator
+							 * This automatically includes all fields (including url, score, category, etc.)
+							 * and prevents bugs from missing fields.
+							 * 
+							 * See lib/types/node.ts for the complete Node interface definition.
+							 */
 							return (
-							<div className="custom-context-menu-wrapper">
-								<NodeContextMenu
-									className="node-context-menu"
-									node={{
-										id: nodeData.id,
-										label: nodeData.label,
-										type: nodeData.type || 'document',
-										size: nodeData.size || NODE_SIZE.default,
-										color: getNodeColor(nodeData),
-										summary: nodeData.summary || '',
-										content: nodeData.content || nodeData.text || '',
-										similarity: nodeData.similarity || nodeData.score,
-										sourceType: nodeData.category || '',
-										continent: nodeData.continent || '',
-										country: nodeData.country || '',
-										url: nodeData.url || '', // URL for "Open Link" button
-									}}
-									onClose={onClose}
-								/>
-							</div>
-						);
+								<div className="custom-context-menu-wrapper">
+									<NodeContextMenu
+										className="node-context-menu"
+										node={{
+											...nodeData,
+											// Override only necessary computed values
+											color: getNodeColor(nodeData),
+											size: nodeData.size || NODE_SIZE.default,
+										}}
+										onClose={onClose}
+									/>
+								</div>
+							);
 						}}
 						getNodePosition={(
 							id: string,
