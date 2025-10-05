@@ -55,7 +55,7 @@ export default function NetworkGraphApp() {
 			{/* Right Panel */}
 			<div
 				className={`${
-					rightPanelExpanded ? 'absolute right-0 top-0 left-96 z-10' : 'w-80'
+					rightPanelExpanded ? 'absolute right-0 top-0 left-96 z-10' : 'w-96'
 				} h-screen bg-sidebar border-l border-sidebar-border overflow-y-auto transition-all duration-300 flex flex-col`}>
 				{/* Expand/Collapse Button */}
 				<div className="flex justify-start p-2 border-b border-sidebar-border">

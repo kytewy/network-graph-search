@@ -70,24 +70,21 @@ def perform_cluster_analysis(nodes: List[Dict[str, Any]]) -> Dict[str, Any]:
     for node_id, label in zip(node_ids, labels):
         cluster_id = f"cluster_{label}"
         cluster_assignments[node_id] = cluster_id
-        clusters_data[label]['nodeIds'].append(node_id)
     
     # Build response
     clusters = []
     for cid, data in clusters_data.items():
         clusters.append({
-            'cluster_id': data['id'],
-            'label': f"Topic {cid}",
+            'cluster_id': f"cluster_{cid}",
+            'label': f"Cluster {cid}",
             'size': len(data['nodeIds']),
             'top_terms': data['keywords'],
             'description': f"Documents about: {', '.join(data['keywords'][:3])}",
             'node_ids': data['nodeIds']
         })
     
-    # Summary
-    summary = f"# Cluster Analysis\n\nFound **{len(clusters)} clusters** from {len(documents)} nodes.\n\n"
-    for c in clusters:
-        summary += f"- **{c['label']}** ({c['size']} nodes): {', '.join(c['top_terms'][:3])}\n"
+    # Summary (without duplicate header since frontend adds it)
+    summary = f"Found {len(clusters)} clusters from {len(documents)} nodes.\n\nLLM Interpretation of results"
     
     return {
         'success': True,

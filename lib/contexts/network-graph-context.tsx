@@ -118,12 +118,12 @@ export function NetworkGraphProvider({
 		
 		setHasAiClusters(Object.keys(assignments).length > 0);
 		
-		// Automatically switch to AI clusters mode
+		// Automatically switch to AI clusters mode when user runs clustering
 		if (Object.keys(assignments).length > 0) {
 			setClusterMode('ai_clusters');
-			console.log('[NetworkGraph] Auto-switched to ai_clusters mode');
+			console.log('[NetworkGraph] Switched to ai_clusters mode after clustering');
 		}
-	}, [filteredResults]);
+	}, [filteredResults, setClusterMode]);
 
 	const clearAiClusters = useCallback(() => {
 		console.log('[NetworkGraph] Clearing AI clusters from nodes');
@@ -147,13 +147,11 @@ export function NetworkGraphProvider({
 		if (hasPreAssignedClusters) {
 			console.log('[NetworkGraph] Detected pre-assigned AI clusters on', nodesWithClusters.length, 'nodes');
 			setHasAiClusters(true);
-			// Auto-switch to AI clusters mode
-			if (clusterMode === 'none') {
-				setClusterMode('ai_clusters');
-				console.log('[NetworkGraph] Auto-switched to ai_clusters mode');
-			}
+			// Don't auto-switch - let user manually select AI Clusters mode
+		} else {
+			setHasAiClusters(false);
 		}
-	}, [filteredResults, clusterMode, setClusterMode]);
+	}, [filteredResults]);
 
 	// Hook: Layout management with cluster validation
 	const { layoutType, handleLayoutChange } = useGraphLayout();

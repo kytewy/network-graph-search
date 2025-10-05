@@ -78,7 +78,7 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 		{ id: 'continent', name: 'Continent' },
 		{ id: 'country', name: 'Country' },
 		{ id: 'sourceType', name: 'Source Type' },
-		...(hasAiClusters ? [{ id: 'ai_clusters', name: '🤖 AI Clusters' }] : []),
+		...(hasAiClusters ? [{ id: 'ai_clusters', name: 'AI Clusters' }] : []),
 	];
 
 	// Get display name for current layout

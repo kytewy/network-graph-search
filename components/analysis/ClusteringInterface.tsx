@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronUp, BarChart4 } from 'lucide-react';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
+import { useContextStore } from '@/lib/stores/context-store';
 
 interface ClusteringInterfaceProps {
 	contextNodes: any[];
@@ -28,8 +30,14 @@ export default function ClusteringInterface({
 }: ClusteringInterfaceProps) {
 	const { applyAiClusters, clearAiClusters } = useNetworkGraph();
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
-	const [clusterResults, setClusterResults] = useState<ClusterAnalysisResponse | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	
+	// Use persistent store for clustering results
+	const clusterResults = useContextStore((state) => state.clusterResults);
+	const expandedClusters = useContextStore((state) => state.expandedClusters);
+	const setClusterResults = useContextStore((state) => state.setClusterResults);
+	const toggleClusterExpansion = useContextStore((state) => state.toggleClusterExpansion);
+	const clearClusterResults = useContextStore((state) => state.clearClusterResults);
 
 	const handleAnalyzeClusters = async () => {
 		if (contextNodes.length === 0) {
@@ -78,8 +86,52 @@ export default function ClusteringInterface({
 
 	const handleClearClusters = () => {
 		clearAiClusters();
-		setClusterResults(null);
+		clearClusterResults();
 		setError(null);
+	};
+
+	// Helper function to format the executive summary with better structure
+	const formatSummary = (summary: string) => {
+		// Split by lines and process each line
+		const lines = summary.split('\n').filter(line => line.trim());
+		
+		return lines.map((line, index) => {
+			// Check if line starts with "Found X clusters"
+			if (line.includes('Found') && line.includes('clusters')) {
+				return (
+					<div key={index} className="text-lg font-semibold text-blue-900 mb-3">
+						{line}
+					</div>
+				);
+			}
+			
+			// Check if line starts with "- **Cluster"
+			if (line.startsWith('- **Cluster')) {
+				const parts = line.split('): ');
+				if (parts.length === 2) {
+					const clusterPart = parts[0] + '):';
+					const termsPart = parts[1];
+					
+					return (
+						<div key={index} className="mb-2 p-2 bg-white rounded border border-blue-100">
+							<div className="font-medium text-blue-800 mb-1">
+								{clusterPart}
+							</div>
+							<div className="text-sm text-gray-700 ml-2">
+								<span className="font-medium">Key terms:</span> {termsPart}
+							</div>
+						</div>
+					);
+				}
+			}
+			
+			// Default formatting for other lines
+			return (
+				<div key={index} className="text-sm text-blue-800 mb-1">
+					{line}
+				</div>
+			);
+		});
 	};
 
 	return (
@@ -130,10 +182,13 @@ export default function ClusteringInterface({
 					{/* Executive Summary */}
 					{clusterResults.executive_summary && (
 						<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-							<h5 className="font-semibold text-blue-900 mb-2">Summary</h5>
-							<p className="text-sm text-blue-800 whitespace-pre-wrap">
-								{clusterResults.executive_summary}
-							</p>
+							<h5 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+								<BarChart4 className="h-4 w-4" />
+								Cluster Analysis
+							</h5>
+							<div className="space-y-2">
+								{formatSummary(clusterResults.executive_summary)}
+							</div>
 						</div>
 					)}
 
@@ -142,55 +197,74 @@ export default function ClusteringInterface({
 						<h5 className="font-semibold text-gray-900">
 							Clusters ({clusterResults.clusters.length})
 						</h5>
-						{clusterResults.clusters.map((cluster) => (
-							<div
-								key={cluster.cluster_id}
-								className="bg-white border border-gray-200 rounded-lg p-4">
-								<div className="flex items-center justify-between mb-2">
-									<h6 className="font-semibold text-gray-900">
-										{cluster.cluster_id}
-									</h6>
-									<span className="text-xs text-gray-500">
-										{cluster.size} {cluster.size === 1 ? 'node' : 'nodes'}
-									</span>
-								</div>
-								{/* Top Terms */}
-								<div className="mb-3">
-									<p className="text-xs font-medium text-gray-600 mb-1">Top Terms:</p>
-									<div className="flex flex-wrap gap-2">
-										{cluster.top_terms && cluster.top_terms.length > 0 ? (
-											cluster.top_terms.map((term, idx) => (
-												<span
-													key={idx}
-													className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
-													{term}
-												</span>
-											))
-										) : (
-											<span className="text-xs text-gray-500 italic">
-												No top terms available
-											</span>
-										)}
+						{clusterResults.clusters.map((cluster) => {
+							const isExpanded = expandedClusters.has(cluster.cluster_id);
+							return (
+								<div
+									key={cluster.cluster_id}
+									className="bg-white border border-gray-200 rounded-lg p-4">
+									<div className="flex items-center justify-between mb-2">
+										<h6 className="font-semibold text-gray-900">
+											{cluster.cluster_id}
+										</h6>
+										<span className="text-xs text-gray-500">
+											{cluster.size} {cluster.size === 1 ? 'node' : 'nodes'}
+										</span>
 									</div>
-								</div>
-
-								{/* Node IDs */}
-								{cluster.node_ids && cluster.node_ids.length > 0 && (
-									<div>
-										<p className="text-xs font-medium text-gray-600 mb-1">Nodes:</p>
-										<div className="flex flex-wrap gap-1">
-											{cluster.node_ids.map((nodeId) => (
-												<span
-													key={nodeId}
-													className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-mono">
-													{nodeId}
+									{/* Top Terms */}
+									<div className="mb-3">
+										<p className="text-xs font-medium text-gray-600 mb-1">Top Terms:</p>
+										<div className="flex flex-wrap gap-2">
+											{cluster.top_terms && cluster.top_terms.length > 0 ? (
+												cluster.top_terms.map((term, idx) => (
+													<span
+														key={idx}
+														className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+														{term}
+													</span>
+												))
+											) : (
+												<span className="text-xs text-gray-500 italic">
+													No top terms available
 												</span>
-											))}
+											)}
 										</div>
 									</div>
-								)}
-							</div>
-						))}
+
+									{/* Node IDs with Dropdown */}
+									{cluster.node_ids && cluster.node_ids.length > 0 && (
+										<div>
+											<button
+												onClick={() => toggleClusterExpansion(cluster.cluster_id)}
+												className="flex items-center gap-2 text-xs font-medium text-gray-600 mb-1 hover:text-gray-800 transition-colors">
+												<span>Nodes:</span>
+												{isExpanded ? (
+													<ChevronUp className="h-3 w-3" />
+												) : (
+													<ChevronDown className="h-3 w-3" />
+												)}
+											</button>
+											{isExpanded && (
+												<div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+													{cluster.node_ids.map((nodeId) => (
+														<span
+															key={nodeId}
+															className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-mono">
+															{nodeId}
+														</span>
+													))}
+												</div>
+											)}
+											{!isExpanded && (
+												<div className="text-xs text-gray-500 italic">
+													Click to view {cluster.node_ids.length} nodes
+												</div>
+											)}
+										</div>
+									)}
+								</div>
+							);
+						})}
 					</div>
 				</div>
 			)}

@@ -323,31 +323,39 @@ export default function ContextManagement({
 			</div>
 
 			{/* Tab navigation for nodes/analysis/clustering views */}
-			<div className="flex items-center gap-2 mb-4">
-				<Button
-					variant={activeTab === 'nodes' ? 'default' : 'outline'}
-					size="sm"
-					onClick={() => setActiveTab('nodes')}
-					className="text-xs h-8 px-3">
-					<CheckSquare className="h-3 w-3 mr-1" />
-					Nodes
-				</Button>
-				<Button
-					variant={activeTab === 'analysis' ? 'default' : 'outline'}
-					size="sm"
-					onClick={() => setActiveTab('analysis')}
-					className="text-xs h-8 px-3">
-					<MessageSquare className="h-3 w-3 mr-1" />
-					Analysis
-				</Button>
-				<Button
-					variant={activeTab === 'clustering' ? 'default' : 'outline'}
-					size="sm"
-					onClick={() => setActiveTab('clustering')}
-					className="text-xs h-8 px-3">
-					<BarChart4 className="h-3 w-3 mr-1" />
-					Clustering
-				</Button>
+			<div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg p-1 mb-4">
+				<nav className="flex space-x-1" aria-label="Tabs">
+					<button
+						onClick={() => setActiveTab('nodes')}
+						className={`flex-1 flex items-center justify-center gap-1 py-2.5 px-2 text-xs font-semibold rounded-md transition-all duration-200 ${
+							activeTab === 'nodes'
+								? 'bg-[#7c3aed] text-white shadow-lg shadow-purple-500/25'
+								: 'text-slate-600 hover:text-slate-800 hover:bg-white/50'
+						}`}>
+						<CheckSquare className="h-3.5 w-3.5" />
+						<span className="hidden sm:inline">Nodes</span>
+					</button>
+					<button
+						onClick={() => setActiveTab('analysis')}
+						className={`flex-1 flex items-center justify-center gap-1 py-2.5 px-2 text-xs font-semibold rounded-md transition-all duration-200 ${
+							activeTab === 'analysis'
+								? 'bg-[#7c3aed] text-white shadow-lg shadow-purple-500/25'
+								: 'text-slate-600 hover:text-slate-800 hover:bg-white/50'
+						}`}>
+						<MessageSquare className="h-3.5 w-3.5" />
+						<span className="hidden sm:inline">Analysis</span>
+					</button>
+					<button
+						onClick={() => setActiveTab('clustering')}
+						className={`flex-1 flex items-center justify-center gap-1 py-2.5 px-2 text-xs font-semibold rounded-md transition-all duration-200 ${
+							activeTab === 'clustering'
+								? 'bg-[#7c3aed] text-white shadow-lg shadow-purple-500/25'
+								: 'text-slate-600 hover:text-slate-800 hover:bg-white/50'
+						}`}>
+						<BarChart4 className="h-3.5 w-3.5" />
+						<span className="hidden sm:inline">Clustering</span>
+					</button>
+				</nav>
 			</div>
 
 			{/* Content based on active tab */}
