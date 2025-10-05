@@ -118,32 +118,31 @@ export function NetworkGraphCanvas() {
 							onClose: () => void;
 						}) => {
 							// Only show context menu for nodes, not edges
-							if (!data || !data.data) return null;
-
 							// Get the node data from the graph node
 							const nodeData = data.data;
 
 							return (
-								<div className="custom-context-menu-wrapper">
-									<NodeContextMenu
-										className="node-context-menu"
-										node={{
-											id: nodeData.id,
-											label: nodeData.label,
-											type: nodeData.type || 'document',
-											size: nodeData.size || NODE_SIZE.default,
-											color: getNodeColor(nodeData),
-											summary: nodeData.summary || '',
-											content: nodeData.content || nodeData.text || '',
-											similarity: nodeData.similarity || nodeData.score,
-											sourceType: nodeData.category || '',
-											continent: nodeData.continent || '',
-											country: nodeData.country || '',
-										}}
-										onClose={onClose}
-									/>
-								</div>
-							);
+							<div className="custom-context-menu-wrapper">
+								<NodeContextMenu
+									className="node-context-menu"
+									node={{
+										id: nodeData.id,
+										label: nodeData.label,
+										type: nodeData.type || 'document',
+										size: nodeData.size || NODE_SIZE.default,
+										color: getNodeColor(nodeData),
+										summary: nodeData.summary || '',
+										content: nodeData.content || nodeData.text || '',
+										similarity: nodeData.similarity || nodeData.score,
+										sourceType: nodeData.category || '',
+										continent: nodeData.continent || '',
+										country: nodeData.country || '',
+										url: nodeData.url || '', // URL for "Open Link" button
+									}}
+									onClose={onClose}
+								/>
+							</div>
+						);
 						}}
 						getNodePosition={(
 							id: string,

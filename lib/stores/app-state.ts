@@ -268,10 +268,12 @@ export const useAppStore = create<AppState>()(
 						text: hit.fields?.chunk_text || hit.fields?.content || '',
 						summary: hit.fields?.summary || '',
 						content: hit.fields?.content || '',
+						sourceType: hit.fields?.sourceType || '',
 						// Add normalized direct properties
 						country,
 						continent,
 						ai_clusters: undefined, // Will be assigned by AI clustering API
+						url: hit.fields?.url || '', // URL for "Open Link" button
 						// Keep original fields for backward compatibility
 						fields: hit.fields || {},
 					};

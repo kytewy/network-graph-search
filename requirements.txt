@@ -1,5 +1,7 @@
 beautifulsoup4
 requests
-pinecone-client>=3.0.0
+bertopic 
+sentence-transformers 
+openai 
+pinecone
 python-dotenv
-sentence-transformers>=2.2.0

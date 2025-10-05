@@ -46,10 +46,9 @@ export function NodeContextMenu({
   className,
 }: NodeContextMenuProps) {
   const modalRef = useRef<HTMLDivElement>(null);
-  const [showReadingMode, setShowReadingMode] = useState(false);
 
   // Use reusable hooks
-  useClickOutside(modalRef, onClose);
+  const { ref: modalRef, isOutside } = useClickOutside(onClose);
   const { isInContext, addToContext, toggleContext } = useNodeContextOperations(node);
   
   // Open reading mode
@@ -57,7 +56,7 @@ export function NodeContextMenu({
     setShowReadingMode(true);
   }, []);
 
-  // If reading mode is active, show the document overlay directly
+{{ ... }}
   if (showReadingMode) {
     // Use the helper function to transform Node → ReadingItem
     const readingItem = nodeToReadingItem(node);
@@ -120,8 +119,22 @@ export function NodeContextMenu({
             Add to Context
           </button>
           <button
-            className="flex-1 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors border-l border-gray-200"
-            onClick={() => window.open(node.url || "https://www.google.com", "_blank")}
+            className={`flex-1 py-2 text-sm ${!node.url ? 'text-gray-400 bg-gray-50 cursor-not-allowed' : 'text-gray-700 bg-gray-100 hover:bg-gray-200'} transition-colors border-l border-gray-200`}
+            onClick={() => {
+              console.log('🖱️ [Open Link Button] Clicked!', { 
+                nodeId: node.id, 
+                url: node.url,
+                hasUrl: !!node.url,
+                fullNode: node 
+              });
+              if (node.url) {
+                window.open(node.url, "_blank");
+              } else {
+                console.warn('⚠️ [Open Link Button] No URL found on node!');
+              }
+            }}
+            disabled={!node.url}
+            title={!node.url ? "No link provided" : "Open link in new tab"}
           >
             Open Link
           </button>

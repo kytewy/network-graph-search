@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
 			country: string;
 			sourceType: string;
 			size: number;
+			url?: string;
 		}
 
 		interface Edge {
@@ -58,51 +59,67 @@ export async function POST(request: NextRequest) {
 		// Use any type to avoid TypeScript errors with the response format
 		const responseData = results as any;
 
-		// Check if results exists and has matches
-		if (
-			responseData &&
-			responseData.matches &&
-			Array.isArray(responseData.matches)
-		) {
+		// Check if results exists and has hits (Pinecone serverless inference format)
+		const hits = responseData?.result?.hits || responseData?.matches || [];
+		const allNodeIds = new Set<string>();
+		
+		if (Array.isArray(hits) && hits.length > 0) {
 			// Get all node IDs first to create a lookup set
 			// This is similar to the Python example's all_node_ids set
-			const allNodeIds = new Set<string>();
-			responseData.matches.forEach((match: any) => {
-				allNodeIds.add(match.id);
+			hits.forEach((hit: any) => {
+				allNodeIds.add(hit._id || hit.id);
 			});
 
-			// First, create all nodes from the matches
-			nodes = responseData.matches.map((match: any) => ({
-				id: match.id,
-				label: match.metadata?.label || match.id,
-				score: match.score,
-				similarity: match.score, // For compatibility with existing code
-				category: match.metadata?.category || '',
-				type: match.metadata?.type || '',
-				summary: match.metadata?.summary || '',
-				content: match.metadata?.content?.substring(0, 200) || '',
-				continent: match.metadata?.continent || '',
-				country: match.metadata?.country || '',
-				sourceType: match.metadata?.sourceType || '',
-				size: match.score * 10, // Scale score for node size
-			}));
+			// First, create all nodes from the hits
+			nodes = hits.map((hit: any) => {
+				// Handle both formats: serverless inference (fields) and standard (metadata)
+				const data = hit.fields || hit.metadata || {};
+				const nodeId = hit._id || hit.id;
+				const score = hit._score || hit.score || 0;
+				
+				const node = {
+					id: nodeId,
+					label: data.label || nodeId,
+					score: score,
+					similarity: score, // For compatibility with existing code
+					category: data.category || '',
+					type: data.type || '',
+					summary: data.summary || '',
+					content: data.content?.substring(0, 200) || '',
+					continent: data.continent || '',
+					country: data.country || '',
+					sourceType: data.sourceType || '',
+					size: score * 10, // Scale score for node size
+					url: data.url || undefined,
+				};
+				
+				// Debug logging to see if URL is present
+				if (nodeId === 'A57') {
+					console.log('🔍 DEBUG - Article 57 URL:', data.url);
+					console.log('🔍 DEBUG - Full data:', JSON.stringify(data, null, 2));
+				}
+				
+				return node;
+			});
 
 			// Then create edges based on connected_to field
 			// This is similar to the Python example's edge creation logic
-			responseData.matches.forEach((match: any) => {
-				const connectedTo = match.metadata?.connected_to || [];
+			hits.forEach((hit: any) => {
+				const data = hit.fields || hit.metadata || {};
+				const nodeId = hit._id || hit.id;
+				const connectedTo = data.connected_to || [];
+				
 				if (Array.isArray(connectedTo)) {
-
 					connectedTo.forEach((targetId: string) => {
 						// Only create edges to nodes that are in our result set
 						// This matches the Python example's check: if target_id in all_node_ids
 						if (allNodeIds.has(targetId)) {
-							const edgeId = `${match.id}-${targetId}`;
+							const edgeId = `${nodeId}-${targetId}`;
 							edges.push({
 								id: edgeId,
-								source: match.id,
+								source: nodeId,
 								target: targetId,
-								label: `${match.metadata?.label || match.id} → ${targetId}`,
+								label: `${data.label || nodeId} → ${targetId}`,
 								type: 'connected',
 								weight: 1,
 							});

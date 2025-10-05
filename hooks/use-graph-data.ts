@@ -78,10 +78,7 @@ export function useGraphData(
 		[nodeSizeMode]
 	);
 
-	// Transform nodes to Reagraph format
 	const graphNodes = useMemo(() => {
-		if (!nodes || nodes.length === 0) return [];
-
 		const transformed = nodes.map((node) => {
 			const nodeData = node as any;
 			
@@ -89,7 +86,6 @@ export function useGraphData(
 				id: node.id,
 				label: node.label || node.id,
 				fill: getNodeColor(node),
-				size: getNodeSize(node),
 				score: node.score || 0.5,
 				category: node.category || '',
 				data: node as any, // Store original node data for context menu and interactions
@@ -101,6 +97,11 @@ export function useGraphData(
 				country: nodeData.country,
 				sourceType: nodeData.sourceType,
 				ai_clusters: nodeData.ai_clusters, // AI cluster assignment (e.g., "cluster_0") - stored directly on node
+				
+				// Include fields needed by UI components
+				summary: nodeData.summary,
+				content: nodeData.content,
+				url: nodeData.url, // URL for "Open Link" button
 			};
 			return graphNode;
 		});

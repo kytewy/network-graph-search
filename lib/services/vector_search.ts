@@ -90,6 +90,7 @@ export async function searchPinecone(
 				'country',
 				'sourceType',
 				'connected_to',
+				'url',
 			],
 		});
 

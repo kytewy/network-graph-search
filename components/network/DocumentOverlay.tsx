@@ -21,6 +21,7 @@ interface ReadingItem {
 	category?: string;    // Maps to Node.sourceType
 	readTime?: string;
 	status: 'read' | 'unread' | 'reading';
+	url?: string;         // Maps to Node.url
 }
 
 interface DocumentOverlayProps {
@@ -41,6 +42,7 @@ export function nodeToReadingItem(node: Node): ReadingItem {
 		description: node.summary || '',
 		content: node.content || '',
 		category: node.sourceType,
+		url: node.url,
 		status: 'unread' as const,
 	};
 }
@@ -122,7 +124,16 @@ export default function DocumentOverlay({
 							</h1>
 						</div>
 					</div>
-					<div>
+					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-8 text-xs"
+							onClick={() => documentItem.url ? window.open(documentItem.url, "_blank") : null}
+							disabled={!documentItem.url}
+							title={!documentItem.url ? "No link provided" : "Open link in new tab"}>
+							Open Link
+						</Button>
 						<Button
 							variant={isInContext ? 'destructive' : 'secondary'}
 							size="sm"
