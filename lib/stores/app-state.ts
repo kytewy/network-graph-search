@@ -126,7 +126,7 @@ export const useAppStore = create<AppState>()(
 		filteredResults: [],
 		links: [],
 		filteredLinks: [],
-		colorMode: 'sourceType',
+		colorMode: 'continent',
 		nodeSizeMode: 'none',
 		clusterMode: 'none',
 		showLabels: true,
@@ -137,6 +137,8 @@ export const useAppStore = create<AppState>()(
 		selectedContinents: [],
 		selectedCountries: [],
 
+		// Additional state for AI clustering
+		aiClusters: [], // List of AI cluster assignments (e.g., ['cluster_0', 'cluster_1'])
 		// Basic actions
 		setQuery: (query) => set({ query }),
 		setIsLoading: (isLoading) => set({ isLoading }),

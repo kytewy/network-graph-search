@@ -45,7 +45,7 @@ export function NodeContextMenu({
   onNodeExpand,
   className,
 }: NodeContextMenuProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
+  const [showReadingMode, setShowReadingMode] = useState(false);
 
   // Use reusable hooks
   const { ref: modalRef, isOutside } = useClickOutside(onClose);
@@ -56,7 +56,6 @@ export function NodeContextMenu({
     setShowReadingMode(true);
   }, []);
 
-{{ ... }}
   if (showReadingMode) {
     // Use the helper function to transform Node → ReadingItem
     const readingItem = nodeToReadingItem(node);
