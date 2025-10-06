@@ -91,21 +91,16 @@ export function useGraphLayout(): UseGraphLayoutReturn {
 			// Map Reagraph layout type to network store layout type
 			const networkLayout = LayoutMapper.fromReagraph(reagraphLayout);
 
-			// Reset cluster mode when switching to a non-force-directed layout
 			// Only force-directed layouts support clustering
 			if (
 				!LayoutMapper.supportsCluster(reagraphLayout) &&
 				clusterMode !== 'none'
 			) {
-				console.log(
-					`Layout "${reagraphLayout}" does not support clustering. Resetting cluster mode to "none".`
-				);
 				setClusterModeStore('none');
 			}
 
 			// Update network store with new layout
 			useNetworkStore.getState().setLayoutType(networkLayout);
-		},
 		[clusterMode, setClusterModeStore]
 	);
 

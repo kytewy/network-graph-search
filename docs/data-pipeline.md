@@ -1,6 +1,6 @@
 # Data Pipeline Scripts
 
-> **Data collection and upload pipeline for the AI Governance Network Graph**
+> Data collection and upload pipeline for the AI Governance Network Graph
 
 This directory contains Python scripts for scraping AI governance documents and uploading them to Pinecone vector database for semantic search and graph visualization.
 
@@ -176,11 +176,6 @@ All records follow a standardized schema:
 - **Content truncation**: Automatic handling of Pinecone's 40KB metadata limit
 - **Error handling**: Graceful degradation with detailed error messages
 
-## 📚 Additional Documentation
-
-- [Detailed Upload Guide](./docs/DATA_UPLOAD_GUIDE.md) - Comprehensive troubleshooting and reference
-- [API Documentation](../README.md) - Main project documentation
-
 ## 🤝 Contributing
 
 When adding new data sources:
@@ -190,10 +185,6 @@ When adding new data sources:
 3. Update this README with new source information
 4. Test with `test_pinecone_search.py`
 
-## 📄 License
-
-Part of the Network Graph Search project. See main repository for license information.
-
 ---
 
-**Questions?** See the [detailed documentation](./docs/DATA_UPLOAD_GUIDE.md) or open an issue.
+**Questions?** See the main [Architecture documentation](./ARCHITECTURE.md) or open an issue.

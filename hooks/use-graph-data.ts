@@ -106,21 +106,6 @@ export function useGraphData(
 			return graphNode;
 		});
 
-		// Log AI cluster assignments for debugging
-		const aiClusteredNodes = transformed.filter(n => n.ai_clusters);
-		if (aiClusteredNodes.length > 0) {
-			console.log('[useGraphData] Nodes with AI cluster assignments:', aiClusteredNodes.length, '/', transformed.length);
-			console.log('[useGraphData] AI Cluster distribution:', 
-				Object.entries(
-					aiClusteredNodes.reduce((acc, node) => {
-						const cluster = node.ai_clusters!;
-						acc[cluster] = (acc[cluster] || 0) + 1;
-						return acc;
-					}, {} as Record<string, number>)
-				)
-			);
-		}
-
 		return transformed;
 	}, [nodes, getNodeColor, getNodeSize]);
 

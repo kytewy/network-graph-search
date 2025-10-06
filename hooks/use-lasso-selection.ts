@@ -124,8 +124,6 @@ export function useLassoSelection(
 	 * Also triggers external selection clearing if callback is provided
 	 */
 	const closeLassoMenu = useCallback(() => {
-		console.log('Closing lasso menu and clearing selections');
-
 		// Clear local state
 		setShowLassoMenu(false);
 		setLassoSelectedNodes([]);

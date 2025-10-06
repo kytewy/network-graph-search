@@ -83,12 +83,6 @@ export function useGraphCoordination(
 		(nodes: Node[]) => {
 			if (!nodes || nodes.length === 0) return;
 
-			console.log('Sending nodes to context:', nodes.length);
-			console.log(
-				'Node content example:',
-				nodes[0]?.content?.substring(0, 50) + '...'
-			);
-
 			// Show toast notification
 			toast.success(
 				`Added ${nodes.length} node${nodes.length > 1 ? 's' : ''} to context`,

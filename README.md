@@ -1,165 +1,308 @@
-# Network Graph Search Application
+# Network Graph Search
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/wyattkyte-hotmailcoms-projects/v0-network-graph-search)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/uJGaMe3yzNo)
+> Semantic document search with interactive graph visualization and AI-powered clustering
 
-## Overview
+Built while solving RAG quality issues with various clients. Turns hours of manual document review into minutes of visual pattern recognition.
 
-Network Graph Search is an interactive visualization tool for exploring and analyzing complex network data. The application provides powerful search, filtering, and analysis capabilities to help users discover insights within interconnected data structures.
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Reagraph](https://img.shields.io/badge/Reagraph-4-purple)](https://reagraph.dev/)
+[![Python](https://img.shields.io/badge/Python-3.9+-yellow?logo=python)](https://www.python.org/)
 
-## Features
+---
 
-- Interactive network graph visualization
-- Full-text and semantic search capabilities
-- Multi-dimensional filtering (by type, geography, source, etc.)
-- Node selection and expansion
-- Similarity analysis and visualization
-- AI-powered content analysis
-- Customizable display options
+## 🎯 The Problem
 
-## Development Roadmap: Phased Approach
+**RAG systems often fail because vector databases return irrelevant results.** Traditional debugging? Manually reviewing hundreds of documents in spreadsheets, hoping to spot patterns.
 
-### Phase 1: Core Functionality & Performance Optimization
+There had to be a better way.
 
-**Timeline: Current - Q4 2025**
+---
 
-#### Key Objectives:
+## 💡 The Solution
 
-1. **Component Restructuring**
-   - Break down the large `NetworkGraphApp` component into smaller, focused components
-   - Create separate modules for filters, visualization, and analysis panels
-   - Implement proper component boundaries to minimize re-renders
+A visual document exploration tool that:
 
-2. **Custom Hooks Implementation**
-   - Create domain-specific hooks to replace direct store access
-   - Develop `useNodeFiltering`, `useNetworkSelection`, and `useAnalysis` hooks
-   - Consolidate related selectors to reduce unnecessary re-renders
+1. **Searches semantically** using Pinecone vector database
+2. **Visualizes relationships** in an interactive 3D force-directed graph
+3. **Clusters automatically** using TF-IDF + KMeans (< 2 seconds)
+4. **Enables rapid triaging** through visual pattern recognition
 
-3. **Performance Optimization**
-   - Move heavy computations (TF-IDF, similarity) to Web Workers
-   - Implement virtualization for large node lists
-   - Optimize memoization strategy to prevent redundant calculations
-   - Remove or conditionally enable console logging
+**Result:** Quality issues invisible in spreadsheets become obvious when visualized.
 
-### Phase 2: Enhanced Features & UX Improvements
+---
 
-**Timeline: Q1 2026 - Q2 2026**
+## ✨ Key Features
 
-#### Key Objectives:
+### 🔍 **Semantic Search**
 
-1. **Advanced Visualization**
-   - Implement additional layout algorithms
-   - Add node clustering capabilities
-   - Develop interactive graph manipulation tools
-   - Create animated transitions between graph states
+- Query 299+ AI governance documents via Pinecone
+- Adjustable similarity thresholds
+- Real-time filtering by geography, type, and score
 
-2. **Improved Search & Filtering**
-   - Implement advanced semantic search with embeddings
-   - Add saved search/filter presets
-   - Develop query history and suggestions
-   - Create visual filter builder
+### 📊 **Interactive Graph Visualization**
 
-3. **Enhanced Analysis Tools**
-   - Expand AI-powered analysis capabilities
-   - Add comparative analysis between node selections
-   - Implement network metrics and statistics
-   - Create exportable reports and insights
+- **Reagraph** (WebGL-powered) for 1000+ node graphs
+- Three layout modes: Force-Directed, Concentric, Radial
+- Zoom, pan, node selection, lasso multi-select
 
-### Phase 3: Enterprise Features & Scalability
+### 🤖 **AI-Powered Clustering**
 
-**Timeline: Q3 2026 - Q4 2026**
+- TF-IDF + KMeans clustering (< 2 seconds for 100 docs)
+- Automatic cluster summaries and top terms
+- Color-coded cluster visualization
 
-#### Key Objectives:
+### 🎨 **Visual Analysis**
 
-1. **Data Management**
-   - Implement data versioning and history
-   - Add collaborative features for team analysis
-   - Create data import/export pipelines
-   - Develop custom data connectors
+- 5 color modes (continent, type, similarity, clusters)
+- Interactive similarity histogram
+- Geographic and type-based filtering
 
-2. **Scalability Improvements**
-   - Optimize for very large networks (100,000+ nodes)
-   - Implement progressive loading and rendering
-   - Add server-side processing for complex operations
-   - Create caching strategies for frequent operations
+---
 
-3. **Enterprise Integration**
-   - Develop authentication and authorization
-   - Add team collaboration features
-   - Implement audit logging and compliance features
-   - Create API for external system integration
-
-## Technical Implementation Details
-
-### Current Architecture
-
-The application uses:
-- React with Next.js for the frontend
-- Zustand for state management
-- Custom TF-IDF implementation for semantic search
-- D3.js-based visualization
-
-### Planned Technical Improvements
-
-1. **State Management**
-   - Consolidate store selectors with custom hooks
-   - Implement more granular state updates
-   - Add persistence layer for user preferences
-
-2. **Performance Optimizations**
-   - Web Workers for computation-heavy tasks
-   - Virtualized rendering for large datasets
-   - Optimized memoization strategies
-   - Lazy loading of non-critical components
-
-3. **Code Organization**
-   - Feature-based folder structure
-   - Clear separation of concerns
-   - Consistent naming conventions
-   - Comprehensive documentation
-
-## Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and npm/pnpm
-- Modern web browser
+- **Node.js 18+**
+- **Python 3.9+** (for clustering)
+- **Pinecone account** (optional, for vector search)
 
-### Installation
+### 1. Install Dependencies
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/network-graph-search.git
-
-# Navigate to the project directory
+# Clone repository
+git clone https://github.com/kytewy/network-graph-search
 cd network-graph-search
 
-# Install dependencies
+# Install Node dependencies
 pnpm install
 
-# Start the development server
+# Install Python dependencies (for clustering)
+pip install -r requirements.txt
+```
+
+### 2. Configure Environment
+
+```bash
+# Copy example environment file
+cp example.env .env
+
+# Add your Pinecone credentials (optional)
+PINECONE_API_KEY=your_api_key
+PINECONE_INDEX_NAME=network-graph
+PINECONE_NAMESPACE=default
+```
+
+### 3. Run Development Server
+
+```bash
 pnpm dev
 ```
 
-### Configuration
+Visit **http://localhost:3000/graph**
 
-The application can be configured through environment variables:
+### 4. Upload Data (First Time)
+
+```bash
+# Upload 299 AI governance documents to Pinecone
+python scripts/upload_all_data.py
+```
+
+---
+
+## 🏗️ Tech Stack
+
+### Frontend
+
+- **Next.js 14** - React framework with App Router
+- **Reagraph** - WebGL graph visualization (D3.js powered)
+- **TypeScript** - Type safety throughout
+- **Tailwind CSS + shadcn/ui** - Modern UI components
+- **Zustand** - State management
+
+### Backend
+
+- **Next.js API Routes** - Serverless API endpoints
+- **Python** - Clustering subprocess
+- **scikit-learn** - TF-IDF + KMeans clustering
+- **Pinecone** - Vector database (optional)
+
+## 🎨 Why These Technologies?
+
+### **Why Reagraph over D3.js directly?**
+
+- ✅ React-native API (no DOM manipulation)
+- ✅ WebGL rendering for 1000+ nodes
+- ✅ Built-in physics simulation
+- ✅ TypeScript support
+
+### **Why TF-IDF + KMeans over BERTopic?**
+
+| Method              | Speed    | Quality     | Cost       | Production-Ready?    |
+| ------------------- | -------- | ----------- | ---------- | -------------------- |
+| **TF-IDF + KMeans** | **< 2s** | Good enough | Very Low   | ✅ Yes               |
+| **BERTopic**        | ~30s     | Excellent   | High (GPU) | ⚠️ Complex           |
+| **UMAP + HDBSCAN**  | ~10s     | Good        | Medium     | ⚠️ Non-deterministic |
+
+**Decision:** TF-IDF + KMeans wins for speed and simplicity. The graph visualization makes the slight quality trade-off irrelevant—you can _see_ the clusters.
+
+### **Why Next.js API Routes over Flask?**
+
+- ✅ Single codebase (no separate backend server)
+- ✅ Serverless deployment ready
+- ✅ TypeScript end-to-end
+- ✅ Built-in optimization
+
+### **Why Force-Directed Layout?**
+
+- Naturally reveals clusters without imposing hierarchy
+- Makes outliers obvious (isolated nodes)
+- Matches mental model: "similar things cluster together"
+
+---
+
+## 📁 Project Structure
 
 ```
-NEXT_PUBLIC_API_URL=your_api_url
-NEXT_PUBLIC_DEFAULT_LAYOUT=radial
+network-graph-search/
+├── app/                      # Next.js App Router pages
+│   ├── graph/               # Main graph visualization page
+│   └── api/                 # API routes
+│       ├── vector-search/  # Pinecone search endpoint
+│       └── cluster-analysis/ # Clustering endpoint
+├── components/              # React components
+│   ├── analysis/           # Clustering & chat interfaces
+│   ├── filters/            # Geographic & type filters
+│   ├── network/            # Graph visualization
+│   └── search/             # Search UI
+├── backend/                 # Python clustering
+│   └── clustering/
+│       ├── analyzer.py     # TF-IDF + KMeans implementation
+│       └── cli.py          # CLI interface for API
+├── lib/
+│   ├── contexts/           # React Context providers
+│   ├── stores/             # Zustand state management
+│   └── utils/              # Utility functions
+├── hooks/                   # Custom React hooks
+├── scripts/                 # Data upload scripts
+└── docs/                    # Technical documentation
 ```
 
-## Deployment
+---
 
-Your project is live at:
+## 🔧 Key Technical Decisions
 
-**[https://vercel.com/wyattkyte-hotmailcoms-projects/v0-network-graph-search](https://vercel.com/wyattkyte-hotmailcoms-projects/v0-network-graph-search)**
+### **Issue 1: Reagraph SSR Breaking on Windows**
 
-## Contributing
+**Problem:** Reagraph's `GraphCanvas` crashed with `useGLEffect` errors.
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+**Solution:** Dynamic imports with SSR disabled:
+
+```tsx
+const GraphCanvas = dynamic(
+	() => import('reagraph').then((m) => m.GraphCanvas),
+	{ ssr: false }
+);
+```
+
+### **Issue 2: Cluster Persistence**
+
+**Problem:** Clustering results disappeared during graph interactions.
+
+**Solution:** Directly mutate node properties (`node.ai_clusters = clusterId`) instead of storing in separate state. This ensures persistence through graph re-renders.
+
+### **Issue 3: State Management Complexity**
+
+**Problem:** Multiple overlapping stores caused confusion.
+
+**Solution:** Adopted hook composition pattern in `NetworkGraphContext`:
+
+- 6 focused hooks (graph-data, selection, layout, etc.)
+- Each handles one responsibility
+- Context composes them into unified API
+
+---
+
+## 🎯 Use Cases
+
+### **1. RAG Quality Assurance**
+
+Search → Cluster → Visually identify off-topic documents
+
+### **2. Document Set Analysis**
+
+View entire corpus as graph → Discover unexpected relationships
+
+### **3. Content Gap Analysis**
+
+Identify sparse areas → Find missing content
+
+---
+
+## 📚 Documentation
+
+- **[Architecture Guide](./docs/ARCHITECTURE.md)** - System design deep dive
+- **[State Management](./docs/state-management.md)** - Zustand stores guide
+- **[Components](./docs/components.md)** - Component architecture
+- **[Data Pipeline](./docs/data-pipeline.md)** - Data upload scripts
+
+---
+
+## 📊 Performance
+
+| Operation         | Time    | Notes                |
+| ----------------- | ------- | -------------------- |
+| Vector Search     | ~200ms  | Pinecone latency     |
+| TF-IDF Clustering | < 2s    | CPU-only, local      |
+| Graph Rendering   | < 100ms | WebGL client-side    |
+| Full Page Load    | ~500ms  | Including data fetch |
+
+**Tested with 299 documents. Scales to 1000+ nodes.**
+
+---
+
+## 🛣️ Roadmap
+
+### **Current Features** ✅
+
+- Semantic search with Pinecone
+- Interactive Reagraph visualization
+- TF-IDF + KMeans clustering
+- Geographic & type filtering
+
+### **Next Steps**
+
+- [ ] Demo mode (works without Pinecone)
+- [ ] Export graph as image
+- [ ] LLM-powered cluster naming
+- [ ] Real-time collaboration
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! Areas of interest:
+
+- Alternative clustering algorithms
+- New visualization layouts
+- Performance optimizations
+- UI/UX improvements
+
+---
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT
+
+---
+
+## 👤 Author
+
+**Wyatt Kyte**
+
+Built while solving RAG quality issues. Focus: Making AI systems interpretable and debuggable through visualization.
+
+---
+
+**Have questions?** Check the [documentation](./docs/ARCHITECTURE.md) or open an issue.

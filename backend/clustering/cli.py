@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLI wrapper for BERTopic clustering analysis.
+CLI wrapper for TF-IDF + KMeans clustering analysis.
 Reads JSON from stdin, performs clustering, outputs JSON to stdout.
 
 This is the entry point called by the Next.js API route.

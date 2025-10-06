@@ -1,4 +1,4 @@
-# Store Architecture
+# State Management
 
 **State management for the Network Graph Search application using Zustand.**
 
@@ -413,7 +413,7 @@ const MyComponent = () => {
 
 ## 📖 Further Reading
 
-- **STORE_OWNERSHIP.md** - Detailed ownership & Phase 2 roadmap
+- **STORE_OWNERSHIP.md** - Detailed ownership & Phase 2 roadmap (in `/lib/stores`)
 - [Zustand Docs](https://github.com/pmndrs/zustand) - Official documentation
 - **Phase 1 Changes** - See git history for recent consolidation
 
@@ -424,7 +424,7 @@ const MyComponent = () => {
 **Before adding new state:**
 
 1. Check `STORE_OWNERSHIP.md` - Does it already exist?
-2. Check this README - Which store is responsible?
+2. Check this guide - Which store is responsible?
 3. Ask: "Is this UI state or business logic?"
 
 **Common Questions:**
@@ -435,4 +435,4 @@ const MyComponent = () => {
 
 ---
 
-_Last updated: 2025-09-30 (Phase 1 complete)_
+_Last updated: 2025-10-05_

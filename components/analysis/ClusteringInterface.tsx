@@ -56,8 +56,6 @@ export default function ClusteringInterface({
 				text: node.content || node.summary || node.label || '',
 			}));
 
-			console.log('[Clustering] Sending nodes to API:', nodeData.length);
-
 			// Call clustering API
 			const response = await fetch('/api/cluster-analysis', {
 				method: 'POST',
@@ -70,8 +68,6 @@ export default function ClusteringInterface({
 			}
 
 			const data: ClusterAnalysisResponse = await response.json();
-			console.log('[Clustering] Received results:', data);
-			console.log('[Clustering] Cluster assignments:', data.cluster_assignments);
 
 			// Apply cluster assignments to the graph
 			applyAiClusters(data.cluster_assignments);

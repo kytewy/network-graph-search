@@ -15,11 +15,6 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Log search request
-		console.log(
-			`Executing reranked vector search for query: "${query}" with topK=${topK}`
-		);
-
 		// Use the searchPinecone function with reranking enabled
 		const { results } = await searchPinecone(query, topK, true);
 
@@ -93,12 +88,6 @@ export async function POST(request: NextRequest) {
 					url: data.url || undefined,
 				};
 				
-				// Debug logging to see if URL is present
-				if (nodeId === 'A57') {
-					console.log('🔍 DEBUG - Article 57 URL:', data.url);
-					console.log('🔍 DEBUG - Full data:', JSON.stringify(data, null, 2));
-				}
-				
 				return node;
 			});
 
@@ -117,9 +106,7 @@ export async function POST(request: NextRequest) {
 							const edgeId = `${nodeId}-${targetId}`;
 							edges.push({
 								id: edgeId,
-								source: nodeId,
 								target: targetId,
-								label: `${data.label || nodeId} → ${targetId}`,
 								type: 'connected',
 								weight: 1,
 							});
@@ -127,28 +114,7 @@ export async function POST(request: NextRequest) {
 					});
 				}
 			});
-
-			// Only print the nodes and edges being created
-			console.log('Nodes created:', JSON.stringify(nodes, null, 2));
-			console.log('Edges created:', JSON.stringify(edges, null, 2));
-		} else {
-			console.log('No matches found or unexpected results format');
 		}
-
-		// Return the search results
-		return NextResponse.json({
-			success: true,
-			nodes: nodes,
-			edges: edges,
-			rawResponse: results,
-		});
-	} catch (error: any) {
-		console.error('Vector search API error:', error);
-
-		return NextResponse.json(
-			{
-				error: 'Error processing vector search',
-				message: error.message,
 				stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
 			},
 			{ status: 500 }

@@ -79,13 +79,8 @@ function runPythonScript(scriptPath: string, inputData: any): Promise<any> {
 		for (const venvPath of venvPaths) {
 			if (existsSync(venvPath)) {
 				pythonCommand = venvPath;
-				console.log('[Cluster Analysis] Using venv Python:', venvPath);
 				break;
 			}
-		}
-
-		if (pythonCommand === 'python') {
-			console.log('[Cluster Analysis] Warning: venv not found, using system Python');
 		}
 
 		const python = spawn(pythonCommand, [scriptPath]);

@@ -45,16 +45,12 @@ export async function searchPinecone(
 	filters?: Record<string, any>
 ) {
 	try {
-		// Check if API key exists
 		if (!PINECONE_API_KEY) {
 			throw new Error('PINECONE_API_KEY is not set');
 		}
 
 		// Initialize Pinecone client
 		const pc = new Pinecone({ apiKey: PINECONE_API_KEY });
-
-		// Log the search request
-		console.log(`Executing search for query: "${query}" with topK=${topK}`);
 
 		// Get the index and namespace using the pattern from the documentation
 		// Note: If PINECONE_INDEX_HOST is empty, it will use the default host
@@ -64,14 +60,6 @@ export async function searchPinecone(
 
 		// Get the namespace
 		const namespace = index.namespace(PINECONE_NAMESPACE);
-
-		// Log the query parameters
-		console.log('Searching with params:', {
-			query,
-			topK,
-			namespace: PINECONE_NAMESPACE,
-			indexName: PINECONE_INDEX_NAME,
-		});
 
 		// Search using the exact pattern from the documentation
 		const response = await namespace.searchRecords({
@@ -91,11 +79,9 @@ export async function searchPinecone(
 				'sourceType',
 				'connected_to',
 				'url',
+				'embedding',
 			],
 		});
-
-		// Log the results for debugging
-		console.log('Search results structure:', JSON.stringify(response, null, 2));
 
 		return { results: response };
 	} catch (error) {
@@ -103,5 +89,3 @@ export async function searchPinecone(
 		throw new Error(`Pinecone search failed: ${error}`);
 	}
 }
-
-// End of file

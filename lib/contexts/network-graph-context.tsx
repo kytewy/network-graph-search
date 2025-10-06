@@ -107,8 +107,6 @@ export function NetworkGraphProvider({
 
 	// AI Cluster functions - Now mutates nodes directly
 	const applyAiClusters = useCallback((assignments: Record<string, string>) => {
-		console.log('[NetworkGraph] Applying AI clusters directly to nodes:', assignments);
-		
 		// Mutate the filteredResults nodes directly
 		filteredResults.forEach((node) => {
 			if (assignments[node.id]) {
@@ -121,13 +119,10 @@ export function NetworkGraphProvider({
 		// Automatically switch to AI clusters mode when user runs clustering
 		if (Object.keys(assignments).length > 0) {
 			setClusterMode('ai_clusters');
-			console.log('[NetworkGraph] Switched to ai_clusters mode after clustering');
 		}
 	}, [filteredResults, setClusterMode]);
 
 	const clearAiClusters = useCallback(() => {
-		console.log('[NetworkGraph] Clearing AI clusters from nodes');
-		
 		// Remove ai_clusters from all nodes
 		filteredResults.forEach((node) => {
 			delete node.ai_clusters;
@@ -136,7 +131,6 @@ export function NetworkGraphProvider({
 		setHasAiClusters(false);
 		// Switch back to no clustering
 		setClusterMode('none');
-		console.log('[NetworkGraph] Switched back to none mode');
 	}, [filteredResults]);
 
 	// Detect if nodes already have ai_clusters assigned (e.g., from search results)
@@ -145,7 +139,6 @@ export function NetworkGraphProvider({
 		const hasPreAssignedClusters = nodesWithClusters.length > 0;
 		
 		if (hasPreAssignedClusters) {
-			console.log('[NetworkGraph] Detected pre-assigned AI clusters on', nodesWithClusters.length, 'nodes');
 			setHasAiClusters(true);
 			// Don't auto-switch - let user manually select AI Clusters mode
 		} else {

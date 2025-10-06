@@ -1,6 +1,25 @@
 {
-	"name": "my-v0-project",
-	"version": "0.1.0",
+	"name": "network-graph-search",
+	"version": "1.0.0",
+	"description": "Semantic document search with interactive graph visualization and AI-powered clustering using Next.js and Reagraph",
+	"author": "Wyatt Kyte",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/kytewy/network-graph-search"
+	},
+	"keywords": [
+		"network-graph",
+		"semantic-search",
+		"document-visualization",
+		"reagraph",
+		"nextjs",
+		"clustering",
+		"tf-idf",
+		"pinecone",
+		"knowledge-graph",
+		"rag"
+	],
+	"license": "MIT",
 	"private": true,
 	"scripts": {
 		"build": "next build",
