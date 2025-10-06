@@ -118,10 +118,10 @@ def create_pinecone_index(pc: Pinecone, index_name: str) -> None:
     else:
         print(f"✅ Index {index_name} already exists")
 
-def load_eu_articles(project_dir: str) -> List[Dict[str, Any]]:
+def load_eu_articles(script_dir: str) -> List[Dict[str, Any]]:
     """Load EU AI Act articles."""
     print("\n📄 Loading EU AI Act Articles...")
-    file_path = os.path.join(project_dir, 'eu_ai_act.json')
+    file_path = os.path.join(script_dir, 'data', 'eu_ai_act.json')
     articles_data = load_json_file(file_path)
     
     if not articles_data:
@@ -149,10 +149,10 @@ def load_eu_articles(project_dir: str) -> List[Dict[str, Any]]:
     print(f"   ✅ Loaded {len(records)} articles")
     return records
 
-def load_eu_recitals(project_dir: str) -> List[Dict[str, Any]]:
+def load_eu_recitals(script_dir: str) -> List[Dict[str, Any]]:
     """Load EU AI Act recitals."""
     print("\n📄 Loading EU AI Act Recitals...")
-    file_path = os.path.join(project_dir, 'test_recitals_1_to_180.json')
+    file_path = os.path.join(script_dir, 'data', 'test_recitals_1_to_180.json')
     recitals_data = load_json_file(file_path)
     
     if not recitals_data:
@@ -325,8 +325,8 @@ def main():
         print("📚 LOADING DATA SOURCES")
         print("=" * 70)
         
-        eu_articles = load_eu_articles(project_dir)
-        eu_recitals = load_eu_recitals(project_dir)
+        eu_articles = load_eu_articles(script_dir)
+        eu_recitals = load_eu_recitals(script_dir)
         canadian_data = load_canadian_data()
         iapp_data = load_iapp_data()
         
