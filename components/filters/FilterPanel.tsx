@@ -91,11 +91,12 @@ const FilterPanel = () => {
 				getCountriesByContinent={getCountriesByContinent}
 			/>
 
+			{/* TODO Update Upload for more fields
 			<SourceTypeFilters
 				sourceTypes={sourceTypes}
 				selectedSourceTypes={selectedSourceTypes}
 				toggleSourceType={toggleSourceType}
-			/>
+			/> */}
 
 			<Button
 				onClick={clearAllFilters}
