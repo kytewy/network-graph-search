@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 		const { results } = await searchPinecone(query, topK, true);
 
 		// Log the results structure to understand the format
-		// console.log('Results structure:', JSON.stringify(results, null, 2));
+		console.log('Results structure:', JSON.stringify(results, null, 2));
 
 		// Define interfaces for nodes and edges
 		interface Node {
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 		// Check if results exists and has hits (Pinecone serverless inference format)
 		const hits = responseData?.result?.hits || responseData?.matches || [];
 		const allNodeIds = new Set<string>();
-		
+
 		if (Array.isArray(hits) && hits.length > 0) {
 			// Get all node IDs first to create a lookup set
 			// This is similar to the Python example's all_node_ids set
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 				const data = hit.fields || hit.metadata || {};
 				const nodeId = hit._id || hit.id;
 				const score = hit._score || hit.score || 0;
-				
+
 				const node = {
 					id: nodeId,
 					label: data.label || nodeId,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 					size: score * 10, // Scale score for node size
 					url: data.url || undefined,
 				};
-				
+
 				return node;
 			});
 
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 				const data = hit.fields || hit.metadata || {};
 				const nodeId = hit._id || hit.id;
 				const connectedTo = data.connected_to || [];
-				
+
 				if (Array.isArray(connectedTo)) {
 					connectedTo.forEach((targetId: string) => {
 						// Only create edges to nodes that are in our result set
@@ -106,7 +106,9 @@ export async function POST(request: NextRequest) {
 							const edgeId = `${nodeId}-${targetId}`;
 							edges.push({
 								id: edgeId,
+								source: nodeId,
 								target: targetId,
+								label: 'connected',
 								type: 'connected',
 								weight: 1,
 							});
@@ -115,6 +117,19 @@ export async function POST(request: NextRequest) {
 				}
 			});
 		}
+
+		// Return the nodes and edges with rawResponse for compatibility
+		return NextResponse.json({
+			nodes,
+			edges,
+			rawResponse: results, // Include raw response for processApiResponse
+		});
+	} catch (error: any) {
+		console.error('Error in reranked vector search:', error);
+		return NextResponse.json(
+			{
+				error: 'Failed to perform reranked vector search',
+				message: error.message,
 				stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
 			},
 			{ status: 500 }

@@ -86,8 +86,6 @@ export function useGraphLayout(): UseGraphLayoutReturn {
 	const handleLayoutChange = useCallback(
 		(layout: string) => {
 			const reagraphLayout = layout as ReagraphLayoutType;
-			setLayoutType(reagraphLayout);
-
 			// Map Reagraph layout type to network store layout type
 			const networkLayout = LayoutMapper.fromReagraph(reagraphLayout);
 
@@ -101,6 +99,7 @@ export function useGraphLayout(): UseGraphLayoutReturn {
 
 			// Update network store with new layout
 			useNetworkStore.getState().setLayoutType(networkLayout);
+		},
 		[clusterMode, setClusterModeStore]
 	);
 

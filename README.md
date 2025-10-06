@@ -2,65 +2,89 @@
 
 > Semantic document search with interactive graph visualization and AI-powered clustering
 
-Built while solving RAG quality issues with various clients. Turns hours of manual document review into minutes of visual pattern recognition.
+Born from production RAG debugging - turns hours of document review into minutes of visual analysis.
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Reagraph](https://img.shields.io/badge/Reagraph-4-purple)](https://reagraph.dev/)
-[![Python](https://img.shields.io/badge/Python-3.9+-yellow?logo=python)](https://www.python.org/)
+<!-- **[Live Demo](https://your-demo-url.com)** *(Add when deployed)* -->
+
+![Graph Visualization Demo](./docs/images/demo.jpg)
+_Search results visualized as an interactive network - spot patterns and outliers instantly_
+
+---
+
+## 🚀 Quick Start
+
+**Get running in 3 minutes:**
+
+```bash
+# 1. Clone and install
+git clone https://github.com/kytewy/network-graph-search
+cd network-graph-search
+pnpm install && pip install -r requirements.txt
+
+# 2. Set up environment (add your Pinecone)
+cp example.env
+
+# 3. Run the app
+pnpm dev
+```
+
+**→ Visit [localhost:3000/graph](http://localhost:3000/graph)**
+
+Search for documents, explore the graph, analyze clusters. [Full setup guide below](#-detailed-setup).
 
 ---
 
 ## 🎯 The Problem
 
-**RAG systems often fail because vector databases return irrelevant results.** Traditional debugging? Manually reviewing hundreds of documents in spreadsheets, hoping to spot patterns.
+**When your RAG returns "Cookie Baking Best Practices" for a query about data privacy**, you need to review 500+ documents to find why.
 
-There had to be a better way.
+Traditional debugging methods:
+
+- **Spreadsheets:** Can't see relationships between documents
+- **Text search:** Misses semantic issues
+- **Manual review:** Hours per investigation
+
+**The core issue:** RAG quality problems are invisible in tabular data.
 
 ---
 
 ## 💡 The Solution
 
-A visual document exploration tool that:
+A visual document exploration tool that makes patterns obvious:
 
-1. **Searches semantically** using Pinecone vector database
-2. **Visualizes relationships** in an interactive 3D force-directed graph
-3. **Clusters automatically** using TF-IDF + KMeans (< 2 seconds)
-4. **Enables rapid triaging** through visual pattern recognition
+- **Semantic search** with Pinecone vectors
+- **Interactive graph visualization** using Reagraph (WebGL)
+- **AI-powered clustering** with TF-IDF + KMeans (< 2s)
+- **Multi-dimensional filtering** by geography, type, similarity
 
-**Result:** Quality issues invisible in spreadsheets become obvious when visualized.
+**Result:** Hours of document review → Minutes of visual analysis
 
 ---
 
 ## ✨ Key Features
 
-### 🔍 **Semantic Search**
-
-- Query 299+ AI governance documents via Pinecone
-- Adjustable similarity thresholds
-- Real-time filtering by geography, type, and score
-
-### 📊 **Interactive Graph Visualization**
-
-- **Reagraph** (WebGL-powered) for 1000+ node graphs
-- Three layout modes: Force-Directed, Concentric, Radial
-- Zoom, pan, node selection, lasso multi-select
-
-### 🤖 **AI-Powered Clustering**
-
-- TF-IDF + KMeans clustering (< 2 seconds for 100 docs)
-- Automatic cluster summaries and top terms
-- Color-coded cluster visualization
-
-### 🎨 **Visual Analysis**
-
-- 5 color modes (continent, type, similarity, clusters)
-- Interactive similarity histogram
-- Geographic and type-based filtering
+- **🔍 Semantic search** across 300+ documents with adjustable thresholds
+- **📊 Interactive 3D graphs** with force-directed, concentric, and radial layouts
+- **🤖 Instant clustering** with automatic summaries and top terms
+- **🎨 4 color modes** (continent, type, similarity, source type)
+- **🎯 Advanced filtering** by geography, document type, and similarity score
+- **⚡ Lasso selection** for bulk node operations
+- **📈 Similarity histogram** for distribution analysis
 
 ---
 
-## 🚀 Quick Start
+## 🏗️ Tech Stack
+
+**Frontend:** Next.js 14 + TypeScript + Reagraph (WebGL graphs)  
+**Backend:** Python (TF-IDF + KMeans) + Pinecone (semantic search)  
+**State:** Zustand + React Context  
+**Styling:** Tailwind CSS + Radix UI
+
+**Why these choices?** [See Technical Decisions](./docs/TECH_DECISIONS.md)
+
+---
+
+## 📋 Detailed Setup
 
 ### Prerequisites
 
@@ -121,45 +145,6 @@ python scripts/upload_all_data.py
 - **Tailwind CSS + shadcn/ui** - Modern UI components
 - **Zustand** - State management
 
-### Backend
-
-- **Next.js API Routes** - Serverless API endpoints
-- **Python** - Clustering subprocess
-- **scikit-learn** - TF-IDF + KMeans clustering
-- **Pinecone** - Vector database (optional)
-
-## 🎨 Why These Technologies?
-
-### **Why Reagraph over D3.js directly?**
-
-- ✅ React-native API (no DOM manipulation)
-- ✅ WebGL rendering for 1000+ nodes
-- ✅ Built-in physics simulation
-- ✅ TypeScript support
-
-### **Why TF-IDF + KMeans over BERTopic?**
-
-| Method              | Speed    | Quality     | Cost       | Production-Ready?    |
-| ------------------- | -------- | ----------- | ---------- | -------------------- |
-| **TF-IDF + KMeans** | **< 2s** | Good enough | Very Low   | ✅ Yes               |
-| **BERTopic**        | ~30s     | Excellent   | High (GPU) | ⚠️ Complex           |
-| **UMAP + HDBSCAN**  | ~10s     | Good        | Medium     | ⚠️ Non-deterministic |
-
-**Decision:** TF-IDF + KMeans wins for speed and simplicity. The graph visualization makes the slight quality trade-off irrelevant—you can _see_ the clusters.
-
-### **Why Next.js API Routes over Flask?**
-
-- ✅ Single codebase (no separate backend server)
-- ✅ Serverless deployment ready
-- ✅ TypeScript end-to-end
-- ✅ Built-in optimization
-
-### **Why Force-Directed Layout?**
-
-- Naturally reveals clusters without imposing hierarchy
-- Makes outliers obvious (isolated nodes)
-- Matches mental model: "similar things cluster together"
-
 ---
 
 ## 📁 Project Structure
@@ -191,39 +176,6 @@ network-graph-search/
 
 ---
 
-## 🔧 Key Technical Decisions
-
-### **Issue 1: Reagraph SSR Breaking on Windows**
-
-**Problem:** Reagraph's `GraphCanvas` crashed with `useGLEffect` errors.
-
-**Solution:** Dynamic imports with SSR disabled:
-
-```tsx
-const GraphCanvas = dynamic(
-	() => import('reagraph').then((m) => m.GraphCanvas),
-	{ ssr: false }
-);
-```
-
-### **Issue 2: Cluster Persistence**
-
-**Problem:** Clustering results disappeared during graph interactions.
-
-**Solution:** Directly mutate node properties (`node.ai_clusters = clusterId`) instead of storing in separate state. This ensures persistence through graph re-renders.
-
-### **Issue 3: State Management Complexity**
-
-**Problem:** Multiple overlapping stores caused confusion.
-
-**Solution:** Adopted hook composition pattern in `NetworkGraphContext`:
-
-- 6 focused hooks (graph-data, selection, layout, etc.)
-- Each handles one responsibility
-- Context composes them into unified API
-
----
-
 ## 🎯 Use Cases
 
 ### **1. RAG Quality Assurance**
@@ -242,6 +194,7 @@ Identify sparse areas → Find missing content
 
 ## 📚 Documentation
 
+- **[Technical Decisions](./docs/TECH_DECISIONS.md)** - Why we chose these technologies
 - **[Architecture Guide](./docs/ARCHITECTURE.md)** - System design deep dive
 - **[State Management](./docs/state-management.md)** - Zustand stores guide
 - **[Components](./docs/components.md)** - Component architecture
@@ -258,7 +211,7 @@ Identify sparse areas → Find missing content
 | Graph Rendering   | < 100ms | WebGL client-side    |
 | Full Page Load    | ~500ms  | Including data fetch |
 
-**Tested with 299 documents. Scales to 1000+ nodes.**
+**Tested with 300+ documents. Scales to 1000+ nodes.**
 
 ---
 

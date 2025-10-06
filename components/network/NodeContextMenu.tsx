@@ -112,13 +112,20 @@ export function NodeContextMenu({
       <div className="flex flex-col border-t border-gray-200">
         <div className="flex">
           <button
+            className={`flex-1 py-2 text-sm ${
+              isInContext 
+                ? 'text-white bg-green-600 hover:bg-green-700' 
+                : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+            } transition-colors`}
+            onClick={toggleContext}
+          >
+            {isInContext ? 'Remove from Context' : 'Add to Context'}
+          </button>
           <button
             className={`flex-1 py-2 text-sm ${!node.url ? 'text-gray-400 bg-gray-50 cursor-not-allowed' : 'text-gray-700 bg-gray-100 hover:bg-gray-200'} transition-colors border-l border-gray-200`}
             onClick={() => {
-              console.log(' [Open Link Button] Clicked!', { 
-                nodeId: node.id, 
-                url: node.url,
-                hasUrl: !!node.url,
+              if (node.url) {
+                window.open(node.url, '_blank', 'noopener,noreferrer');
               }
             }}
             disabled={!node.url}
