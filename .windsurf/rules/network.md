@@ -13,7 +13,7 @@ globs: **network**
 - Use `next/dynamic` with `{ ssr: false }`.
   🔗 [Docs – Next.js Integration](https://reagraph.dev/docs/getting-started/NextJS)
 
-```ts
+\`\`\`ts
 'use client';
 import dynamic from 'next/dynamic';
 
@@ -21,7 +21,7 @@ export const GraphCanvas = dynamic(
 	() => import('reagraph').then((m) => m.GraphCanvas),
 	{ ssr: false }
 );
-```
+\`\`\`
 
 ---
 
@@ -32,12 +32,12 @@ export const GraphCanvas = dynamic(
 - Tune with `layoutOverrides`.
   🔗 [Docs – Layouts](https://reagraph.dev/docs/getting-started/Layouts)
 
-```tsx
+\`\`\`tsx
 <GraphCanvas
 	layoutType="forceDirected2d"
 	layoutOverrides={{ linkDistance: 60, nodeStrength: -120 }}
 />
-```
+\`\`\`
 
 ---
 
@@ -46,10 +46,10 @@ export const GraphCanvas = dynamic(
 - Implement `getNodePosition` and respect active drags.
   🔗 [Docs – Layouts](https://reagraph.dev/docs/getting-started/Layouts)
 
-```ts
+\`\`\`ts
 getNodePosition: (id, { drags }) =>
 	drags?.[id]?.position ?? { x: 0, y: 0, z: 0 };
-```
+\`\`\`
 
 ---
 
@@ -59,9 +59,9 @@ getNodePosition: (id, { drags }) =>
 - Style clusters via theme.
   🔗 [Docs – Clustering](https://reagraph.dev/docs/advanced/Clustering)
 
-```tsx
+\`\`\`tsx
 <GraphCanvas layoutType="forceDirected2d" clusterAttribute="category" />
-```
+\`\`\`
 
 ---
 
@@ -71,14 +71,14 @@ getNodePosition: (id, { drags }) =>
 - Configure bounds via `minNodeSize`/`maxNodeSize`.
   🔗 [Docs – Sizing](https://reagraph.dev/docs/advanced/Sizing)
 
-```tsx
+\`\`\`tsx
 <GraphCanvas
 	sizingType="attribute"
 	sizingAttribute="score"
 	minNodeSize={5}
 	maxNodeSize={18}
 />
-```
+\`\`\`
 
 ---
 
@@ -87,7 +87,7 @@ getNodePosition: (id, { drags }) =>
 - Prefer the `useSelection` hook (built-in hotkeys: `⌘+A`, `Esc`, `⌘+click`).
   🔗 [Docs – Selection](https://reagraph.dev/docs/advanced/Selection)
 
-```tsx
+\`\`\`tsx
 const { selections, onNodeClick, onCanvasClick } = useSelection({
 	ref,
 	nodes,
@@ -99,7 +99,7 @@ const { selections, onNodeClick, onCanvasClick } = useSelection({
 	onNodeClick={onNodeClick}
 	onCanvasClick={onCanvasClick}
 />;
-```
+\`\`\`
 
 ---
 
@@ -161,7 +161,7 @@ const { selections, onNodeClick, onCanvasClick } = useSelection({
 
 ## 14) Minimal scaffold
 
-```tsx
+\`\`\`tsx
 'use client';
 import dynamic from 'next/dynamic';
 import { useRef } from 'react';
@@ -278,4 +278,4 @@ export const Node = () => (
   />
 );
 
-```
+\`\`\`

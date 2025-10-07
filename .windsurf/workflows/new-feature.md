@@ -18,25 +18,25 @@ Before starting, identify which development phase you're in:
 ## Steps
 
 ### 1. Planning Phase
-```markdown
+\`\`\`markdown
 1. Review the PRD section for this feature
 2. Update `app_flow.md` with new screens/endpoints
 3. Update database schema if needed in `db_schema.md`
 4. Add implementation steps to `implementation_plan.md`
-```
+\`\`\`
 
 ### 2. Implementation Phase
-```typescript
+\`\`\`typescript
 // Example: Create a new React component
 // 1. Create component file in appropriate directory
 // 2. Implement basic structure following project conventions
 // 3. Add TypeScript interfaces
 // 4. Implement business logic
 // 5. Add tests
-```
+\`\`\`
 
 ### 3. Testing Phase
-```bash
+\`\`\`bash
 # Run unit tests
 npm test
 
@@ -45,7 +45,7 @@ npm run test:integration
 
 # Verify test coverage meets requirements (80%+)
 npm run test:coverage
-```
+\`\`\`
 
 ### 4. Documentation
 - [ ] Update component documentation

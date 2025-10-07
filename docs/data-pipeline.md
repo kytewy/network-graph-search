@@ -6,9 +6,9 @@
 
 **Upload all data sources:**
 
-```bash
+\`\`\`bash
 python scripts/upload_all_data.py
-```
+\`\`\`
 
 This uploads **299 AI governance documents** from multiple authoritative sources.
 
@@ -26,23 +26,23 @@ This uploads **299 AI governance documents** from multiple authoritative sources
 
 Create a `.env` file in the project root:
 
-```bash
+\`\`\`bash
 PINECONE_API_KEY=your_api_key_here
 PINECONE_INDEX_NAME=network-graph
 PINECONE_NAMESPACE=example-namespace
-```
+\`\`\`
 
 Install dependencies:
 
-```bash
+\`\`\`bash
 pip install -r requirements.txt
-```
+\`\`\`
 
 ## 🏗️ Data Schema
 
 All records follow a standardized schema:
 
-```python
+\`\`\`python
 {
     "_id": "A1",                    # Unique identifier
     "chunk_text": "...",            # Combined text for embedding
@@ -57,7 +57,7 @@ All records follow a standardized schema:
     "sourceType": "Government",     # Authority type
     "connected_to": ["R1", "R5"]    # Cross-references (optional)
 }
-```
+\`\`\`
 
 ## 📦 Key Scripts
 

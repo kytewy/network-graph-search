@@ -17,7 +17,7 @@
 - Node.js 18+ and Python 3.9+
 - Pinecone API key ([sign up free](https://www.pinecone.io/))
 
-```bash
+\`\`\`bash
 # 1. Clone and install
 git clone https://github.com/kytewy/network-graph-search
 cd network-graph-search
@@ -32,7 +32,7 @@ python scripts/upload_all_data.py
 
 # 4. Run the app
 pnpm dev
-```
+\`\`\`
 
 **→ Visit [localhost:3000/graph](http://localhost:3000/graph)**
 
@@ -83,7 +83,7 @@ Traditional RAG systems retrieve documents based on embedding cosine similarity,
 
 ## 📁 Project Structure
 
-```
+\`\`\`
 network-graph-search/
 ├── app/                      # Next.js App Router pages
 │   ├── graph/               # Main graph visualization page
@@ -106,7 +106,7 @@ network-graph-search/
 ├── hooks/                   # Custom React hooks
 ├── scripts/                 # Data upload scripts
 └── docs/                    # Technical documentation
-```
+\`\`\`
 
 ---
 

@@ -4,14 +4,14 @@ Server-side logic called by Next.js API routes via Python subprocesses.
 
 ## Structure
 
-```
+\`\`\`
 backend/
 └── clustering/
     ├── __init__.py
     ├── analyzer.py      # TF-IDF + KMeans clustering
     ├── cli.py           # Stdin/stdout wrapper
     └── requirements.txt # Python dependencies
-```
+\`\`\`
 
 ## Clustering Module
 
@@ -23,18 +23,18 @@ backend/
 
 ### Installation
 
-```bash
+\`\`\`bash
 cd backend/clustering
 pip install -r requirements.txt
-```
+\`\`\`
 
 Dependencies: `scikit-learn`, `numpy`
 
 ### Testing
 
-```bash
+\`\`\`bash
 # Test via API
 ./scripts/test_cluster_api.sh
-```
+\`\`\`
 
 See `PHASE_1_BACKEND_COMPLETE.md` for detailed setup and usage.

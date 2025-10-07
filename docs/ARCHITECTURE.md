@@ -21,7 +21,7 @@
 
 ## Architecture Overview
 
-```
+\`\`\`
 ┌─────────────────────────────────────────────────────────────┐
 │                         Frontend                            │
 │  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐        │
@@ -66,7 +66,7 @@
 │  │    Search)       │        │                     │        │
 │  └──────────────────┘        └─────────────────────┘        │
 └─────────────────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ## Key Design Decisions
 
@@ -101,7 +101,7 @@
 
 ### Search Flow
 
-```
+\`\`\`
 User Input → SearchInput component
     ↓
 performSearch() in app-state
@@ -115,11 +115,11 @@ applyFilters() creates filteredResults
 NetworkGraphContext transforms to Reagraph nodes
     ↓
 Graph visualization updates
-```
+\`\`\`
 
 ### Clustering Flow
 
-```
+\`\`\`
 User selects nodes → ContextManagement
     ↓
 addNodesToContext() in context-store
@@ -135,7 +135,7 @@ applyAiClusters() in NetworkGraphContext
 Nodes get ai_clusters property
     ↓
 Graph re-renders with cluster colors
-```
+\`\`\`
 
 ## Component Architecture
 
@@ -143,7 +143,7 @@ Graph re-renders with cluster colors
 
 The graph visualization uses a **hook composition pattern** to separate concerns:
 
-```tsx
+\`\`\`tsx
 // NetworkGraphContext composes focused hooks
 const visualSettings = useGraphVisualizationSettings();
 const layout = useGraphLayout();
@@ -163,7 +163,7 @@ return (
 		}}
 	/>
 );
-```
+\`\`\`
 
 **Benefits:**
 
@@ -176,11 +176,11 @@ return (
 
 **Example: FilterPanel** - Split monolithic component into presentational sub-components:
 
-```
+\`\`\`
 FilterPanel.tsx (coordinator)
 ├── GeographicFilters.tsx (presentation)
 └── SourceTypeFilters.tsx (presentation)
-```
+\`\`\`
 
 **Result:** 63% reduction in main component (300 → 111 lines)
 
@@ -224,10 +224,10 @@ See [README Quick Start](../README.md#-quick-start) for setup instructions.
 
 ### Build & Deploy
 
-```bash
+\`\`\`bash
 npm run build
 npm start
-```
+\`\`\`
 
 ## Related Documentation
 
