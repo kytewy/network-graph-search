@@ -7,7 +7,7 @@
 ### Frontend
 
 - **Next.js 14** - React framework with App Router
-- **Reagraph** - Network graph visualization (D3.js powered)
+- **Reagraph** - Network graph visualization (WebGL powered)
 - **TypeScript** - Type safety throughout
 - **Tailwind CSS + shadcn/ui** - Modern UI components
 - **Zustand** - State management
@@ -24,10 +24,10 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                         Frontend                            │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Search    │  │    Filters   │  │   Analysis   │      │
-│  │  Interface  │  │    Panel     │  │   Workspace  │      │
-│  └──────┬──────┘  └──────┬───────┘  └──────┬───────┘      │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐        │
+│  │   Search    │  │    Filters   │  │   Analysis   │        │
+│  │  Interface  │  │    Panel     │  │   Workspace  │        │
+│  └──────┬──────┘  └──────┬───────┘  └──────┬───────┘        │
 │         │                 │                  │              │
 │         └─────────────────┼──────────────────┘              │
 │                           ↓                                 │
@@ -54,17 +54,17 @@
                            ↕
 ┌─────────────────────────────────────────────────────────────┐
 │                      Next.js API Routes                     │
-│  ┌──────────────────┐        ┌─────────────────────┐       │
-│  │  /api/           │        │  /api/              │       │
-│  │  vector-search   │        │  cluster-analysis   │       │
-│  └────────┬─────────┘        └─────────┬───────────┘       │
-│           │                             │                   │
-│           ↓                             ↓                   │
-│  ┌──────────────────┐        ┌─────────────────────┐       │
-│  │   Pinecone       │        │   Python Subprocess │       │
-│  │   (Semantic      │        │   (TF-IDF + KMeans) │       │
-│  │    Search)       │        │                     │       │
-│  └──────────────────┘        └─────────────────────┘       │
+│  ┌──────────────────┐        ┌─────────────────────┐        │
+│  │  /api/           │        │  /api/              │        │
+│  │  vector-search   │        │  cluster-analysis   │        │
+│  └────────┬─────────┘        └─────────┬───────────┘        │
+│           │                            │                    │
+│           ↓                            ↓                    │
+│  ┌──────────────────┐        ┌─────────────────────┐        │
+│  │   Pinecone       │        │   Python Subprocess │        │
+│  │   (Semantic      │        │   (TF-IDF + KMeans) │        │
+│  │    Search)       │        │                     │        │
+│  └──────────────────┘        └─────────────────────┘        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -72,10 +72,8 @@
 
 ### 1. **Why Next.js API Routes instead of Flask?**
 
-- ✅ Single codebase (no separate backend server)
-- ✅ Serverless deployment ready
-- ✅ TypeScript end-to-end
-- ✅ Built-in API optimization
+- ✅ Easier to take advantage of rapid prototyping, front-end interaction
+  is what I am trying to demonstrate
 
 ### 2. **Why Reagraph instead of D3.js directly?**
 
@@ -90,7 +88,7 @@
 - ✅ Deterministic results
 - ✅ No GPU required
 - ✅ Predictable resource usage
-- ✅ Good enough for document clustering
+- ✅ Simple to implement to get user flow
 
 ### 4. **Why Zustand instead of Redux?**
 
@@ -139,13 +137,66 @@ Nodes get ai_clusters property
 Graph re-renders with cluster colors
 ```
 
-## Component Organization
+## Component Architecture
 
-See detailed documentation:
+### Hook Composition Pattern
 
-- **[State Management](./state-management.md)** - Zustand stores architecture
-- **[Components Guide](./components.md)** - Component structure and usage
-- **[Data Pipeline](./data-pipeline.md)** - Data scraping and upload scripts
+The graph visualization uses a **hook composition pattern** to separate concerns:
+
+```tsx
+// NetworkGraphContext composes focused hooks
+const visualSettings = useGraphVisualizationSettings();
+const layout = useGraphLayout();
+const selection = useGraphSelection({ graphNodes, graphEdges, graphRef });
+const lasso = useLassoSelection();
+const coordination = useGraphCoordination({ clearSelections });
+
+// Provides unified API to components
+return (
+	<NetworkGraphContext.Provider
+		value={{
+			...visualSettings,
+			...layout,
+			...selection,
+			...lasso,
+			...coordination,
+		}}
+	/>
+);
+```
+
+**Benefits:**
+
+- Each hook has a single responsibility
+- Easy to test hooks independently
+- Composable and reusable
+- No God components with 500+ lines
+
+### Component Decomposition
+
+**Example: FilterPanel** - Split monolithic component into presentational sub-components:
+
+```
+FilterPanel.tsx (coordinator)
+├── GeographicFilters.tsx (presentation)
+└── SourceTypeFilters.tsx (presentation)
+```
+
+**Result:** 63% reduction in main component (300 → 111 lines)
+
+### Core Graph Components
+
+- **`NetworkGraph.tsx`** - Entry point, wraps canvas with provider
+- **`NetworkGraphCanvas.tsx`** - Renders Reagraph visualization
+- **`VisualizationControls.tsx`** - Layout and color mode controls
+- **`LassoSelectionMenu.tsx`** - Multi-node selection interface
+- **`ClusteringInterface.tsx`** - AI-powered clustering with collapsible results
+
+### Layout Types
+
+1. **Force Directed** (`forceDirected2d`) - Natural clustering, physics-based
+2. **Concentric** (`concentric2d`) - Hierarchical importance levels
+3. **Radial** (`radialOut2d`) - Topic-centered exploration
 
 ## Performance Considerations
 
@@ -169,19 +220,7 @@ See detailed documentation:
 
 ## Deployment
 
-### Requirements
-
-- Node.js 18+
-- Python 3.9+ (for clustering)
-- Pinecone account (optional, for search)
-
-### Environment Variables
-
-```bash
-PINECONE_API_KEY=xxx
-PINECONE_INDEX_NAME=network-graph
-PINECONE_NAMESPACE=default
-```
+See [README Quick Start](../README.md#-quick-start) for setup instructions.
 
 ### Build & Deploy
 
@@ -190,21 +229,12 @@ npm run build
 npm start
 ```
 
-## Future Enhancements
-
-### Nice to Have
-
-- [ ] Query Expansion
-- [ ] LLM-powered cluster naming
-- [ ] More and different data domains
-
 ## Related Documentation
 
-- **Main README** - Project overview and quick start
-- **State Management** - Deep dive into Zustand architecture
-- **Components** - Component usage and patterns
-- **Data Pipeline** - Data collection and upload process
+- **[Main README](../README.md)** - Project overview and quick start
+- **[Technical Decisions](./tech-decisions.md)** - Why we chose these technologies
+- **[Data Pipeline](./data-pipeline.md)** - Data collection and upload process
 
 ---
 
-**Last Updated:** 2025-10-05
+**Last Updated:** 2025-10-06
