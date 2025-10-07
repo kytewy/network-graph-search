@@ -159,8 +159,6 @@ network-graph-search/
 
 - **[Architecture Guide](./docs/architecture.md)** - Tech stack, system design, and data flow
 - **[Technical Decisions](./docs/tech-decisions.md)** - Why we chose these technologies
-- **[State Management](./docs/state-management.md)** - Zustand stores guide
-- **[Components](./docs/components.md)** - Component architecture
 - **[Data Pipeline](./docs/data-pipeline.md)** - Data upload scripts
 
 ---
