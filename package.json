@@ -100,11 +100,5 @@
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
     "typescript": "^5"
-  },
-  "pnpm": {
-    "overrides": {
-      "@react-three/fiber": "8.15.19",
-      "react-reconciler": "0.29.0"
-    }
   }
 }
