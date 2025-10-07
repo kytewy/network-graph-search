@@ -18,14 +18,14 @@ Consider the current project phase when fixing bugs:
 ## Steps
 
 ### 1. Reproduce the Bug
-```
+\`\`\`
 1. Document exact steps to reproduce
 2. Note any error messages or unexpected behavior
 3. Check if bug exists in other environments
-```
+\`\`\`
 
 ### 2. Root Cause Analysis
-```typescript
+\`\`\`typescript
 // Example debugging approach
 function findRootCause() {
   // 1. Check error logs
@@ -33,17 +33,17 @@ function findRootCause() {
   // 3. Use breakpoints in debugger
   // 4. Check recent changes in git history
 }
-```
+\`\`\`
 
 ### 3. Implement Fix
-```typescript
+\`\`\`typescript
 // Example fix implementation
 function fixBug() {
   // 1. Make minimal changes to fix the issue
   // 2. Don't introduce new functionality
   // 3. Document why the fix works
 }
-```
+\`\`\`
 
 ### 4. Test the Fix
 - [ ] Verify the bug is fixed

@@ -18,17 +18,17 @@ This rule helps you work with Pinecone vector databases, including index creatio
 
 ### 1. Initialize Pinecone Client
 
-```javascript
+\`\`\`javascript
 import { Pinecone } from '@pinecone-database/pinecone';
 
 const pc = new Pinecone({
 	apiKey: process.env.PINECONE_API_KEY || 'YOUR_API_KEY',
 });
-```
+\`\`\`
 
 ### 2. Create Index with Integrated Embedding
 
-```javascript
+\`\`\`javascript
 const indexName = 'your-index-name';
 await pc.createIndexForModel({
 	name: indexName,
@@ -42,38 +42,38 @@ await pc.createIndexForModel({
 	},
 	waitUntilReady: true,
 });
-```
+\`\`\`
 
 ## Data Operations
 
 ### 3. Target Index and Namespace
 
-```javascript
+\`\`\`javascript
 const index = pc.index(indexName).namespace('your-namespace');
-```
+\`\`\`
 
 ### 4. Upsert Records
 
-```javascript
+\`\`\`javascript
 // Records should have structure: { _id, chunk_text, category, ...metadata }
 await index.upsertRecords(records);
 
 // Wait for indexing (adjust time based on data size)
 await new Promise((resolve) => setTimeout(resolve, 10000));
-```
+\`\`\`
 
 ### 5. Check Index Stats
 
-```javascript
+\`\`\`javascript
 const stats = await index.describeIndexStats();
 console.log(`Total records: ${stats.totalRecordCount}`);
-```
+\`\`\`
 
 ## Search Operations
 
 ### 6. Basic Search with Text
 
-```javascript
+\`\`\`javascript
 const searchResults = await index.searchRecords({
 	query: {
 		topK: 10,
@@ -81,11 +81,11 @@ const searchResults = await index.searchRecords({
 	},
 	fields: ['chunk_text', 'category'], // specify fields to return
 });
-```
+\`\`\`
 
 ### 7. Search with Metadata Filtering
 
-```javascript
+\`\`\`javascript
 const filteredResults = await index.searchRecords({
 	query: {
 		topK: 5,
@@ -97,11 +97,11 @@ const filteredResults = await index.searchRecords({
 	},
 	fields: ['chunk_text', 'category'],
 });
-```
+\`\`\`
 
 ### 8. Advanced Filtering with Operators
 
-```javascript
+\`\`\`javascript
 const advancedFilter = {
 	$and: [
 		{ category: { $in: ['science', 'physics'] } },
@@ -116,11 +116,11 @@ const results = await index.searchRecords({
 		filter: advancedFilter,
 	},
 });
-```
+\`\`\`
 
 ### 9. Search with Reranking
 
-```javascript
+\`\`\`javascript
 const rerankedResults = await index.searchRecords({
 	query: {
 		topK: 10,
@@ -132,13 +132,13 @@ const rerankedResults = await index.searchRecords({
 		rankFields: ['chunk_text'],
 	},
 });
-```
+\`\`\`
 
 ## Best Practices
 
 ### Error Handling
 
-```javascript
+\`\`\`javascript
 try {
 	const results = await index.searchRecords({
 		query: { topK: 5, inputs: { text: query } },
@@ -148,11 +148,11 @@ try {
 	console.error('Pinecone search failed:', error);
 	throw error;
 }
-```
+\`\`\`
 
 ### Environment Configuration
 
-```javascript
+\`\`\`javascript
 // Use environment variables for configuration
 const config = {
 	apiKey: process.env.PINECONE_API_KEY,
@@ -161,18 +161,18 @@ const config = {
 	cloud: process.env.PINECONE_CLOUD || 'aws',
 	region: process.env.PINECONE_REGION || 'us-east-1',
 };
-```
+\`\`\`
 
 ### Data Validation
 
-```javascript
+\`\`\`javascript
 function validateRecord(record) {
 	if (!record._id || !record.chunk_text) {
 		throw new Error('Record must have _id and chunk_text fields');
 	}
 	return record;
 }
-```
+\`\`\`
 
 ## Common Filter Operators Reference
 
@@ -194,7 +194,7 @@ function validateRecord(record) {
 
 ### Complete Workflow Example
 
-```javascript
+\`\`\`javascript
 async function pineconeWorkflow() {
 	// 1. Initialize
 	const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
@@ -221,7 +221,7 @@ async function pineconeWorkflow() {
 		console.log('---');
 	});
 }
-```
+\`\`\`
 
 ## When to Use This Rule
 

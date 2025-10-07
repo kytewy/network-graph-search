@@ -58,11 +58,11 @@
 
 **Implementation:**
 
-```typescript
+\`\`\`typescript
 // app/api/cluster-analysis/route.ts
 const python = spawn('python', ['backend/clustering/cli.py']);
 python.stdin.write(JSON.stringify(nodeData));
-```
+\`\`\`
 
 ---
 
@@ -115,20 +115,20 @@ python.stdin.write(JSON.stringify(nodeData));
 
 1. **Selective subscriptions** - Components only subscribe to state slices they need
 
-   ```tsx
+   \`\`\`tsx
    // ✅ Good - only re-renders when query changes
    const query = useAppStore((state) => state.query);
 
    // ❌ Bad - re-renders on any state change
    const store = useAppStore();
-   ```
+   \`\`\`
 
 2. **Direct node mutation** - For Reagraph compatibility
 
-   ```tsx
+   \`\`\`tsx
    // Store cluster data directly on nodes
    node.ai_clusters = clusterId;
-   ```
+   \`\`\`
 
 3. **No cross-store mutations** - Each store manages its own domain
 
@@ -151,13 +151,13 @@ python.stdin.write(JSON.stringify(nodeData));
 
 **Solution:** Directly mutate node properties instead of storing in separate state:
 
-```typescript
+\`\`\`typescript
 // ❌ Bad: Separate state gets lost
 const [clusterMap, setClusterMap] = useState<Record<string, string>>({});
 
 // ✅ Good: Store directly on node
 node.ai_clusters = clusterId;
-```
+\`\`\`
 
 **Lesson:** For graph node metadata that needs to persist through re-renders, store it directly on the node object.
 
