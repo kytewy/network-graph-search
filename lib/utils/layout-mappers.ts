@@ -8,20 +8,25 @@
 /**
  * Network store layout types (simplified, user-facing names)
  */
-export type NetworkLayoutType = 'forceDirected' | 'concentric' | 'radial' | 'hierarchical';
+export type NetworkLayoutType = 
+  | 'forceDirected2d'
+  | 'circular2d'
+  | 'treeTd2d'
+  | 'treeLr2d'
+  | 'radialOut2d'
+  | 'forceatlas2';
 
 /**
  * Reagraph layout types (technical implementation names)
+ * All supported layouts from Reagraph library
  */
 export type ReagraphLayoutType =
   | 'forceDirected2d'
-  | 'forceDirected3d'
-  | 'hierarchical'
-  | 'radial'
-  | 'forceAtlas2'
-  | 'noOverlap'
-  | 'concentric2d'
-  | 'radialOut2d';
+  | 'circular2d'
+  | 'treeTd2d'
+  | 'treeLr2d'
+  | 'radialOut2d'
+  | 'forceatlas2';
 
 /**
  * LayoutMapper
@@ -32,44 +37,24 @@ export type ReagraphLayoutType =
 export class LayoutMapper {
   /**
    * Map from network store layout type to Reagraph layout type
+   * Since we now use the same values, this is a passthrough
    * 
    * @param layoutType - Network store layout type
    * @returns Reagraph layout type
    */
   static toReagraph(layoutType: NetworkLayoutType): ReagraphLayoutType {
-    const mapping: Record<NetworkLayoutType, ReagraphLayoutType> = {
-      forceDirected: 'forceDirected2d',
-      concentric: 'concentric2d',
-      radial: 'radialOut2d',
-      hierarchical: 'hierarchical',
-    };
-    
-    return mapping[layoutType] || 'forceDirected2d';
+    return layoutType as ReagraphLayoutType;
   }
 
   /**
    * Map from Reagraph layout type to network store layout type
+   * Since we now use the same values, this is a passthrough
    * 
    * @param layoutType - Reagraph layout type
    * @returns Network store layout type
    */
   static fromReagraph(layoutType: ReagraphLayoutType): NetworkLayoutType {
-    // Map known Reagraph types back to simplified network types
-    switch (layoutType) {
-      case 'forceDirected2d':
-      case 'forceDirected3d':
-      case 'forceAtlas2':
-        return 'forceDirected';
-      case 'concentric2d':
-        return 'concentric';
-      case 'radialOut2d':
-      case 'radial':
-        return 'radial';
-      case 'hierarchical':
-        return 'hierarchical';
-      default:
-        return 'forceDirected';
-    }
+    return layoutType as NetworkLayoutType;
   }
 
   /**
@@ -79,11 +64,13 @@ export class LayoutMapper {
    * @returns Human-readable description
    */
   static getDescription(layoutType: NetworkLayoutType): string {
-    const descriptions: Record<NetworkLayoutType, string> = {
-      forceDirected: 'Show me everything and how it relates - Uses physics simulation for natural spacing',
-      concentric: 'Show me by importance level - Arranges nodes in concentric circles',
-      radial: 'Show me everything related to THIS topic - Arranges nodes radiating outward from central points',
-      hierarchical: 'Show me the hierarchy - Arranges nodes in a tree-like structure',
+    const descriptions: Partial<Record<NetworkLayoutType, string>> = {
+      forceDirected2d: 'Force Directed 2D - Physics-based natural spacing',
+      circular2d: 'Circular 2D - Nodes arranged in a circle',
+      treeTd2d: 'Tree Top-Down 2D - Hierarchical tree from top',
+      treeLr2d: 'Tree Left-Right 2D - Hierarchical tree from left',
+      radialOut2d: 'Radial Out 2D - Radiating from center',
+      forceatlas2: 'ForceAtlas2 - Optimized for large graphs',
     };
     
     return descriptions[layoutType] || 'Unknown layout';
@@ -97,7 +84,8 @@ export class LayoutMapper {
    * @returns True if clustering is supported
    */
   static supportsCluster(layoutType: ReagraphLayoutType): boolean {
-    return layoutType === 'forceDirected2d' || layoutType === 'forceDirected3d' || layoutType === 'forceAtlas2';
+    return layoutType === 'forceDirected2d' || 
+           layoutType === 'forceatlas2';
   }
 
   /**
@@ -111,29 +99,18 @@ export class LayoutMapper {
     nodeStrength?: number;
     linkDistance?: number;
   } {
-    switch (layoutType) {
-      case 'forceDirected':
-        return {
-          animated: true,
-          nodeStrength: -120,
-          linkDistance: 60,
-        };
-      case 'concentric':
-        return {
-          animated: true,
-        };
-      case 'radial':
-        return {
-          animated: true,
-        };
-      case 'hierarchical':
-        return {
-          animated: false, // Hierarchical typically doesn't need animation
-        };
-      default:
-        return {
-          animated: true,
-        };
+    // Force-directed layouts benefit from custom physics settings
+    if (layoutType === 'forceDirected2d' || layoutType === 'forceatlas2') {
+      return {
+        animated: true,
+        nodeStrength: -120,
+        linkDistance: 60,
+      };
     }
+    
+    // Most other layouts just need animation
+    return {
+      animated: true,
+    };
   }
 }

@@ -1,13 +1,6 @@
 'use client';
 
-import {
-	Check,
-	Layers,
-	Palette,
-	Maximize2,
-	Tag,
-	Network,
-} from 'lucide-react';
+import { Check, Layers, Palette, Maximize2, Tag, Network } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -47,23 +40,39 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 
 	// Layout options with descriptions
 	const layoutOptions = [
+		// Force-based layouts
 		{
 			id: 'forceDirected2d',
 			name: 'Force Directed',
-			description: 'Show me everything and how it relates',
-			icon: <Maximize2 className="h-4 w-4 mr-2" />,
+			description: 'Physics-based natural spacing',
 		},
 		{
-			id: 'concentric2d',
-			name: 'Concentric',
-			description: 'Show me by importance level',
-			icon: <Layers className="h-4 w-4 mr-2" />,
+			id: 'forceatlas2',
+			name: 'ForceAtlas2',
+			description: 'Optimized for large graphs',
 		},
+		// Radial layout
 		{
 			id: 'radialOut2d',
-			name: 'Radial',
-			description: 'Show me everything related to THIS topic',
-			icon: <Palette className="h-4 w-4 mr-2" />,
+			name: 'Radial Out',
+			description: 'Radiating from center',
+		},
+		// Circular
+		{
+			id: 'circular2d',
+			name: 'Circular',
+			description: 'Nodes in a circle',
+		},
+		// Tree layouts
+		{
+			id: 'treeTd2d',
+			name: 'Tree Top-Down',
+			description: 'Hierarchical tree from top',
+		},
+		{
+			id: 'treeLr2d',
+			name: 'Tree Left-Right',
+			description: 'Hierarchical tree from left',
 		},
 	];
 
@@ -117,7 +126,9 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 	};
 
 	return (
-		<div className="flex items-center space-x-4 bg-card/80 backdrop-blur-sm rounded-md p-2 shadow-sm border border-border" style={{ position: 'relative', zIndex: 9999 }}>
+		<div
+			className="flex items-center space-x-4 bg-card/80 backdrop-blur-sm rounded-md p-2 shadow-sm border border-border"
+			style={{ position: 'relative', zIndex: 9999 }}>
 			{/* Layout Dropdown */}
 			<DropdownMenu modal={false}>
 				<DropdownMenuTrigger asChild>
@@ -132,14 +143,11 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 							key={layout.id}
 							onSelect={() => onLayoutChange(layout.id)}
 							className="flex items-center justify-between">
-							<div className="flex items-center">
-								{layout.icon}
-								<div className="ml-2">
-									<p className="font-medium">{layout.name}</p>
-									<p className="text-xs text-muted-foreground">
-										{layout.description}
-									</p>
-								</div>
+							<div>
+								<p className="font-medium">{layout.name}</p>
+								<p className="text-xs text-muted-foreground">
+									{layout.description}
+								</p>
 							</div>
 							{currentLayout === layout.id && (
 								<Check className="h-4 w-4 text-primary" />
@@ -217,7 +225,10 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 											variant="outline"
 											size="sm"
 											className="gap-2"
-											disabled={currentLayout !== 'forceDirected2d'}>
+											disabled={
+												currentLayout !== 'forceDirected2d' &&
+												currentLayout !== 'forceatlas2'
+											}>
 											<Network className="h-4 w-4" />
 											<span>Cluster: {getCurrentClusterByName()}</span>
 										</Button>
@@ -238,9 +249,10 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 								</DropdownMenu>
 							</div>
 						</TooltipTrigger>
-						{currentLayout !== 'forceDirected2d' && (
+						{currentLayout !== 'forceDirected2d' &&
+						currentLayout !== 'forceatlas2' && (
 							<TooltipContent>
-								<p>Clustering is only available for Force Directed layout</p>
+								<p>Clustering is only available for force-directed layouts</p>
 							</TooltipContent>
 						)}
 					</Tooltip>

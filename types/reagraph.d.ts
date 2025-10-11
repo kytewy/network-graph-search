@@ -82,7 +82,13 @@ declare module 'reagraph' {
     // Core props
     nodes: GraphNode[];
     edges: GraphEdge[];
-    layoutType?: 'forceDirected2d' | 'forceDirected3d' | 'hierarchical' | 'radial' | 'forceAtlas2' | 'noOverlap' | 'concentric2d' | 'radialOut2d';
+    layoutType?: 
+      | 'forceDirected2d'
+      | 'circular2d'
+      | 'treeTd2d'
+      | 'treeLr2d'
+      | 'radialOut2d'
+      | 'forceatlas2';
     layoutOverrides?: LayoutOverrides;
     
     // Selection props

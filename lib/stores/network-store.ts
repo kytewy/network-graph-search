@@ -9,7 +9,13 @@ interface NetworkState {
 	expandedNodes: string[];
 	highlightedNodes: string[];
 	highlightedLinks: string[];
-	layoutType: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical';
+	layoutType: 
+		| 'forceDirected2d'
+		| 'circular2d'
+		| 'treeTd2d'
+		| 'treeLr2d'
+		| 'radialOut2d'
+		| 'forceatlas2';
 
 	// Actions
 	setNodes: (nodes: Node[]) => void;
@@ -21,7 +27,13 @@ interface NetworkState {
 	setHighlightedNodes: (nodes: string[]) => void;
 	setHighlightedLinks: (links: string[]) => void;
 	setLayoutType: (
-		type: 'forceDirected' | 'concentric' | 'radial' | 'hierarchical'
+		type: 
+			| 'forceDirected2d'
+			| 'circular2d'
+			| 'treeTd2d'
+			| 'treeLr2d'
+			| 'radialOut2d'
+			| 'forceatlas2'
 	) => void;
 	clearSelections: () => void;
 }
@@ -33,7 +45,7 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
 	expandedNodes: [],
 	highlightedNodes: [],
 	highlightedLinks: [],
-	layoutType: 'forceDirected',
+	layoutType: 'forceDirected2d',
 
 	setNodes: (nodes) => set({ nodes }),
 	setLinks: (links) => set({ links }),
