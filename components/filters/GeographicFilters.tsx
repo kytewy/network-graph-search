@@ -63,7 +63,7 @@ export function GeographicFilters({
 									variant={isSelected ? 'default' : 'outline'}
 									className={`cursor-pointer transition-colors flex-1 justify-between ${
 										isSelected
-											? 'bg-[#a855f7] text-white hover:bg-[#9333ea]'
+											? 'bg-primary text-primary-foreground hover:bg-primary/90'
 											: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
 									}`}
 									onClick={() => toggleContinent(continent)}>
@@ -143,7 +143,7 @@ export function GeographicFilters({
 																key={country}
 																className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${
 																	isCountrySelected
-																		? 'bg-[#a855f7] text-white'
+																		? 'bg-primary text-primary-foreground'
 																		: 'bg-gray-50 hover:bg-gray-100 text-gray-700'
 																}`}
 																onClick={() => toggleCountry(country)}>

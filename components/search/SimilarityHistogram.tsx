@@ -109,7 +109,7 @@ export function SimilarityHistogram() {
 								<div
 									className={`h-6 rounded cursor-pointer transition-all duration-200 flex items-center justify-end pr-2 ${
 										selectedSimilarityRanges.includes(bar.range)
-											? 'bg-purple-600 hover:bg-purple-700 shadow-md'
+											? 'bg-primary hover:bg-primary/90 shadow-md'
 											: 'bg-gray-300 hover:bg-gray-400'
 									}`}
 									style={{ width: `${bar.width}%` }}

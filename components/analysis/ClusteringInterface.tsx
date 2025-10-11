@@ -147,7 +147,7 @@ export default function ClusteringInterface({
 				<Button
 					onClick={handleAnalyzeClusters}
 					disabled={isAnalyzing || contextNodes.length === 0}
-					className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white">
+					className="bg-primary hover:bg-primary/90 text-primary-foreground">
 					{isAnalyzing ? 'Analyzing...' : 'Analyze Clusters'}
 				</Button>
 				{clusterResults && (

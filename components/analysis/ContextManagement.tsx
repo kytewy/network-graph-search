@@ -2,11 +2,9 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
-	ChevronDown,
 	Search,
 	X,
 	CheckSquare,
@@ -88,7 +86,9 @@ export default function ContextManagement({
 	const [searchQuery, setSearchQuery] = useState('');
 
 	// State for tabs view
-	const [activeTab, setActiveTab] = useState<'nodes' | 'analysis' | 'clustering'>('nodes');
+	const [activeTab, setActiveTab] = useState<
+		'nodes' | 'analysis' | 'clustering'
+	>('nodes');
 
 	// State for bulk selection
 	const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
@@ -324,17 +324,28 @@ export default function ContextManagement({
 			</div>
 
 			{/* Tab navigation for nodes/analysis/clustering views */}
-			<Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'nodes' | 'analysis' | 'clustering')} className="mb-4">
+			<Tabs
+				value={activeTab}
+				onValueChange={(value) =>
+					setActiveTab(value as 'nodes' | 'analysis' | 'clustering')
+				}
+				className="mb-4">
 				<TabsList className="grid w-full grid-cols-3">
-					<TabsTrigger value="nodes" className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+					<TabsTrigger
+						value="nodes"
+						className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
 						<CheckSquare className="h-3.5 w-3.5" />
 						<span className="hidden sm:inline">Nodes</span>
 					</TabsTrigger>
-					<TabsTrigger value="analysis" className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+					<TabsTrigger
+						value="analysis"
+						className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
 						<MessageSquare className="h-3.5 w-3.5" />
 						<span className="hidden sm:inline">Analysis</span>
 					</TabsTrigger>
-					<TabsTrigger value="clustering" className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+					<TabsTrigger
+						value="clustering"
+						className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
 						<BarChart4 className="h-3.5 w-3.5" />
 						<span className="hidden sm:inline">Clustering</span>
 					</TabsTrigger>

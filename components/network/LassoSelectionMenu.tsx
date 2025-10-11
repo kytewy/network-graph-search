@@ -62,7 +62,7 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 				maxHeight: '80vh',
 			}}>
 			<div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex justify-between items-center">
-				<h3 className="text-lg font-semibold text-[#1f2937]">
+				<h3 className="text-lg font-semibold text-foreground">
 					{selectedNodes.length} Nodes Selected
 				</h3>
 				<div className="flex items-center gap-2">
@@ -76,7 +76,7 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 					<Button
 						size="sm"
 						onClick={handleSendToContext}
-						className="text-xs px-3 py-1 bg-[#a855f7] hover:bg-[#9333ea] text-white">
+						className="text-xs px-3 py-1 bg-primary hover:bg-primary/90 text-primary-foreground">
 						Send to Context
 					</Button>
 					<button
@@ -102,9 +102,9 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 				<button
 					onClick={() => setExpanded(!expanded)}
 					className="w-full flex justify-between items-center cursor-pointer p-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors rounded-md">
-					<span className="font-medium text-[#1f2937]">Selected Nodes</span>
+					<span className="font-medium text-foreground">Selected Nodes</span>
 					<svg
-						className={`w-5 h-5 text-[#6b7280] transition-transform duration-200 ${
+						className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${
 							expanded ? 'rotate-180' : ''
 						}`}
 						fill="none"
@@ -124,13 +124,13 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 						<table className="w-full text-sm">
 							<thead className="bg-gray-50 sticky top-0">
 								<tr>
-									<th className="text-left py-2 px-3 font-medium text-[#6b7280]">
+									<th className="text-left py-2 px-3 font-medium text-muted-foreground">
 										Label
 									</th>
-									<th className="text-left py-2 px-3 font-medium text-[#6b7280]">
+									<th className="text-left py-2 px-3 font-medium text-muted-foreground">
 										Type
 									</th>
-									<th className="text-right py-2 px-3 font-medium text-[#6b7280]">
+									<th className="text-right py-2 px-3 font-medium text-muted-foreground">
 										Chars
 									</th>
 								</tr>
@@ -143,8 +143,8 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 										<td className="py-2 px-3 truncate max-w-[150px]">
 											{node.label}
 										</td>
-										<td className="py-2 px-3 text-[#6b7280]">{node.type}</td>
-										<td className="py-2 px-3 text-right text-[#6b7280]">
+										<td className="py-2 px-3 text-muted-foreground">{node.type}</td>
+										<td className="py-2 px-3 text-right text-muted-foreground">
 											{(node.content?.length || 0).toLocaleString()} chars
 										</td>
 									</tr>

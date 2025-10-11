@@ -207,7 +207,7 @@ export default function ChatInterface({
 						}}
 						className={`rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
 							selectedPill === 'Summary'
-								? 'bg-[#7c3aed] text-white border-[#7c3aed] shadow-lg shadow-purple-500/25'
+								? 'bg-primary text-primary-foreground border-primary shadow-lg'
 								: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
 						}`}
 						disabled={isThinking}>
@@ -229,7 +229,7 @@ export default function ChatInterface({
 						}}
 						className={`rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
 							selectedPill === 'Business Impact'
-								? 'bg-[#7c3aed] text-white border-[#7c3aed] shadow-lg shadow-purple-500/25'
+								? 'bg-primary text-primary-foreground border-primary shadow-lg'
 								: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
 						}`}
 						disabled={isThinking}>
@@ -242,7 +242,7 @@ export default function ChatInterface({
 						value={chatInput}
 						onChange={(e) => setChatInput(e.target.value)}
 						placeholder={placeholder}
-						className="w-full bg-white border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 pr-16 min-h-[120px] resize-none rounded-xl text-base leading-relaxed transition-all duration-200 focus:border-[#7c3aed] focus:ring-4 focus:ring-purple-500/10"
+						className="w-full bg-white border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 pr-16 min-h-[120px] resize-none rounded-xl text-base leading-relaxed transition-all duration-200 focus:border-primary focus:ring-4 focus:ring-primary/10"
 						onKeyDown={(e) => {
 							if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
 								handleSendMessage();
@@ -254,7 +254,7 @@ export default function ChatInterface({
 					/>
 					<Button
 						size="sm"
-						className={`absolute right-3 bottom-3 h-10 w-10 p-0 bg-[#7c3aed] hover:bg-[#6d28d9] text-white rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+						className={`absolute right-3 bottom-3 h-10 w-10 p-0 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 ${
 							isThinking ? 'animate-spin' : 'hover:rotate-12'
 						}`}
 						onClick={() => handleSendMessage()}

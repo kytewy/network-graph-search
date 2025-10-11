@@ -32,7 +32,7 @@ export function SourceTypeFilters({
 						}
 						className={`cursor-pointer transition-colors ${
 							selectedSourceTypes.includes(sourceType)
-								? 'bg-[#a855f7] text-white hover:bg-[#9333ea]'
+								? 'bg-primary text-primary-foreground hover:bg-primary/90'
 								: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
 						}`}
 						onClick={() => toggleSourceType(sourceType)}>

@@ -71,7 +71,7 @@ const FilterPanel = () => {
 	];
 
 	return (
-		<div className="rounded-lg p-4 space-y-4 bg-white">
+		<div className="rounded-lg p-4 space-y-4 bg-card">
 			<Label className="text-sidebar-foreground font-medium text-base">
 				Data Filters
 			</Label>
