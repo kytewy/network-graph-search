@@ -8,26 +8,7 @@ import {
 	getSimilarityColor,
 } from '@/lib/theme/colors';
 
-interface Node {
-	id: string;
-	label: string;
-	summary: string;
-	content: string;
-	type: string;
-	continent: string;
-	country: string;
-	sourceType: string;
-	size: number;
-	color: string;
-	similarity?: number;
-	stateProvince?: string;
-}
-
-interface ColorLegendProps {
-	filteredNodes: Node[];
-}
-
-export function ColorLegend({ filteredNodes }: ColorLegendProps) {
+export function ColorLegend() {
 	const colorMode = useAppStore((state) => state.colorMode);
 	const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
 

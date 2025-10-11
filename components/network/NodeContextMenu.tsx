@@ -25,24 +25,15 @@ import type { Node } from '@/lib/types/node';
  * ```
  */
 
-// NodeContextMenu props
 interface NodeContextMenuProps {
   node: Node;
   onClose: () => void;
-  onNodeSelection?: (nodeIds: string[]) => void;
   className?: string;
-  selectedNodes?: string[];
-  expandedNodes?: string[];
-  onNodeExpand?: (nodeId: string) => void;
 }
 
 export function NodeContextMenu({
   node,
   onClose,
-  onNodeSelection,
-  selectedNodes = [],
-  expandedNodes = [],
-  onNodeExpand,
   className,
 }: NodeContextMenuProps) {
   const [showReadingMode, setShowReadingMode] = useState(false);
