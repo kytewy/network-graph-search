@@ -18,25 +18,41 @@
 - Pinecone API key ([sign up free](https://www.pinecone.io/))
 
 ```bash
-# 1. Clone and install
+# 1. Clone and install frontend
 git clone https://github.com/kytewy/network-graph-search
 cd network-graph-search
-pnpm install && pip install -r requirements.txt
+pnpm install
 
-# 2. Set up environment
-cp example.env .env
-# Edit .env with your PINECONE_API_KEY, PINECONE_INDEX_NAME, PINECONE_NAMESPACE
+# 2. Set up Python virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
 
-# 3. Upload sample documents (299 EU AI Act articles)
+# 3. Set up environment
+cp .env.example .env
+# Edit .env and add your Pinecone credentials
+
+# 4. Upload sample documents (299 EU AI Act articles)
 python scripts/upload_all_data.py
 
-# 4. Run the app
+# 5. Run the app
 pnpm dev
 ```
 
 **→ Visit [localhost:3000/graph](http://localhost:3000/graph)**
 
 Search "AI regulations" to see 299 documents clustered in < 2 seconds.
+
+### 🔧 Troubleshooting
+
+**Reagraph version issues:**
+If you encounter compatibility errors, try downgrading:
+```bash
+pnpm install reagraph@4.21.0
+```
+
+**Python dependency conflicts:**
+Always use a virtual environment to isolate dependencies and prevent conflicts.
 
 ---
 
@@ -180,18 +196,24 @@ network-graph-search/
 
 ### **Current Features** ✅
 
-- Semantic search with Pinecone
-- Interactive Reagraph visualization
-- TF-IDF + KMeans clustering
-- Geographic & type filtering
+- ✅ Semantic search with Pinecone
+- ✅ Interactive Reagraph visualization (force-directed, concentric, radial layouts)
+- ✅ TF-IDF + KMeans clustering with automatic summaries
+- ✅ Geographic & type filtering
+- ✅ Lasso selection for bulk operations
+- ✅ Similarity histogram
 
-### **Next Steps**
+### **In Development** 🚧
+
+- 🚧 LLM integration for node summary/business analysis (Summary & Business Analysis buttons in workspace)
+
+### **Planned Features** 📋
 
 - [ ] LLM-powered cluster naming
-- [ ] Search with metadata extracted
-- [ ] More data/ingestion pipeline
-- [ ] LLM Chat with citations
-- [ ] Metadata tagging at scale
+- [ ] Enhanced metadata extraction
+- [ ] Expanded data ingestion pipeline
+- [ ] LLM Chat with document citations
+- [ ] Bulk metadata tagging
 
 ---
 
