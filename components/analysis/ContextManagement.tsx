@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
 	ChevronDown,
 	Search,
@@ -323,44 +324,24 @@ export default function ContextManagement({
 			</div>
 
 			{/* Tab navigation for nodes/analysis/clustering views */}
-			<div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg p-1 mb-4">
-				<nav className="flex space-x-1" aria-label="Tabs">
-					<button
-						onClick={() => setActiveTab('nodes')}
-						className={`flex-1 flex items-center justify-center gap-1 py-2.5 px-2 text-xs font-semibold rounded-md transition-all duration-200 ${
-							activeTab === 'nodes'
-								? 'bg-[#7c3aed] text-white shadow-lg shadow-purple-500/25'
-								: 'text-slate-600 hover:text-slate-800 hover:bg-white/50'
-						}`}>
+			<Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'nodes' | 'analysis' | 'clustering')} className="mb-4">
+				<TabsList className="grid w-full grid-cols-3">
+					<TabsTrigger value="nodes" className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
 						<CheckSquare className="h-3.5 w-3.5" />
 						<span className="hidden sm:inline">Nodes</span>
-					</button>
-					<button
-						onClick={() => setActiveTab('analysis')}
-						className={`flex-1 flex items-center justify-center gap-1 py-2.5 px-2 text-xs font-semibold rounded-md transition-all duration-200 ${
-							activeTab === 'analysis'
-								? 'bg-[#7c3aed] text-white shadow-lg shadow-purple-500/25'
-								: 'text-slate-600 hover:text-slate-800 hover:bg-white/50'
-						}`}>
+					</TabsTrigger>
+					<TabsTrigger value="analysis" className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
 						<MessageSquare className="h-3.5 w-3.5" />
 						<span className="hidden sm:inline">Analysis</span>
-					</button>
-					<button
-						onClick={() => setActiveTab('clustering')}
-						className={`flex-1 flex items-center justify-center gap-1 py-2.5 px-2 text-xs font-semibold rounded-md transition-all duration-200 ${
-							activeTab === 'clustering'
-								? 'bg-[#7c3aed] text-white shadow-lg shadow-purple-500/25'
-								: 'text-slate-600 hover:text-slate-800 hover:bg-white/50'
-						}`}>
+					</TabsTrigger>
+					<TabsTrigger value="clustering" className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
 						<BarChart4 className="h-3.5 w-3.5" />
 						<span className="hidden sm:inline">Clustering</span>
-					</button>
-				</nav>
-			</div>
+					</TabsTrigger>
+				</TabsList>
 
-			{/* Content based on active tab */}
-			{activeTab === 'nodes' ? (
-				<>
+				{/* Nodes Tab Content */}
+				<TabsContent value="nodes" className="mt-0">
 					{/* Search bar */}
 					<div className="flex flex-col gap-2">
 						<div className="relative">
@@ -546,10 +527,10 @@ export default function ContextManagement({
 							)}
 						</div>
 					</div>
-				</>
-			) : activeTab === 'analysis' ? (
-				// Analysis tab content
-				<div className="mt-4">
+				</TabsContent>
+
+				{/* Analysis Tab Content */}
+				<TabsContent value="analysis" className="mt-0">
 					<ChatInterface
 						safeSelectedNodes={contextNodes.map((node) => node.id)}
 						networkState={networkState}
@@ -557,16 +538,16 @@ export default function ContextManagement({
 						rightPanelExpanded={rightPanelExpanded}
 						selectedNodesSummary={selectedNodesSummary}
 					/>
-				</div>
-			) : (
-				// Clustering tab content
-				<div className="mt-4">
+				</TabsContent>
+
+				{/* Clustering Tab Content */}
+				<TabsContent value="clustering" className="mt-0">
 					<ClusteringInterface
 						contextNodes={contextNodes}
 						rightPanelExpanded={rightPanelExpanded}
 					/>
-				</div>
-			)}
+				</TabsContent>
+			</Tabs>
 
 			{/* Document Overlay */}
 			{showDocumentOverlay && selectedNode && (
