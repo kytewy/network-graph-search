@@ -9,11 +9,13 @@
  */
 export const GRAPH_LAYOUT_CONFIG = {
 	/** Distance between connected nodes (default: 80) */
-	linkDistance: 80,
+	linkDistance: 120,
 	/** Strength of node repulsion - negative values push nodes apart (default: -250) */
-	nodeStrength: -250,
+	nodeStrength: -300,
 	/** Gravitational pull toward center - keeps graph from spreading too far (default: 0.5) */
 	gravity: 0.5,
+	/** Cluster cohesion strength - how tightly clustered nodes group together (0 = disabled, 1 = maximum) */
+	clusterStrength: 0.8,
 } as const;
 
 /**

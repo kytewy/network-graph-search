@@ -1,6 +1,13 @@
 'use client';
 
-import React, { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
+import React, {
+	createContext,
+	useContext,
+	useMemo,
+	useState,
+	useCallback,
+	useEffect,
+} from 'react';
 import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
 import { useAppStore, type Node, type Link } from '@/lib/stores/app-state';
 
@@ -29,7 +36,13 @@ interface NetworkGraphContextType {
 	showLabels: boolean;
 	colorMode: ColorMode;
 	nodeSizeMode: NodeSizeMode;
-	clusterMode: 'none' | 'type' | 'continent' | 'country' | 'sourceType' | 'ai_clusters';
+	clusterMode:
+		| 'none'
+		| 'type'
+		| 'continent'
+		| 'country'
+		| 'sourceType'
+		| 'ai_clusters';
 
 	// AI Cluster analysis state
 	hasAiClusters: boolean;
@@ -57,7 +70,13 @@ interface NetworkGraphContextType {
 	setColorMode: (mode: ColorMode) => void;
 	setNodeSizeMode: (mode: NodeSizeMode) => void;
 	setClusterMode: (
-		mode: 'none' | 'type' | 'continent' | 'country' | 'sourceType' | 'ai_clusters'
+		mode:
+			| 'none'
+			| 'type'
+			| 'continent'
+			| 'country'
+			| 'sourceType'
+			| 'ai_clusters'
 	) => void;
 	handleCustomNodeClick: (node: GraphNode) => void;
 	handleLasso: (selectedIds: string[]) => void;
@@ -106,28 +125,31 @@ export function NetworkGraphProvider({
 	} = useGraphVisualizationSettings();
 
 	// AI Cluster functions - Now mutates nodes directly
-	const applyAiClusters = useCallback((assignments: Record<string, string>) => {
-		// Mutate the filteredResults nodes directly
-		filteredResults.forEach((node) => {
-			if (assignments[node.id]) {
-				node.ai_clusters = assignments[node.id];
+	const applyAiClusters = useCallback(
+		(assignments: Record<string, string>) => {
+			// Mutate the filteredResults nodes directly
+			filteredResults.forEach((node) => {
+				if (assignments[node.id]) {
+					node.ai_clusters = assignments[node.id];
+				}
+			});
+
+			setHasAiClusters(Object.keys(assignments).length > 0);
+
+			// Automatically switch to AI clusters mode when user runs clustering
+			if (Object.keys(assignments).length > 0) {
+				setClusterMode('ai_clusters');
 			}
-		});
-		
-		setHasAiClusters(Object.keys(assignments).length > 0);
-		
-		// Automatically switch to AI clusters mode when user runs clustering
-		if (Object.keys(assignments).length > 0) {
-			setClusterMode('ai_clusters');
-		}
-	}, [filteredResults, setClusterMode]);
+		},
+		[filteredResults, setClusterMode]
+	);
 
 	const clearAiClusters = useCallback(() => {
 		// Remove ai_clusters from all nodes
 		filteredResults.forEach((node) => {
 			delete node.ai_clusters;
 		});
-		
+
 		setHasAiClusters(false);
 		// Switch back to no clustering
 		setClusterMode('none');
@@ -135,9 +157,11 @@ export function NetworkGraphProvider({
 
 	// Detect if nodes already have ai_clusters assigned (e.g., from search results)
 	useEffect(() => {
-		const nodesWithClusters = filteredResults.filter(node => node.ai_clusters);
+		const nodesWithClusters = filteredResults.filter(
+			(node) => node.ai_clusters
+		);
 		const hasPreAssignedClusters = nodesWithClusters.length > 0;
-		
+
 		if (hasPreAssignedClusters) {
 			setHasAiClusters(true);
 			// Don't auto-switch - let user manually select AI Clusters mode

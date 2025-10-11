@@ -51,7 +51,8 @@ export function NetworkGraphCanvas() {
 
 	// Determine which cluster attribute to use
 	// Simply use the clusterMode as the attribute name since all properties are attached to nodes
-	const activeClusterAttribute = clusterMode !== 'none' ? clusterMode : undefined;
+	const activeClusterAttribute =
+		clusterMode !== 'none' ? clusterMode : undefined;
 
 	return (
 		<div className="flex flex-col h-full">
@@ -85,9 +86,10 @@ export function NetworkGraphCanvas() {
 						edges={graphEdges}
 						layoutType={layoutType as any}
 						layoutOverrides={{
-							clusterStrength: activeClusterAttribute ? 0.8 : 0,
-							linkDistance: 100,
-							nodeStrength: -150,
+							clusterStrength: activeClusterAttribute ? GRAPH_LAYOUT_CONFIG.clusterStrength : 0,
+							linkDistance: GRAPH_LAYOUT_CONFIG.linkDistance,
+							nodeStrength: GRAPH_LAYOUT_CONFIG.nodeStrength,
+							gravity: GRAPH_LAYOUT_CONFIG.gravity,
 						}}
 						selections={selections}
 						onNodeClick={handleCustomNodeClick}
@@ -105,6 +107,7 @@ export function NetworkGraphCanvas() {
 						// Use 'cluster' for API assignments, or clusterMode for manual clustering
 						clusterAttribute={activeClusterAttribute}
 						// Enable node dragging
+						draggable={true}
 						labelType={showLabels ? PERFORMANCE_CONFIG.labelType : 'none'}
 						edgeStyle={PERFORMANCE_CONFIG.edgeStyle}
 						animated={PERFORMANCE_CONFIG.animated}
@@ -124,7 +127,7 @@ export function NetworkGraphCanvas() {
 							 * ✅ BEST PRACTICE: Pass the full node data using spread operator
 							 * This automatically includes all fields (including url, score, category, etc.)
 							 * and prevents bugs from missing fields.
-							 * 
+							 *
 							 * See lib/types/node.ts for the complete Node interface definition.
 							 */
 							return (
