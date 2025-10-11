@@ -43,19 +43,6 @@ pnpm dev
 
 Search "AI regulations" to see 299 documents clustered in < 2 seconds.
 
-### 🔧 Troubleshooting
-
-**Reagraph version issues:**
-If you encounter compatibility errors, try downgrading:
-```bash
-pnpm install reagraph@4.21.0
-```
-
-**Python dependency conflicts:**
-Always use a virtual environment to isolate dependencies and prevent conflicts.
-
----
-
 ## 🎯 The Problem
 
 Traditional RAG systems retrieve documents based on embedding cosine similarity, not actual relevance.
