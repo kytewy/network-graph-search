@@ -80,6 +80,7 @@ export async function searchPinecone(
 				'connected_to',
 				'url',
 				'embedding',
+				'tags',
 			],
 		});
 

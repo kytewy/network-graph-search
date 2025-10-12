@@ -7,6 +7,7 @@ import { Filter } from 'lucide-react';
 import { useAppStore } from '@/lib/stores/app-state';
 import { GeographicFilters } from './GeographicFilters';
 import { SourceTypeFilters } from './SourceTypeFilters';
+import { TagFilters } from './TagFilters';
 
 /**
  * FilterPanel - Main coordinator for filtering options
@@ -37,6 +38,13 @@ const FilterPanel = () => {
 		(state) => state.getCountriesByContinent
 	);
 
+	// Tag filtering state and actions
+	const selectedTags = useAppStore((state) => state.selectedTags);
+	const toggleTag = useAppStore((state) => state.toggleTag);
+	const clearTagFilters = useAppStore((state) => state.clearTagFilters);
+	const getAvailableTags = useAppStore((state) => state.getAvailableTags);
+	const getNodeCountByTag = useAppStore((state) => state.getNodeCountByTag);
+
 	// Local UI state
 	const [selectedSourceTypes, setSelectedSourceTypes] = useState<string[]>([]);
 	const [expandedContinents, setExpandedContinents] = useState<string[]>([]);
@@ -61,11 +69,13 @@ const FilterPanel = () => {
 
 	const clearAllFilters = () => {
 		clearLocationFilters();
+		clearTagFilters();
 		setSelectedSourceTypes([]);
 	};
 
 	// Derived data
 	const availableContinents = getAvailableContinents();
+	const availableTags = getAvailableTags();
 	const sourceTypes = [
 		...new Set(filteredResults.map((node) => node.type || '').filter(Boolean)),
 	];
@@ -97,6 +107,13 @@ const FilterPanel = () => {
 				selectedSourceTypes={selectedSourceTypes}
 				toggleSourceType={toggleSourceType}
 			/> */}
+
+			<TagFilters
+				availableTags={availableTags}
+				selectedTags={selectedTags}
+				toggleTag={toggleTag}
+				getNodeCountByTag={getNodeCountByTag}
+			/>
 
 			<Button
 				onClick={clearAllFilters}

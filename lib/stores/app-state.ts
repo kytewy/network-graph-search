@@ -17,6 +17,7 @@ export interface Node {
 	country?: string;
 	continent?: string;
 	ai_clusters?: string; // AI cluster assignment (e.g., "cluster_0", "cluster_1")
+	tags?: string[]; // User-defined tags for categorization and filtering
 	// Keep fields for backward compatibility and other metadata
 	fields?: any;
 	data?: any;
@@ -98,6 +99,9 @@ interface AppState {
 	// Location filtering state
 	selectedContinents: string[]; // e.g., ['Europe', 'Asia']
 	selectedCountries: string[]; // e.g., ['USA', 'Japan'] - individual countries not covered by continent selection
+	
+	// Tag filtering state
+	selectedTags: string[]; // e.g., ['important', 'regulations']
 
 	// Location filtering actions
 	toggleContinent: (continent: string) => void; // Smart toggle: selects continent, deselects its individual countries
@@ -110,6 +114,12 @@ interface AppState {
 	getNodeCountByCountry: (country: string) => number; // Get count of nodes for a specific country
 	getAvailableContinents: () => string[]; // Get list of all continents in current data
 	getCountriesByContinent: (continent: string) => string[]; // Get countries for a specific continent in current data
+	
+	// Tag filtering actions
+	toggleTag: (tag: string) => void; // Toggle tag selection
+	clearTagFilters: () => void; // Clear all tag filters
+	getAvailableTags: () => string[]; // Get all unique tags from current results
+	getNodeCountByTag: (tag: string) => number; // Get count of nodes for a specific tag
 }
 
 // Create the store with DevTools middleware
@@ -136,6 +146,9 @@ export const useAppStore = create<AppState>()(
 		// Location filtering state
 		selectedContinents: [],
 		selectedCountries: [],
+		
+		// Tag filtering state
+		selectedTags: [],
 
 		// Additional state for AI clustering
 		aiClusters: [], // List of AI cluster assignments (e.g., ['cluster_0', 'cluster_1'])
@@ -206,7 +219,15 @@ export const useAppStore = create<AppState>()(
 				);
 			}
 
-			// STEP 2: Apply similarity range filter
+			// STEP 2: Apply tag filter
+			const { selectedTags } = get();
+			if (selectedTags.length > 0) {
+				filtered = filtered.filter((node) =>
+					node.tags?.some(tag => selectedTags.includes(tag))
+				);
+			}
+			
+		// STEP 3: Apply similarity range filter
 			if (selectedSimilarityRanges.length > 0) {
 				filtered = filtered.filter((node) => {
 					const similarity = Math.round((node.score || 0) * 100);
@@ -229,7 +250,7 @@ export const useAppStore = create<AppState>()(
 				});
 			}
 
-			// STEP 3: Filter links to only show connections between visible nodes
+			// STEP 4: Filter links to only show connections between visible nodes
 			const nodeIds = new Set(filtered.map((node) => node.id));
 			const filteredLinks = links.filter(
 				(link) => nodeIds.has(link.source) && nodeIds.has(link.target)
@@ -275,6 +296,7 @@ export const useAppStore = create<AppState>()(
 						country,
 						continent,
 						ai_clusters: undefined, // Will be assigned by AI clustering API
+						tags: hit.fields?.tags || [], // User-defined tags
 						url: hit.fields?.url || '', // URL for "Open Link" button
 						// Keep original fields for backward compatibility
 						fields: hit.fields || {},
@@ -476,6 +498,39 @@ export const useAppStore = create<AppState>()(
 				.map((node) => node.country || '')
 				.filter((country) => country && country.trim() !== '');
 			return [...new Set(countries)] as string[];
+		},
+
+		// Tag filtering actions
+		
+		toggleTag: (tag) => {
+			set((state) => {
+				const isSelected = state.selectedTags.includes(tag);
+				return {
+					selectedTags: isSelected
+						? state.selectedTags.filter((t) => t !== tag)
+						: [...state.selectedTags, tag],
+				};
+			});
+			get().applyFilters();
+		},
+
+		clearTagFilters: () => {
+			set({ selectedTags: [] });
+			get().applyFilters();
+		},
+
+		getAvailableTags: () => {
+			const { searchResults } = get();
+			const tags = new Set<string>();
+			searchResults.forEach((node) => {
+				node.tags?.forEach((tag) => tags.add(tag));
+			});
+			return Array.from(tags).sort();
+		},
+
+		getNodeCountByTag: (tag: string) => {
+			const { filteredResults } = get();
+			return filteredResults.filter((node) => node.tags?.includes(tag)).length;
 		},
 	}))
 );
