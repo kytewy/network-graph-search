@@ -41,7 +41,8 @@ export function SearchInput() {
 
 	return (
 		<Card className="p-4">
-			<h2 className="text-xl font-semibold mb-4">Search</h2>
+			{/* <h2 className="text-xl font-semibold mb-4">Search</h2> */}
+			<h2 className="text-xl font-semibold mb-2">Search Context</h2>
 			{/* Full-width search input */}
 			<div className="relative">
 				<Input

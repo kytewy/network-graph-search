@@ -24,12 +24,9 @@ export default function GraphPage() {
 					<div className="space-y-4">
 						{/* Header */}
 						<div className="mb-4">
-							<h1 className="text-2xl font-bold text-sidebar-foreground mb-1">
+							<h1 className="text-2xl font-bold text-sidebar-foreground">
 								Graph Explorer
 							</h1>
-							<p className="text-xs text-sidebar-foreground/60 leading-snug">
-								Re-ranker: Calculates relevance scores for query + document pairs
-							</p>
 						</div>
 
 						<SearchInput />

@@ -85,13 +85,6 @@ export function SimilarityHistogram() {
 	return (
 		<Card className="p-4">
 			<h2 className="text-xl font-semibold mb-2">Filter by Similarity</h2>
-			<p className="text-sm text-muted-foreground mb-3">
-				{searchResults.length === 0 
-					? 'Run a search to see similarity distribution'
-					: selectedSimilarityRanges.length === 0
-					? 'Click on bars to filter results by similarity score. Currently showing all results.'
-					: `Currently filtering by: ${selectedSimilarityRanges.join(', ')}`}
-			</p>
 
 			{/* Histogram visualization */}
 			<div className="w-full">
