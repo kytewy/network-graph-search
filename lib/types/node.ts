@@ -46,6 +46,9 @@ export interface Node {
   // Clustering properties
   ai_clusters?: string; // AI cluster assignment (e.g., "cluster_0")
   
+  // Tagging properties
+  tags?: string[]; // User-defined tags for categorization and filtering
+  
   // Raw fields for backward compatibility
   fields?: any;
 }

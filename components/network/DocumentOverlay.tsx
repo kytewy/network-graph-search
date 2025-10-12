@@ -3,8 +3,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { X } from 'lucide-react';
+import { X, Tag, Plus, Check } from 'lucide-react';
 import { Z_INDEX } from '@/lib/constants/graph-config';
 import type { Node } from '@/lib/types/node';
 
@@ -68,6 +69,31 @@ export default function DocumentOverlay({
 }: DocumentOverlayProps) {
 	// State to track if we're in the browser environment
 	const [mounted, setMounted] = useState(false);
+	
+	// Tag management state
+	const [tags, setTags] = useState<string[]>([]);
+	const [showTagInput, setShowTagInput] = useState(false);
+	const [tagInput, setTagInput] = useState('');
+	const [isTagging, setIsTagging] = useState(false);
+	const [tagSuccess, setTagSuccess] = useState(false);
+	const [tagError, setTagError] = useState<string | null>(null);
+
+	// Fetch existing tags when document opens
+	useEffect(() => {
+		const fetchTags = async () => {
+			try {
+				const response = await fetch(`/api/documents/tags?documentId=${documentItem.id}`);
+				if (response.ok) {
+					const data = await response.json();
+					setTags(data.tags || []);
+				}
+			} catch (err) {
+				console.error('[Fetch Tags] Error:', err);
+			}
+		};
+
+		fetchTags();
+	}, [documentItem.id]);
 
 	// Set up and clean up when component mounts/unmounts
 	useEffect(() => {
@@ -87,6 +113,53 @@ export default function DocumentOverlay({
 			}
 		};
 	}, []);
+
+	// Handle adding a tag
+	const handleAddTag = async () => {
+		if (!tagInput.trim()) {
+			setTagError('Tag name cannot be empty');
+			return;
+		}
+
+		// Check for duplicates
+		if (tags.includes(tagInput.trim())) {
+			setTagError('This tag already exists');
+			return;
+		}
+
+		setIsTagging(true);
+		setTagError(null);
+
+		try {
+			const response = await fetch('/api/documents/tags', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					documentIds: [documentItem.id],
+					tag: tagInput.trim(),
+					action: 'add',
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error(`Failed to add tag: ${response.status}`);
+			}
+
+			// Add tag to local state
+			setTags(prev => [...prev, tagInput.trim()]);
+			
+			// Show success and reset
+			setTagSuccess(true);
+			setTimeout(() => setTagSuccess(false), 2000);
+			setTagInput('');
+			setShowTagInput(false);
+		} catch (err) {
+			console.error('[Tagging] Error:', err);
+			setTagError(err instanceof Error ? err.message : 'Failed to add tag');
+		} finally {
+			setIsTagging(false);
+		}
+	};
 
 	// If not mounted yet, don't render anything
 	if (!mounted) return null;
@@ -129,6 +202,14 @@ export default function DocumentOverlay({
 							variant="outline"
 							size="sm"
 							className="h-8 text-xs"
+							onClick={() => setShowTagInput(!showTagInput)}>
+							<Tag className="h-3 w-3 mr-1" />
+							Add Tag
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-8 text-xs"
 							onClick={() => documentItem.url ? window.open(documentItem.url, "_blank") : null}
 							disabled={!documentItem.url}
 							title={!documentItem.url ? "No link provided" : "Open link in new tab"}>
@@ -145,15 +226,90 @@ export default function DocumentOverlay({
 				</CardHeader>
 
 				<CardContent className="overflow-y-auto max-h-[calc(90vh-120px)]">
+					{/* Summary */}
 					{documentItem.description && (
-						<div className="mb-6 p-4 bg-muted/50 rounded-md">
+						<div className="mb-4 p-4 bg-muted/50 rounded-md">
+							<p className="text-sm font-medium text-muted-foreground mb-1">Summary</p>
 							<p className="italic text-muted-foreground">
 								{documentItem.description}
 							</p>
 						</div>
 					)}
 
-					<ContentParagraphs content={documentItem.content} />
+					{/* Tag Input */}
+					{showTagInput && (
+						<div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+							<div className="flex gap-2 mb-2">
+								<Input
+									type="text"
+									placeholder="Enter tag name..."
+									value={tagInput}
+									onChange={(e) => setTagInput(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === 'Enter') handleAddTag();
+										if (e.key === 'Escape') {
+											setShowTagInput(false);
+											setTagInput('');
+											setTagError(null);
+										}
+									}}
+									disabled={isTagging}
+									className="flex-1"
+									autoFocus
+								/>
+								<Button
+									size="sm"
+									onClick={handleAddTag}
+									disabled={isTagging || !tagInput.trim()}>
+									{isTagging ? 'Adding...' : 'Add'}
+								</Button>
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={() => {
+										setShowTagInput(false);
+										setTagInput('');
+										setTagError(null);
+									}}>
+									Cancel
+								</Button>
+							</div>
+							{tagError && (
+								<p className="text-xs text-red-600">{tagError}</p>
+							)}
+						</div>
+					)}
+
+					{/* Tags Display */}
+					{tags.length > 0 && (
+						<div className="mb-4 p-4 bg-muted/30 rounded-md">
+							<p className="text-sm font-medium text-muted-foreground mb-2">Tags</p>
+							<div className="flex flex-wrap gap-2">
+								{tags.map((tag, idx) => (
+									<span
+										key={idx}
+										className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+										<Tag className="h-3 w-3" />
+										{tag}
+									</span>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* Success Message */}
+					{tagSuccess && (
+						<div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2 text-green-700">
+							<Check className="h-4 w-4" />
+							<span className="text-sm">Tag added successfully!</span>
+						</div>
+					)}
+
+					{/* Content */}
+					<div className="mb-2">
+						<p className="text-sm font-medium text-muted-foreground mb-2">Content</p>
+						<ContentParagraphs content={documentItem.content} />
+					</div>
 				</CardContent>
 			</Card>
 		</div>,

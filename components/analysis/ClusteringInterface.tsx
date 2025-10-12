@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, BarChart4 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ChevronDown, ChevronUp, BarChart4, Tag, Check } from 'lucide-react';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { useContextStore } from '@/lib/stores/context-store';
 
@@ -31,6 +32,12 @@ export default function ClusteringInterface({
 	const { applyAiClusters, clearAiClusters } = useNetworkGraph();
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	
+	// Tag management state
+	const [tagInputVisible, setTagInputVisible] = useState<string | null>(null);
+	const [tagInput, setTagInput] = useState('');
+	const [isTagging, setIsTagging] = useState(false);
+	const [tagSuccess, setTagSuccess] = useState<string | null>(null);
 	
 	// Use persistent store for clustering results
 	const clusterResults = useContextStore((state) => state.clusterResults);
@@ -84,6 +91,62 @@ export default function ClusteringInterface({
 		clearAiClusters();
 		clearClusterResults();
 		setError(null);
+	};
+
+	const handleAddTag = async (cluster: ClusterResult) => {
+		if (!tagInput.trim()) {
+			setError('Tag name cannot be empty');
+			return;
+		}
+
+		// Validate node_ids
+		if (!cluster.node_ids || !Array.isArray(cluster.node_ids) || cluster.node_ids.length === 0) {
+			setError('No nodes found in this cluster');
+			console.error('[Tagging] Invalid node_ids:', cluster.node_ids);
+			return;
+		}
+
+		setIsTagging(true);
+		setError(null);
+
+		console.log('[Tagging] Adding tag to cluster:', {
+			cluster_id: cluster.cluster_id,
+			node_ids: cluster.node_ids,
+			tag: tagInput.trim()
+		});
+
+		try {
+			const response = await fetch('/api/documents/tags', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					documentIds: cluster.node_ids,
+					tag: tagInput.trim(),
+					action: 'add',
+				}),
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+				console.error('[Tagging] API error response:', errorData);
+				throw new Error(errorData.error || `Failed to add tag: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			// Show success message
+			setTagSuccess(cluster.cluster_id);
+			setTimeout(() => setTagSuccess(null), 3000);
+			
+			// Clear input and hide form
+			setTagInput('');
+			setTagInputVisible(null);
+		} catch (err) {
+			console.error('[Tagging] Error:', err);
+			setError(err instanceof Error ? err.message : 'Failed to add tag');
+		} finally {
+			setIsTagging(false);
+		}
 	};
 
 	// Helper function to format the executive summary with better structure
@@ -258,6 +321,66 @@ export default function ClusteringInterface({
 											)}
 										</div>
 									)}
+
+									{/* Add Tag Section */}
+									<div className="mt-3 pt-3 border-t border-gray-200">
+										{tagSuccess === cluster.cluster_id ? (
+											<div className="flex items-center gap-2 text-green-600 text-sm">
+												<Check className="h-4 w-4" />
+												<span>Tag added successfully!</span>
+											</div>
+										) : tagInputVisible === cluster.cluster_id ? (
+											<div className="space-y-2">
+												<div className="flex gap-2">
+													<Input
+														type="text"
+														placeholder="Enter tag name..."
+														value={tagInput}
+														onChange={(e) => setTagInput(e.target.value)}
+														onKeyDown={(e) => {
+															if (e.key === 'Enter') handleAddTag(cluster);
+															if (e.key === 'Escape') {
+																setTagInputVisible(null);
+																setTagInput('');
+															}
+														}}
+														disabled={isTagging}
+														className="flex-1 text-sm"
+														autoFocus
+													/>
+													<Button
+														size="sm"
+														onClick={() => handleAddTag(cluster)}
+														disabled={isTagging || !tagInput.trim()}
+														className="bg-primary hover:bg-primary/90">
+														{isTagging ? 'Adding...' : 'Add'}
+													</Button>
+													<Button
+														size="sm"
+														variant="outline"
+														onClick={() => {
+															setTagInputVisible(null);
+															setTagInput('');
+														}}
+														disabled={isTagging}>
+														Cancel
+													</Button>
+												</div>
+												<p className="text-xs text-gray-500">
+													This will add the tag to all {cluster.node_ids?.length || 0} nodes in this cluster
+												</p>
+											</div>
+										) : (
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={() => setTagInputVisible(cluster.cluster_id)}
+												className="w-full">
+												<Tag className="h-3 w-3 mr-2" />
+												Add Tag to Cluster
+											</Button>
+										)}
+									</div>
 								</div>
 							);
 						})}

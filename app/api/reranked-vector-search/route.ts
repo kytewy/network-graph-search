@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
 			sourceType: string;
 			size: number;
 			url?: string;
+			tags?: string[];
 		}
 
 		interface Edge {
@@ -86,9 +87,18 @@ export async function POST(request: NextRequest) {
 					sourceType: data.sourceType || '',
 					size: score * 10, // Scale score for node size
 					url: data.url || undefined,
+					tags: data.tags || [],
 				};
 
 				return node;
+			});
+
+			// Log tags for each node
+			console.log('[Search] Nodes with tags:');
+			nodes.forEach(node => {
+				if (node.tags && node.tags.length > 0) {
+					console.log(`  ${node.id}: [${node.tags.join(', ')}]`);
+				}
 			});
 
 			// Then create edges based on connected_to field
