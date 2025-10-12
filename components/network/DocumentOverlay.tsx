@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { X, Tag, Plus, Check } from 'lucide-react';
 import { Z_INDEX } from '@/lib/constants/graph-config';
 import type { Node } from '@/lib/types/node';
+import { useAppStore } from '@/lib/stores/app-state';
 
 /**
  * Document display interface for reading mode
@@ -69,6 +70,10 @@ export default function DocumentOverlay({
 }: DocumentOverlayProps) {
 	// State to track if we're in the browser environment
 	const [mounted, setMounted] = useState(false);
+	
+	// Get store methods to update search results
+	const searchResults = useAppStore((state) => state.searchResults);
+	const setSearchResults = useAppStore((state) => state.setSearchResults);
 	
 	// Tag management state
 	const [tags, setTags] = useState<string[]>([]);
@@ -146,7 +151,16 @@ export default function DocumentOverlay({
 			}
 
 			// Add tag to local state
-			setTags(prev => [...prev, tagInput.trim()]);
+			const newTag = tagInput.trim();
+			setTags(prev => [...prev, newTag]);
+			
+			// Update search results to reflect the new tag
+			const updatedResults = searchResults.map(node =>
+				node.id === documentItem.id
+					? { ...node, tags: [...(node.tags || []), newTag] }
+					: node
+			);
+			setSearchResults(updatedResults);
 			
 			// Show success and reset
 			setTagSuccess(true);
@@ -156,6 +170,43 @@ export default function DocumentOverlay({
 		} catch (err) {
 			console.error('[Tagging] Error:', err);
 			setTagError(err instanceof Error ? err.message : 'Failed to add tag');
+		} finally {
+			setIsTagging(false);
+		}
+	};
+
+	const handleRemoveTag = async (tagToRemove: string) => {
+		setIsTagging(true);
+		setTagError(null);
+
+		try {
+			const response = await fetch('/api/documents/tags', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					documentIds: [documentItem.id],
+					tag: tagToRemove,
+					action: 'remove',
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error(`Failed to remove tag: ${response.status}`);
+			}
+
+			// Remove tag from local state
+			setTags(prev => prev.filter(t => t !== tagToRemove));
+			
+			// Update search results to reflect the removed tag
+			const updatedResults = searchResults.map(node =>
+				node.id === documentItem.id
+					? { ...node, tags: (node.tags || []).filter(t => t !== tagToRemove) }
+					: node
+			);
+			setSearchResults(updatedResults);
+		} catch (err) {
+			console.error('[Tag Removal] Error:', err);
+			setTagError(err instanceof Error ? err.message : 'Failed to remove tag');
 		} finally {
 			setIsTagging(false);
 		}
@@ -288,9 +339,16 @@ export default function DocumentOverlay({
 								{tags.map((tag, idx) => (
 									<span
 										key={idx}
-										className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+										className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded group">
 										<Tag className="h-3 w-3" />
 										{tag}
+										<button
+											onClick={() => handleRemoveTag(tag)}
+											disabled={isTagging}
+											className="ml-1 hover:bg-blue-200 rounded-full p-0.5 transition-colors disabled:opacity-50"
+											title="Remove tag">
+											<X className="h-2.5 w-2.5" />
+										</button>
 									</span>
 								))}
 							</div>
