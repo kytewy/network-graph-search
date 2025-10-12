@@ -70,6 +70,8 @@ def perform_cluster_analysis(nodes: List[Dict[str, Any]]) -> Dict[str, Any]:
     for node_id, label in zip(node_ids, labels):
         cluster_id = f"cluster_{label}"
         cluster_assignments[node_id] = cluster_id
+        # Populate the nodeIds array for each cluster
+        clusters_data[label]['nodeIds'].append(node_id)
     
     # Build response
     clusters = []

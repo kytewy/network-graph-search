@@ -15,8 +15,8 @@ interface ClusteringInterfaceProps {
 interface ClusterResult {
 	cluster_id: string;
 	size: number;
-	top_terms: string[];
-	node_ids: string[];
+	top_terms?: string[]; // Optional since backend might not always include it
+	node_ids?: string[]; // Optional to handle cases where it might be missing
 }
 
 interface ClusterAnalysisResponse {
@@ -75,6 +75,16 @@ export default function ClusteringInterface({
 			}
 
 			const data: ClusterAnalysisResponse = await response.json();
+
+			// Log what we received from API
+			console.log('[Clustering] API Response:', {
+				cluster_count: data.clusters?.length,
+				clusters_with_node_ids: data.clusters?.map(c => ({
+					id: c.cluster_id,
+					node_ids_count: c.node_ids?.length || 0,
+					actual_node_ids: c.node_ids
+				}))
+			});
 
 			// Apply cluster assignments to the graph
 			applyAiClusters(data.cluster_assignments);
