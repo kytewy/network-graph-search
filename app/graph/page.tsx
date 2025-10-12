@@ -20,15 +20,15 @@ export default function GraphPage() {
 		<NetworkGraphProvider>
 			<div className="flex h-screen overflow-hidden bg-background">
 				{/* Sidebar */}
-				<div className="w-96 bg-sidebar border-r border-sidebar-border p-6 overflow-y-auto">
-					<div className="space-y-6">
+				<div className="w-96 bg-sidebar border-r border-sidebar-border p-6 overflow-y-auto [scrollbar-gutter:stable]">
+					<div className="space-y-4">
 						{/* Header */}
-						<div>
-							<h1 className="text-2xl font-bold text-sidebar-foreground mb-2">
+						<div className="mb-4">
+							<h1 className="text-2xl font-bold text-sidebar-foreground mb-1">
 								Graph Explorer
 							</h1>
-							<p className="text-sm text-sidebar-foreground/70">
-								Search and filter network connections
+							<p className="text-xs text-sidebar-foreground/60 leading-snug">
+								Re-ranker: Calculates relevance scores for query + document pairs
 							</p>
 						</div>
 
@@ -52,7 +52,7 @@ export default function GraphPage() {
 				<div
 					className={`${
 						rightPanelExpanded ? 'absolute right-0 top-0 left-96 z-10' : 'w-96'
-					} h-screen bg-sidebar border-l border-sidebar-border overflow-y-auto transition-all duration-300 flex flex-col`}>
+					} h-screen bg-sidebar border-l border-sidebar-border overflow-y-auto [scrollbar-gutter:stable] transition-all duration-300 flex flex-col`}>
 					{/* Expand/Collapse Button */}
 					<div className="flex justify-start p-2 border-b border-sidebar-border">
 						<Button
