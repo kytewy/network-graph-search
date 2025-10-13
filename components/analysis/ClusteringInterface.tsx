@@ -3,7 +3,15 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, ChevronUp, BarChart4, Tag, Check, Loader2, ArrowRight } from 'lucide-react';
+import {
+	ChevronDown,
+	ChevronUp,
+	BarChart4,
+	Tag,
+	Check,
+	Loader2,
+	ArrowRight,
+} from 'lucide-react';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { useContextStore } from '@/lib/stores/context-store';
 
@@ -34,79 +42,91 @@ export default function ClusteringInterface({
 	const { applyAiClusters, clearAiClusters } = useNetworkGraph();
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	
+
 	// Tag management state
 	const [tagInputVisible, setTagInputVisible] = useState<string | null>(null);
 	const [tagInput, setTagInput] = useState('');
 	const [isTagging, setIsTagging] = useState(false);
 	const [tagSuccess, setTagSuccess] = useState<string | null>(null);
-	
+
 	// Use persistent store for clustering results
 	const clusterResults = useContextStore((state) => state.clusterResults);
 	const expandedClusters = useContextStore((state) => state.expandedClusters);
 	const setClusterResults = useContextStore((state) => state.setClusterResults);
-	const toggleClusterExpansion = useContextStore((state) => state.toggleClusterExpansion);
-	const clearClusterResults = useContextStore((state) => state.clearClusterResults);
-	
+	const toggleClusterExpansion = useContextStore(
+		(state) => state.toggleClusterExpansion
+	);
+	const clearClusterResults = useContextStore(
+		(state) => state.clearClusterResults
+	);
+
 	// LLM cluster suggestions
-	const clusterSuggestions = useContextStore((state) => state.clusterSuggestions);
-	const setClusterSuggestions = useContextStore((state) => state.setClusterSuggestions);
+	const clusterSuggestions = useContextStore(
+		(state) => state.clusterSuggestions
+	);
+	const setClusterSuggestions = useContextStore(
+		(state) => state.setClusterSuggestions
+	);
 	const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
 	// Auto-generate cluster suggestions when clustering completes
 	useEffect(() => {
-		if (clusterResults && clusterResults.clusters.length > 0 && clusterSuggestions.size === 0) {
+		if (
+			clusterResults &&
+			clusterResults.clusters.length > 0 &&
+			clusterSuggestions.size === 0
+		) {
 			generateClusterSuggestions();
 		}
 	}, [clusterResults]);
-	
+
 	const generateClusterSuggestions = async () => {
 		if (!clusterResults) return;
-		
+
 		setLoadingSuggestions(true);
 		const suggestions = new Map();
-		
+
 		try {
 			// Process clusters in parallel
 			const promises = clusterResults.clusters.map(async (cluster, index) => {
 				// Get actual nodes for this cluster
 				const clusterNodeIds = cluster.node_ids || [];
-				const clusterNodes = contextNodes.filter(node => 
+				const clusterNodes = contextNodes.filter((node) =>
 					clusterNodeIds.includes(node.id)
 				);
-				
+
 				const response = await fetch('/api/analyze-cluster', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
-						clusterNodes: clusterNodes.map(n => ({
+						clusterNodes: clusterNodes.map((n) => ({
 							id: n.id,
 							label: n.label,
 							fields: {
-								full_text: n.content || n.summary || n.label
-							}
+								full_text: n.content || n.summary || n.label,
+							},
 						})),
 						clusterIndex: index,
 					}),
 				});
-				
+
 				if (!response.ok) {
 					console.error(`Failed to analyze cluster ${index}:`, response.status);
 					return { id: index, data: null };
 				}
-				
+
 				const data = await response.json();
 				return { id: index, data };
 			});
-			
+
 			const results = await Promise.all(promises);
-			
+
 			results.forEach(({ id, data }) => {
 				if (data) {
 					suggestions.set(id, data);
 				}
 			});
-			
+
 			setClusterSuggestions(suggestions);
 			console.log('[Clustering] Generated LLM suggestions:', suggestions);
 		} catch (error) {
@@ -115,7 +135,7 @@ export default function ClusteringInterface({
 			setLoadingSuggestions(false);
 		}
 	};
-	
+
 	const handleAnalyzeClusters = async () => {
 		if (contextNodes.length === 0) {
 			setError('No nodes in context! Add nodes to analyze.');
@@ -149,11 +169,11 @@ export default function ClusteringInterface({
 			// Log what we received from API
 			console.log('[Clustering] API Response:', {
 				cluster_count: data.clusters?.length,
-				clusters_with_node_ids: data.clusters?.map(c => ({
+				clusters_with_node_ids: data.clusters?.map((c) => ({
 					id: c.cluster_id,
 					node_ids_count: c.node_ids?.length || 0,
-					actual_node_ids: c.node_ids
-				}))
+					actual_node_ids: c.node_ids,
+				})),
 			});
 
 			// Apply cluster assignments to the graph
@@ -162,7 +182,9 @@ export default function ClusteringInterface({
 			// Suggestions will be auto-generated by useEffect
 		} catch (err) {
 			console.error('[Clustering] Error:', err);
-			setError(err instanceof Error ? err.message : 'Failed to analyze clusters');
+			setError(
+				err instanceof Error ? err.message : 'Failed to analyze clusters'
+			);
 		} finally {
 			setIsAnalyzing(false);
 		}
@@ -173,18 +195,24 @@ export default function ClusteringInterface({
 		clearClusterResults();
 		setError(null);
 	};
-	
+
 	const sendClusterToChat = (cluster: ClusterResult, index: number) => {
 		const suggestion = clusterSuggestions.get(index);
 		const clusterNodeIds = cluster.node_ids || [];
-		const clusterNodes = contextNodes.filter(node => 
+		const clusterNodes = contextNodes.filter((node) =>
 			clusterNodeIds.includes(node.id)
 		);
-		
+
 		// Create analysis prompt with better formatting
-		const documentList = clusterNodes.slice(0, 5).map((n, idx) => `  ${idx + 1}. ${n.label}`).join('\n');
-		const moreText = clusterNodes.length > 5 ? `  ...and ${clusterNodes.length - 5} more documents` : '';
-		
+		const documentList = clusterNodes
+			.slice(0, 5)
+			.map((n, idx) => `  ${idx + 1}. ${n.label}`)
+			.join('\n');
+		const moreText =
+			clusterNodes.length > 5
+				? `  ...and ${clusterNodes.length - 5} more documents`
+				: '';
+
 		const message = `Analyze this cluster in detail:
 
 Cluster: ${suggestion?.clusterName || cluster.cluster_id}
@@ -202,10 +230,10 @@ Please provide:
 2. Document quality and relevance assessment
 3. Any outliers or unexpected documents in this cluster
 4. Actionable insights from this grouping`;
-		
+
 		// Switch to Analysis tab first
 		onSwitchToChat();
-		
+
 		// Then dispatch custom event to be picked up by ChatInterface
 		setTimeout(() => {
 			window.dispatchEvent(
@@ -217,7 +245,7 @@ Please provide:
 				})
 			);
 		}, 100);
-		
+
 		console.log('[Clustering] Sent cluster to chat:', {
 			cluster: suggestion?.clusterName || cluster.cluster_id,
 			nodeCount: clusterNodes.length,
@@ -231,7 +259,11 @@ Please provide:
 		}
 
 		// Validate node_ids
-		if (!cluster.node_ids || !Array.isArray(cluster.node_ids) || cluster.node_ids.length === 0) {
+		if (
+			!cluster.node_ids ||
+			!Array.isArray(cluster.node_ids) ||
+			cluster.node_ids.length === 0
+		) {
 			setError('No nodes found in this cluster');
 			console.error('[Tagging] Invalid node_ids:', cluster.node_ids);
 			return;
@@ -243,7 +275,7 @@ Please provide:
 		console.log('[Tagging] Adding tag to cluster:', {
 			cluster_id: cluster.cluster_id,
 			node_ids: cluster.node_ids,
-			tag: tagInput.trim()
+			tag: tagInput.trim(),
 		});
 
 		try {
@@ -258,17 +290,21 @@ Please provide:
 			});
 
 			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+				const errorData = await response
+					.json()
+					.catch(() => ({ error: 'Unknown error' }));
 				console.error('[Tagging] API error response:', errorData);
-				throw new Error(errorData.error || `Failed to add tag: ${response.status}`);
+				throw new Error(
+					errorData.error || `Failed to add tag: ${response.status}`
+				);
 			}
 
 			const data = await response.json();
-			
+
 			// Show success message
 			setTagSuccess(cluster.cluster_id);
 			setTimeout(() => setTagSuccess(null), 3000);
-			
+
 			// Clear input and hide form
 			setTagInput('');
 			setTagInputVisible(null);
@@ -283,8 +319,8 @@ Please provide:
 	// Helper function to format the executive summary with better structure
 	const formatSummary = (summary: string) => {
 		// Split by lines and process each line
-		const lines = summary.split('\n').filter(line => line.trim());
-		
+		const lines = summary.split('\n').filter((line) => line.trim());
+
 		return lines.map((line, index) => {
 			// Check if line starts with "Found X clusters"
 			if (line.includes('Found') && line.includes('clusters')) {
@@ -294,16 +330,18 @@ Please provide:
 					</div>
 				);
 			}
-			
+
 			// Check if line starts with "- **Cluster"
 			if (line.startsWith('- **Cluster')) {
 				const parts = line.split('): ');
 				if (parts.length === 2) {
 					const clusterPart = parts[0] + '):';
 					const termsPart = parts[1];
-					
+
 					return (
-						<div key={index} className="mb-2 p-2 bg-white rounded border border-blue-100">
+						<div
+							key={index}
+							className="mb-2 p-2 bg-white rounded border border-blue-100">
 							<div className="font-medium text-blue-800 mb-1">
 								{clusterPart}
 							</div>
@@ -314,7 +352,7 @@ Please provide:
 					);
 				}
 			}
-			
+
 			// Default formatting for other lines
 			return (
 				<div key={index} className="text-sm text-blue-800 mb-1">
@@ -327,13 +365,15 @@ Please provide:
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div>
-				<h4 className="text-xl font-semibold text-gray-900 mb-2">
-					Cluster Analysis
-				</h4>
-				<p className="text-sm text-gray-600">
-					Group nodes by content similarity using TF-IDF + KMeans clustering
-				</p>
+			<div className="border-t border-sidebar-border pt-6">
+				<div>
+					<h4 className="text-xl font-semibold text-gray-900 mb-2">
+						Cluster Analysis
+					</h4>
+					<p className="text-sm text-gray-600">
+						Group nodes by content similarity using TF-IDF + KMeans clustering
+					</p>
+				</div>
 			</div>
 
 			{/* Action Buttons */}
@@ -398,7 +438,7 @@ Please provide:
 						{clusterResults.clusters.map((cluster, index) => {
 							const isExpanded = expandedClusters.has(cluster.cluster_id);
 							const suggestion = clusterSuggestions.get(index);
-							
+
 							return (
 								<div
 									key={cluster.cluster_id}
@@ -407,11 +447,10 @@ Please provide:
 									<button
 										onClick={() => sendClusterToChat(cluster, index)}
 										className="absolute top-3 right-3 p-2 hover:bg-primary/10 rounded-full transition-colors"
-										title="Send to chat for analysis"
-									>
+										title="Send to chat for analysis">
 										<ArrowRight className="w-5 h-5 text-primary" />
 									</button>
-									
+
 									<div className="flex items-center justify-between mb-2 pr-10">
 										<h6 className="font-semibold text-gray-900">
 											{suggestion?.clusterName || cluster.cluster_id}
@@ -420,7 +459,7 @@ Please provide:
 											{cluster.size} {cluster.size === 1 ? 'node' : 'nodes'}
 										</span>
 									</div>
-									
+
 									{/* LLM Description */}
 									{suggestion?.description && (
 										<p className="text-sm text-muted-foreground italic mb-3">
@@ -429,7 +468,9 @@ Please provide:
 									)}
 									{/* Top Terms */}
 									<div className="mb-3">
-										<p className="text-xs font-medium text-gray-600 mb-1">Top Terms:</p>
+										<p className="text-xs font-medium text-gray-600 mb-1">
+											Top Terms:
+										</p>
 										<div className="flex flex-wrap gap-2">
 											{cluster.top_terms && cluster.top_terms.length > 0 ? (
 												cluster.top_terms.map((term, idx) => (
@@ -451,7 +492,9 @@ Please provide:
 									{cluster.node_ids && cluster.node_ids.length > 0 && (
 										<div>
 											<button
-												onClick={() => toggleClusterExpansion(cluster.cluster_id)}
+												onClick={() =>
+													toggleClusterExpansion(cluster.cluster_id)
+												}
 												className="flex items-center gap-2 text-xs font-medium text-gray-600 mb-1 hover:text-gray-800 transition-colors">
 												<span>Nodes:</span>
 												{isExpanded ? (
@@ -524,7 +567,8 @@ Please provide:
 													</Button>
 												</div>
 												<p className="text-xs text-gray-500">
-													This will add the tag to all {cluster.node_ids?.length || 0} nodes in this cluster
+													This will add the tag to all{' '}
+													{cluster.node_ids?.length || 0} nodes in this cluster
 												</p>
 											</div>
 										) : (

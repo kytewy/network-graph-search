@@ -353,25 +353,27 @@ export default function ContextManagement({
 
 				{/* Nodes Tab Content */}
 				<TabsContent value="nodes" className="mt-0">
-					{/* Search bar */}
-					<div className="flex flex-col gap-2">
-						<div className="relative">
-							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-							<Input
-								placeholder="Search nodes..."
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								className="pl-10"
-							/>
-							{searchQuery && (
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => setSearchQuery('')}
-									className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0">
-									<X className="h-3 w-3" />
-								</Button>
-							)}
+					<div className="border-t border-sidebar-border pt-6">
+						{/* Search bar */}
+						<div className="flex flex-col gap-2">
+							<div className="relative">
+								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+								<Input
+									placeholder="Search nodes..."
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									className="pl-10"
+								/>
+								{searchQuery && (
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setSearchQuery('')}
+										className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0">
+										<X className="h-3 w-3" />
+									</Button>
+								)}
+							</div>
 						</div>
 					</div>
 
