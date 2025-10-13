@@ -556,6 +556,7 @@ export default function ContextManagement({
 					<ClusteringInterface
 						contextNodes={contextNodes}
 						rightPanelExpanded={rightPanelExpanded}
+						onSwitchToChat={() => setActiveTab('analysis')}
 					/>
 				</TabsContent>
 			</Tabs>

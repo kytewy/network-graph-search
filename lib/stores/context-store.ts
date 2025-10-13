@@ -20,6 +20,14 @@ interface ClusterSuggestion {
 	tags?: string[]; // Optional, for future use
 }
 
+interface ChatConversation {
+	id: string;
+	prompt: string;
+	response: string;
+	timestamp: Date;
+	feedback?: 'up' | 'down';
+}
+
 interface ContextState {
 	// Selected nodes for context
 	contextNodes: Node[];
@@ -30,6 +38,9 @@ interface ContextState {
 	
 	// LLM cluster suggestions
 	clusterSuggestions: Map<number, ClusterSuggestion>;
+	
+	// Chat conversations
+	chatConversations: ChatConversation[];
 
 	// Actions
 	addNodesToContext: (nodes: Node[]) => void;
@@ -44,6 +55,11 @@ interface ContextState {
 	// LLM cluster suggestion actions
 	setClusterSuggestions: (suggestions: Map<number, ClusterSuggestion>) => void;
 	clearClusterSuggestions: () => void;
+	
+	// Chat actions
+	addChatConversation: (conversation: ChatConversation) => void;
+	updateChatConversation: (id: string, updates: Partial<ChatConversation>) => void;
+	clearChatConversations: () => void;
 }
 
 export const useContextStore = create<ContextState>((set) => ({
@@ -51,6 +67,7 @@ export const useContextStore = create<ContextState>((set) => ({
 	clusterResults: null,
 	expandedClusters: new Set<string>(),
 	clusterSuggestions: new Map(),
+	chatConversations: [],
 
 	addNodesToContext: (nodes) =>
 		set((state) => {
@@ -106,4 +123,19 @@ export const useContextStore = create<ContextState>((set) => ({
 	
 	clearClusterSuggestions: () =>
 		set({ clusterSuggestions: new Map() }),
+	
+	addChatConversation: (conversation) =>
+		set((state) => ({
+			chatConversations: [...state.chatConversations, conversation],
+		})),
+	
+	updateChatConversation: (id, updates) =>
+		set((state) => ({
+			chatConversations: state.chatConversations.map((conv) =>
+				conv.id === id ? { ...conv, ...updates } : conv
+			),
+		})),
+	
+	clearChatConversations: () =>
+		set({ chatConversations: [] }),
 }));

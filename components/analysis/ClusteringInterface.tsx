@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, ChevronUp, BarChart4, Tag, Check, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, BarChart4, Tag, Check, Loader2, ArrowRight } from 'lucide-react';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { useContextStore } from '@/lib/stores/context-store';
 
 interface ClusteringInterfaceProps {
 	contextNodes: any[];
 	rightPanelExpanded: boolean;
+	onSwitchToChat: () => void;
 }
 
 interface ClusterResult {
@@ -28,6 +29,7 @@ interface ClusterAnalysisResponse {
 export default function ClusteringInterface({
 	contextNodes,
 	rightPanelExpanded,
+	onSwitchToChat,
 }: ClusteringInterfaceProps) {
 	const { applyAiClusters, clearAiClusters } = useNetworkGraph();
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -170,6 +172,56 @@ export default function ClusteringInterface({
 		clearAiClusters();
 		clearClusterResults();
 		setError(null);
+	};
+	
+	const sendClusterToChat = (cluster: ClusterResult, index: number) => {
+		const suggestion = clusterSuggestions.get(index);
+		const clusterNodeIds = cluster.node_ids || [];
+		const clusterNodes = contextNodes.filter(node => 
+			clusterNodeIds.includes(node.id)
+		);
+		
+		// Create analysis prompt with better formatting
+		const documentList = clusterNodes.slice(0, 5).map((n, idx) => `  ${idx + 1}. ${n.label}`).join('\n');
+		const moreText = clusterNodes.length > 5 ? `  ...and ${clusterNodes.length - 5} more documents` : '';
+		
+		const message = `Analyze this cluster in detail:
+
+Cluster: ${suggestion?.clusterName || cluster.cluster_id}
+Size: ${cluster.size} documents
+Description: ${suggestion?.description || 'No description available'}
+
+Top Terms: ${cluster.top_terms?.join(', ') || 'N/A'}
+
+Sample Documents:
+${documentList}
+${moreText}
+
+Please provide:
+1. Main themes and key topics across these documents
+2. Document quality and relevance assessment
+3. Any outliers or unexpected documents in this cluster
+4. Actionable insights from this grouping`;
+		
+		// Switch to Analysis tab first
+		onSwitchToChat();
+		
+		// Then dispatch custom event to be picked up by ChatInterface
+		setTimeout(() => {
+			window.dispatchEvent(
+				new CustomEvent('chat:send', {
+					detail: {
+						message,
+						nodes: clusterNodes,
+					},
+				})
+			);
+		}, 100);
+		
+		console.log('[Clustering] Sent cluster to chat:', {
+			cluster: suggestion?.clusterName || cluster.cluster_id,
+			nodeCount: clusterNodes.length,
+		});
 	};
 
 	const handleAddTag = async (cluster: ClusterResult) => {
@@ -350,8 +402,17 @@ export default function ClusteringInterface({
 							return (
 								<div
 									key={cluster.cluster_id}
-									className="bg-white border border-gray-200 rounded-lg p-4">
-									<div className="flex items-center justify-between mb-2">
+									className="bg-white border border-gray-200 rounded-lg p-4 relative">
+									{/* Arrow button - top right */}
+									<button
+										onClick={() => sendClusterToChat(cluster, index)}
+										className="absolute top-3 right-3 p-2 hover:bg-primary/10 rounded-full transition-colors"
+										title="Send to chat for analysis"
+									>
+										<ArrowRight className="w-5 h-5 text-primary" />
+									</button>
+									
+									<div className="flex items-center justify-between mb-2 pr-10">
 										<h6 className="font-semibold text-gray-900">
 											{suggestion?.clusterName || cluster.cluster_id}
 										</h6>

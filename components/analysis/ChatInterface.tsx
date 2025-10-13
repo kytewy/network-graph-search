@@ -1,7 +1,12 @@
-import { useState } from 'react';
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
+import { useContextStore } from '@/lib/stores/context-store';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ChatInterfaceProps {
 	safeSelectedNodes: string[];
@@ -19,15 +24,19 @@ export default function ChatInterface({
 	selectedNodesSummary,
 }: ChatInterfaceProps) {
 	const [chatInput, setChatInput] = useState('');
-	const [conversations, setConversations] = useState<
-		Array<{
-			id: string;
-			prompt: string;
-			response: string;
-			timestamp: Date;
-			feedback?: 'up' | 'down';
-		}>
-	>([]);
+
+	// Use persistent store for conversations
+	const conversations = useContextStore((state) => state.chatConversations);
+	const addChatConversation = useContextStore(
+		(state) => state.addChatConversation
+	);
+	const updateChatConversation = useContextStore(
+		(state) => state.updateChatConversation
+	);
+	const clearChatConversations = useContextStore(
+		(state) => state.clearChatConversations
+	);
+
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [selectedPill, setSelectedPill] = useState<string | null>(null);
 	const [placeholder, setPlaceholder] = useState<string>(
@@ -54,113 +63,108 @@ export default function ChatInterface({
 		},
 	];
 
-	const handleSendMessage = async (message?: string) => {
-		const promptToSend = message || chatInput;
-		if (!promptToSend.trim()) return;
+	const handleSendMessage = useCallback(
+		async (message?: string) => {
+			const promptToSend = message || chatInput;
+			if (!promptToSend.trim()) return;
 
-		setIsAnalyzing(true);
-		const newConversation = {
-			id: Date.now().toString(),
-			prompt: promptToSend,
-			response: 'Thinking...',
-			timestamp: new Date(),
+			setIsAnalyzing(true);
+			const newConversation = {
+				id: Date.now().toString(),
+				prompt: promptToSend,
+				response: 'Thinking...',
+				timestamp: new Date(),
+			};
+
+			addChatConversation(newConversation);
+
+			try {
+				// Prepare node data for analysis
+				const nodeData =
+					safeSelectedNodes.length > 0
+						? safeSelectedNodes.map((node) => ({
+								id: node,
+								name: node,
+								type: 'node',
+								text: 'No description available',
+						  }))
+						: sampleNodes.map((node) => ({
+								id: node.id,
+								name: node.label,
+								type: node.type,
+								text:
+									node.content || node.summary || 'No description available',
+						  }));
+
+				// Call the real LLM API
+				const response = await fetch('/api/analyze-nodes', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						nodes: nodeData,
+						analysisType: 'summary',
+						customPrompt: promptToSend,
+					}),
+				});
+
+				if (response.ok) {
+					const { summary } = await response.json();
+					updateChatConversation(newConversation.id, {
+						response: summary,
+					});
+				} else {
+					throw new Error(`API request failed: ${response.status}`);
+				}
+			} catch (error) {
+				console.error('[v0] Error getting LLM response:', error);
+				updateChatConversation(newConversation.id, {
+					response:
+						'Sorry, I encountered an error while analyzing the network data. Please try again.',
+				});
+			} finally {
+				setIsAnalyzing(false);
+				setChatInput('');
+			}
+		},
+		[
+			chatInput,
+			safeSelectedNodes,
+			sampleNodes,
+			addChatConversation,
+			updateChatConversation,
+		]
+	);
+
+	// Listen for cluster analysis events from ClusteringInterface
+	useEffect(() => {
+		const handleChatSend = (e: CustomEvent) => {
+			const { message, nodes } = e.detail;
+
+			// Auto-send the message
+			handleSendMessage(message);
+
+			console.log('[ChatInterface] Received cluster analysis request:', {
+				nodeCount: nodes?.length || 0,
+			});
 		};
 
-		setConversations((prev) => [...prev, newConversation]);
-
-		try {
-			// Prepare node data for analysis
-			const nodeData =
-				safeSelectedNodes.length > 0
-					? safeSelectedNodes.map((node) => ({
-							id: node,
-							name: node,
-							type: 'node',
-							text: 'No description available',
-					  }))
-					: sampleNodes.map((node) => ({
-							id: node.id,
-							name: node.label,
-							type: node.type,
-							text: node.content || node.summary || 'No description available',
-					  }));
-
-			// Call the real LLM API
-			const response = await fetch('/api/analyze-nodes', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					nodes: nodeData,
-					analysisType: 'summary',
-					customPrompt: promptToSend,
-				}),
-			});
-
-			if (response.ok) {
-				const { summary } = await response.json();
-				setConversations((prev) =>
-					prev.map((conv) =>
-						conv.id === newConversation.id
-							? {
-									...conv,
-									response: summary,
-							  }
-							: conv
-					)
-				);
-			} else {
-				throw new Error(`API request failed: ${response.status}`);
-			}
-		} catch (error) {
-			console.error('[v0] Error getting LLM response:', error);
-			setConversations((prev) =>
-				prev.map((conv) =>
-					conv.id === newConversation.id
-						? {
-								...conv,
-								response:
-									'Sorry, I encountered an error while analyzing the network data. Please try again.',
-						  }
-						: conv
-				)
-			);
-		} finally {
-			setIsAnalyzing(false);
-			setChatInput('');
-		}
-	};
+		window.addEventListener('chat:send', handleChatSend as EventListener);
+		return () => {
+			window.removeEventListener('chat:send', handleChatSend as EventListener);
+		};
+	}, [handleSendMessage]);
 
 	const handleFeedback = (conversationId: string, feedback: 'up' | 'down') => {
-		setConversations((prev) =>
-			prev.map((conv) =>
-				conv.id === conversationId ? { ...conv, feedback } : conv
-			)
-		);
-	};
-
-	const handleCopy = (text: string) => {
-		navigator.clipboard.writeText(text);
-	};
-
-	const handleRetry = (conversationId: string) => {
-		const conversation = conversations.find(
-			(conv) => conv.id === conversationId
-		);
-		if (conversation) {
-			handleSendMessage(conversation.prompt);
-		}
-	};
-
-	const setFeedback = (conversationId: string, feedback: 'up' | 'down') => {
-		setConversations((prev) =>
-			prev.map((conv) =>
-				conv.id === conversationId ? { ...conv, feedback } : conv
-			)
-		);
+		updateChatConversation(conversationId, { feedback });
 	};
 
 	const handleDeleteConversation = (conversationId: string) => {
-		setConversations((prev) => prev.filter((c) => c.id !== conversationId));
+		// We'll need to add this to the store
+		const remainingConversations = conversations.filter(
+			(c) => c.id !== conversationId
+		);
+		clearChatConversations();
+		remainingConversations.forEach((conv) => addChatConversation(conv));
 	};
 
 	const handleCategoryClick = async (category: string) => {
@@ -286,11 +290,10 @@ export default function ChatInterface({
 
 				{conversations.length > 0 && (
 					<div className="space-y-6">
-						{/* Updated analysis conversation buttons to use consistent purple theme */}
 						{conversations
 							.slice()
 							.reverse()
-							.map((conversation, index) => (
+							.map((conversation) => (
 								<div key={conversation.id} className="space-y-4">
 									<div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 relative">
 										<button
@@ -313,10 +316,12 @@ export default function ChatInterface({
 											</div>
 										</div>
 
-										{/* Analysis Section */}
+										{/* Analysis Section with Markdown */}
 										<div className="mb-4">
-											<div className="text-gray-800 leading-relaxed text-base">
-												{conversation.response}
+											<div className="prose prose-sm max-w-none text-gray-800 leading-relaxed">
+												<ReactMarkdown remarkPlugins={[remarkGfm]}>
+													{conversation.response}
+												</ReactMarkdown>
 											</div>
 										</div>
 
