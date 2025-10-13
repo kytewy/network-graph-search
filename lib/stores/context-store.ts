@@ -14,6 +14,12 @@ interface ClusterAnalysisResponse {
 	executive_summary?: string;
 }
 
+interface ClusterSuggestion {
+	clusterName: string;
+	description: string;
+	tags?: string[]; // Optional, for future use
+}
+
 interface ContextState {
 	// Selected nodes for context
 	contextNodes: Node[];
@@ -21,6 +27,9 @@ interface ContextState {
 	// Clustering results
 	clusterResults: ClusterAnalysisResponse | null;
 	expandedClusters: Set<string>;
+	
+	// LLM cluster suggestions
+	clusterSuggestions: Map<number, ClusterSuggestion>;
 
 	// Actions
 	addNodesToContext: (nodes: Node[]) => void;
@@ -31,12 +40,17 @@ interface ContextState {
 	setClusterResults: (results: ClusterAnalysisResponse | null) => void;
 	toggleClusterExpansion: (clusterId: string) => void;
 	clearClusterResults: () => void;
+	
+	// LLM cluster suggestion actions
+	setClusterSuggestions: (suggestions: Map<number, ClusterSuggestion>) => void;
+	clearClusterSuggestions: () => void;
 }
 
 export const useContextStore = create<ContextState>((set) => ({
 	contextNodes: [],
 	clusterResults: null,
 	expandedClusters: new Set<string>(),
+	clusterSuggestions: new Map(),
 
 	addNodesToContext: (nodes) =>
 		set((state) => {
@@ -83,6 +97,13 @@ export const useContextStore = create<ContextState>((set) => ({
 	clearClusterResults: () =>
 		set({ 
 			clusterResults: null,
-			expandedClusters: new Set<string>()
+			expandedClusters: new Set<string>(),
+			clusterSuggestions: new Map()
 		}),
+	
+	setClusterSuggestions: (suggestions) =>
+		set({ clusterSuggestions: suggestions }),
+	
+	clearClusterSuggestions: () =>
+		set({ clusterSuggestions: new Map() }),
 }));
