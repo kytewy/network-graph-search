@@ -190,9 +190,20 @@ export default function ChatInterface({
 	return (
 		<div className="space-y-6">
 			<div className="border-t border-sidebar-border pt-6">
-				<h4 className="text-xl font-semibold text-gray-900 mb-6">
-					What would you like to know?
-				</h4>
+				{/* Header */}
+				<div className="mb-6">
+					<div className="flex items-center justify-between mb-2">
+						<h4 className="text-xl font-semibold text-gray-900">
+							Analysis & Insights
+						</h4>
+						<span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
+							{safeSelectedNodes.length} {safeSelectedNodes.length === 1 ? 'node' : 'nodes'}
+						</span>
+					</div>
+					<p className="text-sm text-gray-600 mb-6">
+						Ask questions about your network nodes and get AI-powered insights
+					</p>
+				</div>
 
 				<div className="flex flex-wrap gap-3 mb-6">
 					<Button

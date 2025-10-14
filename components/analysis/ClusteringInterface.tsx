@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,6 +11,8 @@ import {
 	Check,
 	Loader2,
 	ArrowRight,
+	Plus,
+	CheckCircle,
 } from 'lucide-react';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { useContextStore } from '@/lib/stores/context-store';
@@ -19,6 +21,7 @@ interface ClusteringInterfaceProps {
 	contextNodes: any[];
 	rightPanelExpanded: boolean;
 	onSwitchToChat: () => void;
+	allNodes?: any[]; // All available nodes from network
 }
 
 interface ClusterResult {
@@ -38,10 +41,20 @@ export default function ClusteringInterface({
 	contextNodes,
 	rightPanelExpanded,
 	onSwitchToChat,
+	allNodes = [],
 }: ClusteringInterfaceProps) {
 	const { applyAiClusters, clearAiClusters } = useNetworkGraph();
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	// DEBUG: Log received props
+	console.log('[ClusteringInterface] Received props:', {
+		allNodes_count: allNodes?.length || 0,
+		allNodes_type: typeof allNodes,
+		allNodes_isArray: Array.isArray(allNodes),
+		allNodes_sample: allNodes?.slice(0, 3).map(n => ({ id: n?.id, label: n?.label })),
+		contextNodes_count: contextNodes?.length || 0
+	});
 
 	// Tag management state
 	const [tagInputVisible, setTagInputVisible] = useState<string | null>(null);
@@ -68,6 +81,12 @@ export default function ClusteringInterface({
 		(state) => state.setClusterSuggestions
 	);
 	const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+	// Context management functions
+	const addNodesToContext = useContextStore((state) => state.addNodesToContext);
+	const removeNodeFromContext = useContextStore(
+		(state) => state.removeNodeFromContext
+	);
 
 	// Auto-generate cluster suggestions when clustering completes
 	useEffect(() => {
@@ -252,6 +271,75 @@ Please provide:
 		});
 	};
 
+	// Helper function to check if all cluster nodes are in context
+	const isClusterInContext = useMemo(() => {
+		const contextNodeIds = new Set(contextNodes.map((node) => node.id));
+		const clusterInContext = new Map<string, boolean>();
+
+		if (clusterResults) {
+			clusterResults.clusters.forEach((cluster) => {
+				if (cluster.node_ids && cluster.node_ids.length > 0) {
+					const allInContext = cluster.node_ids.every((nodeId) =>
+						contextNodeIds.has(nodeId)
+					);
+					clusterInContext.set(cluster.cluster_id, allInContext);
+				} else {
+					clusterInContext.set(cluster.cluster_id, false);
+				}
+			});
+		}
+
+		return clusterInContext;
+	}, [contextNodes, clusterResults]);
+
+	// Toggle cluster in/out of context
+	const toggleClusterContext = (cluster: ClusterResult) => {
+		if (!cluster.node_ids || cluster.node_ids.length === 0) {
+			setError('No nodes found in this cluster');
+			return;
+		}
+
+		const isInContext = isClusterInContext.get(cluster.cluster_id);
+
+		if (isInContext) {
+			// Remove all cluster nodes from context
+			cluster.node_ids.forEach((nodeId) => {
+				removeNodeFromContext(nodeId);
+			});
+			console.log('[Clustering] Removed cluster from context:', cluster.cluster_id);
+		} else {
+			// Add cluster nodes to context - filter from ALL available nodes
+			console.log('[Clustering] Attempting to add cluster:', {
+				cluster_id: cluster.cluster_id,
+				cluster_node_ids: cluster.node_ids,
+				allNodes_count: allNodes.length,
+				sample_allNodes_ids: allNodes.slice(0, 5).map(n => n.id)
+			});
+			
+			const clusterNodes = allNodes.filter((node) =>
+				cluster.node_ids?.includes(node.id)
+			);
+			
+			if (clusterNodes.length === 0) {
+				const errorMsg = `Could not find nodes for this cluster. Available nodes: ${allNodes.length}, Cluster expects: ${cluster.node_ids.length} nodes`;
+				console.error('[Clustering] Error:', {
+					error: errorMsg,
+					cluster_node_ids: cluster.node_ids,
+					available_node_ids: allNodes.map(n => n.id)
+				});
+				setError(errorMsg);
+				return;
+			}
+			
+			addNodesToContext(clusterNodes);
+			console.log('[Clustering] Added cluster to context:', {
+				cluster_id: cluster.cluster_id,
+				nodes_added: clusterNodes.length,
+				node_ids: clusterNodes.map(n => n.id)
+			});
+		}
+	};
+
 	const handleAddTag = async (cluster: ClusterResult) => {
 		if (!tagInput.trim()) {
 			setError('Tag name cannot be empty');
@@ -366,10 +454,15 @@ Please provide:
 		<div className="space-y-6">
 			{/* Header */}
 			<div className="border-t border-sidebar-border pt-6">
-				<div>
-					<h4 className="text-xl font-semibold text-gray-900 mb-2">
-						Cluster Analysis
-					</h4>
+				<div className="mb-6">
+					<div className="flex items-center justify-between mb-2">
+						<h4 className="text-xl font-semibold text-gray-900">
+							Cluster Analysis
+						</h4>
+						<span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
+							{contextNodes.length} {contextNodes.length === 1 ? 'node' : 'nodes'}
+						</span>
+					</div>
 					<p className="text-sm text-gray-600">
 						Group nodes by content similarity using TF-IDF + KMeans clustering
 					</p>
@@ -392,11 +485,6 @@ Please provide:
 						Clear Clusters
 					</Button>
 				)}
-			</div>
-
-			{/* Node Count */}
-			<div className="text-sm text-gray-600">
-				<strong>{contextNodes.length}</strong> nodes in context
 			</div>
 
 			{/* Error Message */}
@@ -424,10 +512,15 @@ Please provide:
 
 					{/* Clusters */}
 					<div className="space-y-3">
-						<div className="flex items-center justify-between">
-							<h5 className="font-semibold text-gray-900">
-								Clusters ({clusterResults.clusters.length})
-							</h5>
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<div>
+								<h5 className="font-semibold text-gray-900 mb-1">
+									Clusters ({clusterResults.clusters.length})
+								</h5>
+								<p className="text-xs text-gray-600">
+									Total: {clusterResults.clusters.reduce((sum, c) => sum + c.size, 0)} nodes across all clusters
+								</p>
+							</div>
 							{loadingSuggestions && (
 								<div className="flex items-center gap-2 text-sm text-muted-foreground">
 									<Loader2 className="w-4 h-4 animate-spin" />
@@ -438,12 +531,33 @@ Please provide:
 						{clusterResults.clusters.map((cluster, index) => {
 							const isExpanded = expandedClusters.has(cluster.cluster_id);
 							const suggestion = clusterSuggestions.get(index);
+							const inContext = isClusterInContext.get(cluster.cluster_id) || false;
 
 							return (
 								<div
 									key={cluster.cluster_id}
-									className="bg-white border border-gray-200 rounded-lg p-4 relative">
-									{/* Arrow button - top right */}
+									className={`rounded-lg p-4 relative transition-all duration-200 ${
+										inContext
+											? 'bg-primary/5 border-2 border-primary shadow-md'
+											: 'bg-white border border-gray-200 hover:border-gray-300'
+									}`}>
+									{/* Context toggle button - top right */}
+									<button
+										onClick={() => toggleClusterContext(cluster)}
+										className={`absolute top-3 right-12 p-2 rounded-full transition-all duration-200 ${
+											inContext
+												? 'bg-primary/10 hover:bg-primary/20 text-primary'
+												: 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+										}`}
+										title={inContext ? 'Remove from context' : 'Add to context'}>
+										{inContext ? (
+											<CheckCircle className="w-5 h-5" />
+										) : (
+											<Plus className="w-5 h-5" />
+										)}
+									</button>
+
+									{/* Arrow button - send to chat */}
 									<button
 										onClick={() => sendClusterToChat(cluster, index)}
 										className="absolute top-3 right-3 p-2 hover:bg-primary/10 rounded-full transition-colors"
@@ -451,7 +565,7 @@ Please provide:
 										<ArrowRight className="w-5 h-5 text-primary" />
 									</button>
 
-									<div className="flex items-center justify-between mb-2 pr-10">
+									<div className="flex items-center justify-between mb-2 pr-20">
 										<h6 className="font-semibold text-gray-900">
 											{suggestion?.clusterName || cluster.cluster_id}
 										</h6>

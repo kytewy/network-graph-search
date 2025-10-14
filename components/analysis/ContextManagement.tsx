@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { useUIStore } from '@/lib/stores/ui-store';
 import { useContextStore } from '@/lib/stores/context-store';
+import { useAppStore } from '@/lib/stores/app-state';
+import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import DocumentOverlay from '@/components/network/DocumentOverlay';
 import ChatInterface from '@/components/analysis/ChatInterface';
 import ClusteringInterface from '@/components/analysis/ClusteringInterface';
@@ -70,6 +72,19 @@ export default function ContextManagement({
 	const showActiveNodes = useUIStore((state) => state.showActiveNodes);
 	const setShowActiveNodes = useUIStore((state) => state.setShowActiveNodes);
 
+	// Get nodes from NetworkGraph context (same source as the graph itself!)
+	const { filteredResults } = useNetworkGraph();
+	
+	// Also get from app store for comparison
+	const searchResults = useAppStore((state) => state.searchResults);
+
+	// DEBUG: Log both sources
+	console.warn('🔴 [ContextManagement] COMPONENT RENDERED - Data sources:', {
+		networkGraph_filteredResults_count: filteredResults?.length || 0,
+		appStore_searchResults_count: searchResults?.length || 0,
+		using_source: 'networkGraph_filteredResults'
+	});
+
 	// Get context nodes from context store
 	const contextNodes = useContextStore((state) => state.contextNodes);
 	const removeNodeFromContext = useContextStore(
@@ -80,7 +95,15 @@ export default function ContextManagement({
 	// State for the DocumentOverlay
 	const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 	const [showDocumentOverlay, setShowDocumentOverlay] = useState(false);
-	const [isNodeInContext, setIsNodeInContext] = useState(true); // Track if node is in context
+	const [isNodeInContext, setIsNodeInContext] = useState(false);
+
+	// DEBUG: Log when searchResults changes
+	useEffect(() => {
+		console.warn('🟡 [ContextManagement] searchResults CHANGED:', {
+			count: searchResults?.length || 0,
+			hasData: searchResults && searchResults.length > 0
+		});
+	}, [searchResults]);
 
 	// State for search
 	const [searchQuery, setSearchQuery] = useState('');
@@ -354,6 +377,21 @@ export default function ContextManagement({
 				{/* Nodes Tab Content */}
 				<TabsContent value="nodes" className="mt-0">
 					<div className="border-t border-sidebar-border pt-6">
+						{/* Header */}
+						<div className="mb-6">
+							<div className="flex items-center justify-between mb-2">
+								<h4 className="text-xl font-semibold text-gray-900">
+									Context Nodes
+								</h4>
+								<span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
+									{contextNodes.length} {contextNodes.length === 1 ? 'node' : 'nodes'}
+								</span>
+							</div>
+							<p className="text-sm text-gray-600">
+								Manage which nodes are included in your analysis context
+							</p>
+						</div>
+
 						{/* Search bar */}
 						<div className="flex flex-col gap-2">
 							<div className="relative">
@@ -496,10 +534,15 @@ export default function ContextManagement({
 									</tbody>
 								</table>
 							) : (
-								<div className="text-center py-4 text-muted-foreground">
-									{contextNodes.length > 0
-										? 'No nodes match the search'
-										: 'No nodes in context'}
+								<div className="text-center py-8 text-muted-foreground">
+									{contextNodes.length > 0 ? (
+										<p>No nodes match the search</p>
+									) : (
+										<div className="space-y-2">
+											<p className="font-medium">No nodes in context yet</p>
+											<p className="text-sm">Click nodes on the graph to add them to your analysis context</p>
+										</div>
+									)}
 								</div>
 							)}
 
@@ -555,10 +598,19 @@ export default function ContextManagement({
 
 				{/* Clustering Tab Content */}
 				<TabsContent value="clustering" className="mt-0">
+					{(() => {
+						// DEBUG: Log what we're about to pass
+						console.warn(' [ContextManagement] Passing to ClusteringInterface:', {
+							allNodes_being_passed_count: filteredResults?.length || 0,
+							allNodes_source: 'NetworkGraph.filteredResults'
+						});
+						return null;
+					})()}
 					<ClusteringInterface
 						contextNodes={contextNodes}
 						rightPanelExpanded={rightPanelExpanded}
 						onSwitchToChat={() => setActiveTab('analysis')}
+						allNodes={filteredResults}
 					/>
 				</TabsContent>
 			</Tabs>
