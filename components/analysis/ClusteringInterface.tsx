@@ -223,18 +223,24 @@ export default function ClusteringInterface({
 			clusterNodeIds.includes(node.id)
 		);
 
-		// Get first 5 document labels for the prompt
-		const sampleDocLabels = clusterNodes.slice(0, 5).map((n) => n.label);
+		// Get first 5 documents with full content for citations
+		const sampleDocuments = clusterNodes.slice(0, 5).map((n) => ({
+			label: n.label,
+			content: n.fields?.full_text || n.summary || n.content || '',
+			summary: n.summary,
+			text: n.fields?.full_text,
+		}));
 		const remainingCount = Math.max(0, clusterNodes.length - 5);
 
-		// Use centralized prompt builder
+		// Use centralized prompt builder with document content
 		const message = buildClusterAnalysisPrompt({
 			clusterName: suggestion?.clusterName || cluster.cluster_id,
 			description: suggestion?.description || 'No description available',
 			size: cluster.size,
 			topTerms: cluster.top_terms || [],
-			sampleDocLabels,
+			sampleDocuments,
 			remainingCount,
+			charLimitPerDoc: 600, // Limit per document to manage prompt size
 		});
 
 		// Switch to Analysis tab first

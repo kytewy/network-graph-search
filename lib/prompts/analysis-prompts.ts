@@ -1,6 +1,6 @@
 /**
  * Centralized prompt library for all LLM analysis operations
- * 
+ *
  * This file contains all prompts used across the application for:
  * - General document analysis
  * - Cluster naming and description
@@ -45,8 +45,14 @@ export interface ClusterAnalysisParams {
 	description: string;
 	size: number;
 	topTerms: string[];
-	sampleDocLabels: string[];
+	sampleDocuments: Array<{
+		label: string;
+		content?: string;
+		summary?: string;
+		text?: string;
+	}>;
 	remainingCount: number;
+	charLimitPerDoc?: number;
 }
 
 // ============================================================================
@@ -57,11 +63,11 @@ export const PROMPT_CONFIG = {
 	// Character limits per document
 	CHAR_LIMIT_GENERAL_ANALYSIS: 800,
 	CHAR_LIMIT_CLUSTER_NAMING: 500,
-	
+
 	// LLM settings
-	TEMPERATURE_ANALYSIS: 0.7,
-	TEMPERATURE_NAMING: 0.7,
-	MAX_TOKENS_ANALYSIS: 1000,
+	TEMPERATURE_ANALYSIS: 0.2,
+	TEMPERATURE_NAMING: 0.2,
+	MAX_TOKENS_ANALYSIS: 2500, // Increased for structured output with multiple documents
 	MAX_TOKENS_NAMING: 500,
 } as const;
 
@@ -77,7 +83,7 @@ export function formatNodesForPrompt(
 	charLimit: number = PROMPT_CONFIG.CHAR_LIMIT_GENERAL_ANALYSIS
 ): string {
 	return nodes
-		.map((node, idx) => {
+		.map((node) => {
 			const text = node.text || node.content || node.summary || node.name || '';
 			const metadata = [
 				node.type && `Type: ${node.type}`,
@@ -87,9 +93,9 @@ export function formatNodesForPrompt(
 				.filter(Boolean)
 				.join(' | ');
 
-			return `Document ${idx + 1}: ${node.name || node.id}
+			return `**[${node.name || node.id}]**
 ${metadata ? `Metadata: ${metadata}` : ''}
-Content: ${text.substring(0, charLimit)}...`;
+Content: ${text.substring(0, charLimit)}${text.length > charLimit ? '...' : ''}`;
 		})
 		.join('\n\n---\n\n');
 }
@@ -122,15 +128,41 @@ export function buildAnalyzeNodesPrompt(params: AnalyzeNodesParams): string {
 	const { nodes, customPrompt, charLimitPerDoc } = params;
 	const nodeTexts = formatNodesForPrompt(nodes, charLimitPerDoc);
 
-	return `You are an expert analyst reviewing documents about AI regulations and legal frameworks.
+	// Default structured prompt if no custom prompt provided
+	const defaultPrompt = `Analyze these ${nodes.length} documents from a network graph. Identify patterns, themes, and relationships between them. Pay attention to any metadata provided (type, country, source).
 
-${customPrompt || 'Please provide a detailed analysis of these documents.'}
+Provide your analysis in the following format:
+
+**Executive Summary** (2-3 sentences)
+[Overview of the document set with key citations]
+
+**Key Themes**
+- [Theme 1 with supporting citations]
+- [Theme 2 with supporting citations]  
+- [Theme 3 with supporting citations]
+
+**Document Relationships**
+[How these documents connect or relate to each other, cite specific documents]
+
+**Notable Patterns**
+[Interesting patterns, clusters, or outliers based on content or metadata, with citations]
+
+**Insights**
+[Actionable findings or recommendations supported by evidence from specific documents]
+
+**Important:** When making claims or observations, cite the relevant document(s) using their actual titles in brackets, e.g., [Article 76: Supervision Testing in Real World Conditions by Market Surveillance Authorities].`;
+
+	return `You are an expert document analyst specializing in network analysis and pattern recognition.
+
+Context: You are analyzing ${
+		nodes.length
+	} documents selected from a network graph visualization.
+
+${customPrompt || defaultPrompt}
 
 Documents to analyze:
 
-${nodeTexts}
-
-Provide a comprehensive, structured analysis.`;
+${nodeTexts}`;
 }
 
 /**
@@ -142,20 +174,28 @@ export function buildClusterNamingPrompt(params: ClusterNamingParams): string {
 	const { clusterNodes, totalClusterSize, charLimitPerDoc } = params;
 	const sampleTexts = formatClusterSampleNodes(clusterNodes, charLimitPerDoc);
 
-	return `You are analyzing a cluster of ${totalClusterSize} legal/regulatory documents.
+	return `You are analyzing a cluster of ${totalClusterSize} similar documents from a network graph.
 
-Sample documents from this cluster:
+Sample documents from this cluster (showing ${clusterNodes.length} of ${totalClusterSize}):
 
 ${sampleTexts}
 
-Please analyze this cluster and provide:
-1. A descriptive 2-4 word name that captures the main theme
-2. A single sentence description (max 20 words)
+Task: Create a concise name and description for this cluster.
+
+Requirements:
+1. **Cluster Name**: 2-4 words maximum, specific and descriptive
+   - Be specific, not generic (avoid "General Documents", "Various Topics", "Miscellaneous")
+   - Focus on the common theme that unites these documents
+   - Use domain-specific terminology when appropriate
+
+2. **Description**: One clear sentence (10-20 words)
+   - Capture the essence of what these documents have in common
+   - Mention key topics or themes present across documents
 
 Return your analysis as JSON:
 {
-  "clusterName": "GDPR Privacy Rights",
-  "description": "Documents focused on GDPR Article 5 data protection principles"
+  "clusterName": "Data Privacy Regulations",
+  "description": "Documents covering data protection laws and privacy compliance frameworks"
 }`;
 }
 
@@ -164,29 +204,71 @@ Return your analysis as JSON:
  * Used by: ClusteringInterface (sent to chat)
  * Purpose: Deep-dive analysis of a specific cluster
  */
-export function buildClusterAnalysisPrompt(params: ClusterAnalysisParams): string {
-	const { clusterName, description, size, topTerms, sampleDocLabels, remainingCount } = params;
+export function buildClusterAnalysisPrompt(
+	params: ClusterAnalysisParams
+): string {
+	const {
+		clusterName,
+		description,
+		size,
+		topTerms,
+		sampleDocuments,
+		remainingCount,
+		charLimitPerDoc = 600,
+	} = params;
 
-	const documentList = sampleDocLabels.map((label, idx) => `  ${idx + 1}. ${label}`).join('\n');
-	const moreText = remainingCount > 0 ? `  ...and ${remainingCount} more documents` : '';
+	// Format documents with content for citations using actual titles
+	const documentList = sampleDocuments
+		.map((doc) => {
+			const content = doc.content || doc.text || doc.summary || '';
+			const excerpt = content.substring(0, charLimitPerDoc);
+			return `**[${doc.label}]**\n${excerpt}${content.length > charLimitPerDoc ? '...' : ''}`;
+		})
+		.join('\n\n');
+	
+	const moreText =
+		remainingCount > 0 ? `\n\n*...and ${remainingCount} more documents in this cluster*` : '';
 
-	return `Analyze this cluster in detail:
+	return `## Cluster Analysis Request
 
-Cluster: ${clusterName}
-Size: ${size} documents
-Description: ${description}
+### Cluster Information
 
-Top Terms: ${topTerms.join(', ')}
+**Name:** ${clusterName}  
+**Size:** ${size} documents  
+**Description:** ${description}
 
-Sample Documents:
-${documentList}
-${moreText}
+**Top Terms:** ${topTerms.join(', ')}
 
-Please provide:
-1. Main themes and key topics across these documents
-2. Document quality and relevance assessment
-3. Any outliers or unexpected documents in this cluster
-4. Actionable insights from this grouping`;
+### Documents with Content
+${documentList}${moreText}
+
+---
+
+### Analysis Instructions
+
+Provide a detailed analysis covering:
+
+1. **Main Themes & Topics**
+   - What are the core themes across these documents?
+   - How do they relate to each other?
+   - **Cite specific documents** using their actual titles
+
+2. **Quality & Relevance**
+   - Are all documents well-grouped?
+   - Is the cluster cohesive or diverse?
+   - **Cite examples** from the documents above
+
+3. **Outliers & Anomalies**
+   - Any documents that seem out of place?
+   - Unexpected patterns or connections?
+   - **Reference specific documents** that stand out
+
+4. **Actionable Insights**
+   - What can we learn from this grouping?
+   - Recommendations or next steps?
+   - **Support with evidence** from the documents
+
+**Important:** When making claims, cite the relevant document(s) using their actual titles in brackets, e.g., [Article 76: Supervision Testing in Real World Conditions by Market Surveillance Authorities].`;
 }
 
 // ============================================================================
@@ -199,12 +281,16 @@ Please provide:
  */
 export const QUICK_PROMPTS = {
 	summary: {
-		withSelection: 'Provide a comprehensive summary of the selected network nodes, highlighting their key themes and relationships.',
-		withoutSelection: 'Provide an overview of the entire network structure and main components.',
+		withSelection:
+			'Provide a comprehensive summary of the selected nodes, highlighting their key themes, relationships, and how they connect within the network.',
+		withoutSelection:
+			'Provide an overview of the entire network structure, identifying main topic clusters, central themes, and how different areas relate to each other.',
 	},
 	businessImpact: {
-		withSelection: 'Analyze the business impact and implications of the selected network nodes.',
-		withoutSelection: 'Analyze the overall business impact represented in this network.',
+		withSelection:
+			'Analyze the strategic implications of these selected nodes. What patterns, opportunities, or risks do they reveal? Consider both the content and their network position.',
+		withoutSelection:
+			'Analyze the strategic implications revealed by this network. What are the key patterns, central topics, and potential opportunities or risks?',
 	},
 } as const;
 
@@ -227,7 +313,7 @@ export function getQuickPrompt(
  * Placeholder text for the chat interface
  */
 export const CHAT_PLACEHOLDERS = {
-	default: 'Ask about AI regulations....',
-	summary: 'What key points should I summarize from the network?',
-	businessImpact: 'How might this network configuration affect business operations?',
+	default: 'Ask questions about your network data...',
+	summary: 'What key themes and patterns should I highlight?',
+	businessImpact: 'What strategic insights can I extract from this network?',
 } as const;

@@ -26,8 +26,9 @@ export default function ChatInterface({
 }: ChatInterfaceProps) {
 	const [chatInput, setChatInput] = useState('');
 
-	// Use persistent store for conversations
+	// Use persistent store for conversations and context nodes
 	const conversations = useContextStore((state) => state.chatConversations);
+	const contextNodes = useContextStore((state) => state.contextNodes);
 	const addChatConversation = useContextStore(
 		(state) => state.addChatConversation
 	);
@@ -45,23 +46,6 @@ export default function ChatInterface({
 	);
 	const [isThinking, setIsThinking] = useState(false);
 
-	const sampleNodes = [
-		{
-			id: '1',
-			label: 'Node 1',
-			summary: 'Summary of Node 1',
-			content: 'Content of Node 1',
-			type: 'Type A',
-		},
-		{
-			id: '2',
-			label: 'Node 2',
-			summary: 'Summary of Node 2',
-			content: 'Content of Node 2',
-			type: 'Type B',
-		},
-	];
-
 	const handleSendMessage = useCallback(
 		async (message?: string) => {
 			const promptToSend = message || chatInput;
@@ -78,22 +62,19 @@ export default function ChatInterface({
 			addChatConversation(newConversation);
 
 			try {
-				// Prepare node data for analysis
-				const nodeData =
-					safeSelectedNodes.length > 0
-						? safeSelectedNodes.map((node) => ({
-								id: node,
-								name: node,
-								type: 'node',
-								text: 'No description available',
-						  }))
-						: sampleNodes.map((node) => ({
-								id: node.id,
-								name: node.label,
-								type: node.type,
-								text:
-									node.content || node.summary || 'No description available',
-						  }));
+				// Prepare node data for analysis using context store nodes
+				const nodeData = contextNodes.length > 0 
+					? contextNodes.map((node) => ({
+							id: node.id,
+							name: node.label,
+							type: node.type || 'document',
+							text: node.fields?.full_text || node.summary || node.content || 'No content available',
+							content: node.fields?.full_text || node.content,
+							summary: node.summary,
+							country: node.country,
+							sourceType: (node as any).sourceType,
+					  }))
+					: []; // No fallback to sample nodes - use actual context
 
 				// Call the real LLM API
 				const response = await fetch('/api/analyze-nodes', {
@@ -127,8 +108,7 @@ export default function ChatInterface({
 		},
 		[
 			chatInput,
-			safeSelectedNodes,
-			sampleNodes,
+			contextNodes,
 			addChatConversation,
 			updateChatConversation,
 		]
@@ -306,8 +286,10 @@ export default function ChatInterface({
 
 										{/* Prompt Section */}
 										<div className="mb-4">
-											<div className="text-gray-800 leading-relaxed text-base rounded-lg p-3 bg-slate-100">
-												"{conversation.prompt}"
+											<div className="prose prose-sm max-w-none text-gray-800 leading-relaxed rounded-lg p-4 bg-slate-50 border border-slate-200">
+												<ReactMarkdown remarkPlugins={[remarkGfm]}>
+													{conversation.prompt}
+												</ReactMarkdown>
 											</div>
 										</div>
 
