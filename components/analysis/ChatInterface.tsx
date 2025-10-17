@@ -7,6 +7,7 @@ import { X } from 'lucide-react';
 import { useContextStore } from '@/lib/stores/context-store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { getQuickPrompt, CHAT_PLACEHOLDERS } from '@/lib/prompts/analysis-prompts';
 
 interface ChatInterfaceProps {
 	safeSelectedNodes: string[];
@@ -40,9 +41,7 @@ export default function ChatInterface({
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [selectedPill, setSelectedPill] = useState<string | null>(null);
 	const [placeholder, setPlaceholder] = useState<string>(
-		safeSelectedNodes.length > 0
-			? 'Ask about AI regulations....'
-			: 'Ask about AI regulations....'
+		CHAT_PLACEHOLDERS.default
 	);
 	const [isThinking, setIsThinking] = useState(false);
 
@@ -169,18 +168,14 @@ export default function ChatInterface({
 
 	const handleCategoryClick = async (category: string) => {
 		let prompt = '';
+		const hasSelection = safeSelectedNodes.length > 0;
+		
 		switch (category) {
 			case 'Summary':
-				prompt =
-					safeSelectedNodes.length > 0
-						? 'Provide a comprehensive summary of the selected network nodes, highlighting their key themes and relationships.'
-						: 'Provide an overview of the entire network structure and main components.';
+				prompt = getQuickPrompt('summary', hasSelection);
 				break;
 			case 'Business Impact':
-				prompt =
-					safeSelectedNodes.length > 0
-						? 'Analyze the business impact and implications of the selected network nodes.'
-						: 'Analyze the overall business impact represented in this network.';
+				prompt = getQuickPrompt('businessImpact', hasSelection);
 				break;
 		}
 		setChatInput(prompt);
@@ -197,28 +192,24 @@ export default function ChatInterface({
 							Analysis & Insights
 						</h4>
 						<span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
-							{safeSelectedNodes.length} {safeSelectedNodes.length === 1 ? 'node' : 'nodes'}
+							{safeSelectedNodes.length}{' '}
+							{safeSelectedNodes.length === 1 ? 'node' : 'nodes'}
 						</span>
 					</div>
 					<p className="text-sm text-gray-600 mb-6">
 						Ask questions about your network nodes and get AI-powered insights
 					</p>
 				</div>
-
 				<div className="flex flex-wrap gap-3 mb-6">
 					<Button
 						variant="outline"
 						size="sm"
 						onClick={() => {
 							setSelectedPill('Summary');
-							const prompt =
-								safeSelectedNodes.length > 0
-									? 'Provide a comprehensive summary of the selected network nodes, highlighting their key themes and relationships.'
-									: 'Provide an overview of the entire network structure and main components.';
+							const hasSelection = safeSelectedNodes.length > 0;
+							const prompt = getQuickPrompt('summary', hasSelection);
 							setChatInput(prompt);
-							setPlaceholder(
-								'What key points should I summarize from the network?'
-							);
+							setPlaceholder(CHAT_PLACEHOLDERS.summary);
 						}}
 						className={`rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
 							selectedPill === 'Summary'
@@ -233,14 +224,10 @@ export default function ChatInterface({
 						size="sm"
 						onClick={() => {
 							setSelectedPill('Business Impact');
-							const prompt =
-								safeSelectedNodes.length > 0
-									? 'Analyze the business impact and implications of the selected network nodes.'
-									: 'Analyze the overall business impact represented in this network.';
+							const hasSelection = safeSelectedNodes.length > 0;
+							const prompt = getQuickPrompt('businessImpact', hasSelection);
 							setChatInput(prompt);
-							setPlaceholder(
-								'How might this network configuration affect business operations?'
-							);
+							setPlaceholder(CHAT_PLACEHOLDERS.businessImpact);
 						}}
 						className={`rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
 							selectedPill === 'Business Impact'
@@ -251,7 +238,6 @@ export default function ChatInterface({
 						Business Impact
 					</Button>
 				</div>
-
 				<div className="relative mb-6">
 					<Textarea
 						value={chatInput}
@@ -281,7 +267,6 @@ export default function ChatInterface({
 						)}
 					</Button>
 				</div>
-
 				{isThinking && (
 					<div className="flex justify-start mb-4">
 						<div className="bg-sidebar-accent/10 rounded-xl border border-sidebar-border shadow-sm px-4 py-3 max-w-xs">
@@ -298,7 +283,6 @@ export default function ChatInterface({
 						</div>
 					</div>
 				)}
-
 				{conversations.length > 0 && (
 					<div className="space-y-6">
 						{conversations

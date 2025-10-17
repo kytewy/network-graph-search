@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { useContextStore } from '@/lib/stores/context-store';
+import { buildClusterAnalysisPrompt } from '@/lib/prompts/analysis-prompts';
 
 interface ClusteringInterfaceProps {
 	contextNodes: any[];
@@ -222,33 +223,19 @@ export default function ClusteringInterface({
 			clusterNodeIds.includes(node.id)
 		);
 
-		// Create analysis prompt with better formatting
-		const documentList = clusterNodes
-			.slice(0, 5)
-			.map((n, idx) => `  ${idx + 1}. ${n.label}`)
-			.join('\n');
-		const moreText =
-			clusterNodes.length > 5
-				? `  ...and ${clusterNodes.length - 5} more documents`
-				: '';
+		// Get first 5 document labels for the prompt
+		const sampleDocLabels = clusterNodes.slice(0, 5).map((n) => n.label);
+		const remainingCount = Math.max(0, clusterNodes.length - 5);
 
-		const message = `Analyze this cluster in detail:
-
-Cluster: ${suggestion?.clusterName || cluster.cluster_id}
-Size: ${cluster.size} documents
-Description: ${suggestion?.description || 'No description available'}
-
-Top Terms: ${cluster.top_terms?.join(', ') || 'N/A'}
-
-Sample Documents:
-${documentList}
-${moreText}
-
-Please provide:
-1. Main themes and key topics across these documents
-2. Document quality and relevance assessment
-3. Any outliers or unexpected documents in this cluster
-4. Actionable insights from this grouping`;
+		// Use centralized prompt builder
+		const message = buildClusterAnalysisPrompt({
+			clusterName: suggestion?.clusterName || cluster.cluster_id,
+			description: suggestion?.description || 'No description available',
+			size: cluster.size,
+			topTerms: cluster.top_terms || [],
+			sampleDocLabels,
+			remainingCount,
+		});
 
 		// Switch to Analysis tab first
 		onSwitchToChat();

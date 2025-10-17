@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { openai } from '@/lib/utils/openai-client';
+import { buildAnalyzeNodesPrompt, PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 
 export async function POST(request: NextRequest) {
 	try {
@@ -13,31 +14,19 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Extract text from nodes (limit to save tokens)
-		const nodeTexts = nodes
-			.map((node: any, idx: number) => {
-				const text = node.text || node.content || node.summary || node.name || '';
-				return `Document ${idx + 1} (${node.name || node.id}):\n${text.substring(0, 800)}...`;
-			})
-			.join('\n\n---\n\n');
-
-		// Create prompt for GPT-4o-mini
-		const prompt = `You are an expert analyst reviewing documents about AI regulations and legal frameworks.
-
-${customPrompt || 'Please provide a detailed analysis of these documents.'}
-
-Documents to analyze:
-
-${nodeTexts}
-
-Provide a comprehensive, structured analysis.`;
+		// Build prompt using centralized prompt library
+		const prompt = buildAnalyzeNodesPrompt({
+			nodes,
+			customPrompt,
+			charLimitPerDoc: PROMPT_CONFIG.CHAR_LIMIT_GENERAL_ANALYSIS,
+		});
 
 		// Call GPT-4o-mini
 		const response = await openai.chat.completions.create({
 			model: 'gpt-4o-mini',
 			messages: [{ role: 'user', content: prompt }],
-			temperature: 0.7,
-			max_tokens: 1000,
+			temperature: PROMPT_CONFIG.TEMPERATURE_ANALYSIS,
+			max_tokens: PROMPT_CONFIG.MAX_TOKENS_ANALYSIS,
 		});
 
 		const summary = response.choices[0].message.content || 'No analysis generated';
