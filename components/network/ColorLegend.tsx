@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/stores/app-state';
 import {
 	nodeColors,
@@ -9,8 +10,19 @@ import {
 } from '@/lib/theme/colors';
 
 export function ColorLegend() {
+	const [isClient, setIsClient] = useState(false);
+
+	// Get state from app store - MUST be called before conditional returns
 	const colorMode = useAppStore((state) => state.colorMode);
 	const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
+
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
+
+	if (!isClient) {
+		return null; // Don't render anything during SSR
+	}
 
 	const getColorLegendData = () => {
 		switch (colorMode) {

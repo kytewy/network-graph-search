@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Filter } from 'lucide-react';
@@ -14,7 +14,9 @@ import { TagFilters } from './TagFilters';
  * Manages state and delegates rendering to sub-components
  */
 const FilterPanel = () => {
-	// Get all required state and actions from app-state store
+	const [isClient, setIsClient] = useState(false);
+
+	// Get all required state and actions from app-state store - MUST be called before conditional returns
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	const selectedContinents = useAppStore((state) => state.selectedContinents);
 	const selectedCountries = useAppStore((state) => state.selectedCountries);
@@ -50,21 +52,35 @@ const FilterPanel = () => {
 	const [expandedContinents, setExpandedContinents] = useState<string[]>([]);
 	const [countrySearchTerm, setCountrySearchTerm] = useState<string>('');
 
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
+
+	if (!isClient) {
+		return (
+			<div className="space-y-4">
+				<div className="text-sm text-gray-500">Loading filters...</div>
+			</div>
+		);
+	}
+
 	// Handlers
 	const toggleSourceType = (sourceType: string) => {
-		setSelectedSourceTypes((prev) =>
-			prev.includes(sourceType)
-				? prev.filter((type) => type !== sourceType)
-				: [...prev, sourceType]
-		);
+		setSelectedSourceTypes((prev) => {
+			const safePrev = Array.isArray(prev) ? prev : [];
+			return safePrev.includes(sourceType)
+				? safePrev.filter((type) => type !== sourceType)
+				: [...safePrev, sourceType];
+		});
 	};
 
 	const toggleExpandedContinent = (continent: string) => {
-		setExpandedContinents((prev) =>
-			prev.includes(continent)
-				? prev.filter((c) => c !== continent)
-				: [...prev, continent]
-		);
+		setExpandedContinents((prev) => {
+			const safePrev = Array.isArray(prev) ? prev : [];
+			return safePrev.includes(continent)
+				? safePrev.filter((c) => c !== continent)
+				: [...safePrev, continent];
+		});
 	};
 
 	const clearAllFilters = () => {

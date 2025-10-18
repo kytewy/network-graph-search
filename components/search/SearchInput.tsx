@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -17,7 +18,9 @@ import { Search, Loader2, X, Plus, Minus } from 'lucide-react';
  * Uses app store for state management
  */
 export function SearchInput() {
-	// Get state and actions from app store
+	const [isClient, setIsClient] = useState(false);
+
+	// Get state and actions from app store - MUST be called before conditional returns
 	const query = useAppStore((state) => state.query);
 	const setQuery = useAppStore((state) => state.setQuery);
 	const isLoading = useAppStore((state) => state.isLoading);
@@ -26,6 +29,18 @@ export function SearchInput() {
 	const performSearch = useAppStore((state) => state.performSearch);
 	const searchResults = useAppStore((state) => state.searchResults);
 	const setSearchResults = useAppStore((state) => state.setSearchResults);
+
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
+
+	if (!isClient) {
+		return (
+			<Card className="p-4">
+				<div className="text-sm text-gray-500">Loading search...</div>
+			</Card>
+		);
+	}
 
 	// Handle search
 	const handleSearch = () => {

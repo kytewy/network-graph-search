@@ -1,83 +1,49 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { ColorLegend } from '@/components/network/ColorLegend';
-import { NetworkGraphCanvas } from '@/components/network/NetworkGraphCanvas';
-import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
-import { SearchInput } from '@/components/search/SearchInput';
-import { SimilarityHistogram } from '@/components/search/SimilarityHistogram';
-import FilterPanel from '@/components/filters/FilterPanel';
-import ContextManagement from '@/components/analysis/ContextManagement';
-import { useAppStore } from '@/lib/stores/app-state';
+import dynamic from 'next/dynamic';
+import { useState, useEffect } from 'react';
 
-export default function GraphPage() {
-	const rightPanelExpanded = useAppStore((state) => state.rightPanelExpanded);
-	const setRightPanelExpanded = useAppStore(
-		(state) => state.setRightPanelExpanded
-	);
-
-	return (
-		<NetworkGraphProvider>
-			<div className="flex h-screen overflow-hidden bg-background">
-				{/* Sidebar */}
-				<div className="w-96 bg-sidebar border-r border-sidebar-border p-6 overflow-y-auto [scrollbar-gutter:stable]">
-					<div className="space-y-4">
-						{/* Header */}
-						<div className="mb-4">
-							<h1 className="text-2xl font-bold text-sidebar-foreground">
-								Graph Explorer
-							</h1>
-						</div>
-
-						<SearchInput />
-
-						<SimilarityHistogram />
-
-						<FilterPanel />
+// Dynamically import the entire GraphPageClient to avoid SSR issues
+const GraphPageClient = dynamic(
+	() => import('@/components/graph/GraphPageClient').then((m) => ({ default: m.GraphPageClient })),
+	{ 
+		ssr: false,
+		loading: () => (
+			<div className="flex items-center justify-center h-screen bg-background">
+				<div className="text-center">
+					<div className="text-lg font-semibold text-foreground mb-2">
+						Loading Graph Explorer...
 					</div>
-				</div>
-
-				{/* Main Graph Area */}
-				<div className="flex-1 relative h-screen overflow-hidden">
-					<div className="w-full h-full">
-						<NetworkGraphCanvas />
-					</div>
-					<ColorLegend />
-				</div>
-
-				{/* Right Panel */}
-				<div
-					className={`${
-						rightPanelExpanded ? 'absolute right-0 top-0 left-96 z-10' : 'w-96'
-					} h-screen bg-sidebar border-l border-sidebar-border overflow-y-auto [scrollbar-gutter:stable] transition-all duration-300 flex flex-col`}>
-					{/* Expand/Collapse Button */}
-					<div className="flex justify-start p-2 border-b border-sidebar-border">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setRightPanelExpanded(!rightPanelExpanded)}
-							className="h-6 px-2 text-sidebar-foreground/70 hover:text-sidebar-foreground">
-							{rightPanelExpanded ? '»' : '«'}
-						</Button>
-					</div>
-
-					<div className="p-6 flex-1">
-						<div className="space-y-6">
-							<div className="flex items-center justify-between mb-3">
-								<div>
-									<h3 className="text-2xl font-bold text-sidebar-foreground">
-										Analysis Workspace
-									</h3>
-									<p className="text-sm text-sidebar-foreground/70 mt-1"></p>
-								</div>
-							</div>
-
-							{/* Context Management */}
-							<ContextManagement rightPanelExpanded={rightPanelExpanded} />
-						</div>
+					<div className="text-sm text-muted-foreground">
+						Initializing network visualization
 					</div>
 				</div>
 			</div>
-		</NetworkGraphProvider>
-	);
+		)
+	}
+);
+
+export default function GraphPage() {
+	const [isClient, setIsClient] = useState(false);
+
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
+
+	if (!isClient) {
+		return (
+			<div className="flex items-center justify-center h-screen bg-background">
+				<div className="text-center">
+					<div className="text-lg font-semibold text-foreground mb-2">
+						Loading Graph Explorer...
+					</div>
+					<div className="text-sm text-muted-foreground">
+						Initializing network visualization
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	return <GraphPageClient />;
 }

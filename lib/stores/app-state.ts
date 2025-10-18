@@ -95,6 +95,7 @@ interface AppState {
 
 	// Complex actions
 	performSearch: (query: string, topK?: number) => Promise<void>;
+	processApiResponse: (data: any) => { nodes: Node[]; links: Link[] };
 
 	// Location filtering state
 	selectedContinents: string[]; // e.g., ['Europe', 'Asia']
@@ -181,10 +182,16 @@ export const useAppStore = create<AppState>()(
 		// Toggle a similarity range selection
 		toggleSimilarityRange: (range) => {
 			set((state) => {
-				const isSelected = state.selectedSimilarityRanges.includes(range);
+				console.log('🔍 [toggleSimilarityRange] Called with:', {
+					range,
+					selectedSimilarityRanges: state.selectedSimilarityRanges,
+					isArray: Array.isArray(state.selectedSimilarityRanges)
+				});
+				const safeRanges = Array.isArray(state.selectedSimilarityRanges) ? state.selectedSimilarityRanges : [];
+				const isSelected = safeRanges.includes(range);
 				const selectedSimilarityRanges = isSelected
-					? state.selectedSimilarityRanges.filter((r) => r !== range)
-					: [...state.selectedSimilarityRanges, range];
+					? safeRanges.filter((r) => r !== range)
+					: [...safeRanges, range];
 
 				return { selectedSimilarityRanges };
 			});
@@ -201,62 +208,84 @@ export const useAppStore = create<AppState>()(
 
 		// Enhanced filtering that combines location and similarity filters
 		applyFilters: () => {
-			const {
-				searchResults,
-				links,
-				selectedSimilarityRanges,
-				getEffectiveCountries,
-			} = get();
+			set((state) => {
+				const {
+					searchResults,
+					selectedSimilarityRanges,
+					selectedContinents,
+					selectedCountries,
+					selectedTags,
+				} = state;
 
-			let filtered = searchResults;
-
-			// STEP 1: Apply location filter (continent/country)
-			const effectiveCountries = getEffectiveCountries();
-			if (effectiveCountries.length > 0) {
-				// Use direct country property instead of fields.country
-				filtered = filtered.filter((node) =>
-					effectiveCountries.includes(node.country || '')
-				);
-			}
-
-			// STEP 2: Apply tag filter
-			const { selectedTags } = get();
-			if (selectedTags.length > 0) {
-				filtered = filtered.filter((node) =>
-					node.tags?.some(tag => selectedTags.includes(tag))
-				);
-			}
-			
-		// STEP 3: Apply similarity range filter
-			if (selectedSimilarityRanges.length > 0) {
-				filtered = filtered.filter((node) => {
-					const similarity = Math.round((node.score || 0) * 100);
-					return selectedSimilarityRanges.some((range) => {
-						switch (range) {
-							case '<20':
-								return similarity >= 0 && similarity <= 19;
-							case '21-40':
-								return similarity >= 20 && similarity <= 40;
-							case '41-60':
-								return similarity >= 41 && similarity <= 60;
-							case '61-80':
-								return similarity >= 61 && similarity <= 80;
-							case '81-100':
-								return similarity >= 81 && similarity <= 100;
-							default:
-								return false;
-						}
-					});
+				console.log('🔍 [applyFilters] Starting with state:', {
+					searchResultsCount: Array.isArray(searchResults) ? searchResults.length : 'Not array',
+					selectedSimilarityRanges: selectedSimilarityRanges,
+					selectedContinents: selectedContinents,
+					selectedCountries: selectedCountries,
+					selectedTags: selectedTags,
+					allArrayChecks: {
+						searchResults: Array.isArray(searchResults),
+						selectedSimilarityRanges: Array.isArray(selectedSimilarityRanges),
+						selectedContinents: Array.isArray(selectedContinents),
+						selectedCountries: Array.isArray(selectedCountries),
+						selectedTags: Array.isArray(selectedTags)
+					}
 				});
-			}
 
-			// STEP 4: Filter links to only show connections between visible nodes
-			const nodeIds = new Set(filtered.map((node) => node.id));
-			const filteredLinks = links.filter(
-				(link) => nodeIds.has(link.source) && nodeIds.has(link.target)
-			);
+				const safeSearchResults = Array.isArray(searchResults) ? searchResults : [];
+				const safeSelectedSimilarityRanges = Array.isArray(selectedSimilarityRanges) ? selectedSimilarityRanges : [];
 
-			set({ filteredResults: filtered, filteredLinks });
+				let filtered = safeSearchResults;
+				
+				// STEP 1: Apply location filter (continent/country)
+				const effectiveCountries = get().getEffectiveCountries();
+				if (Array.isArray(effectiveCountries) && effectiveCountries.length > 0) {
+					// Use direct country property instead of fields.country
+					filtered = filtered.filter((node) =>
+						effectiveCountries.includes(node.country || '')
+					);
+				}
+
+				// STEP 2: Apply tag filter
+				const safeSelectedTags = Array.isArray(selectedTags) ? selectedTags : [];
+				if (safeSelectedTags.length > 0) {
+					filtered = filtered.filter((node) =>
+						Array.isArray(node.tags) && node.tags.some((tag: any) => safeSelectedTags.includes(tag))
+					);
+				}
+				
+				// STEP 3: Apply similarity range filter
+				if (safeSelectedSimilarityRanges.length > 0) {
+					filtered = filtered.filter((node) => {
+						const similarity = Math.round((node.score || 0) * 100);
+						return safeSelectedSimilarityRanges.some((range) => {
+							switch (range) {
+								case '<20':
+									return similarity >= 0 && similarity <= 19;
+								case '21-40':
+									return similarity >= 20 && similarity <= 40;
+								case '41-60':
+									return similarity >= 41 && similarity <= 60;
+								case '61-80':
+									return similarity >= 61 && similarity <= 80;
+								case '81-100':
+									return similarity >= 81 && similarity <= 100;
+								default:
+									return false;
+							}
+						});
+					});
+				}
+
+				// STEP 4: Filter links to only show connections between visible nodes
+				const nodeIds = new Set(filtered.map((node) => node.id));
+				const safeLinks = Array.isArray(state.links) ? state.links : [];
+				const filteredLinks = safeLinks.filter(
+					(link: any) => nodeIds.has(link.source) && nodeIds.has(link.target)
+				);
+
+				return { filteredResults: filtered, filteredLinks };
+			});
 		},
 
 		// Process API response to extract nodes and links
@@ -389,7 +418,8 @@ export const useAppStore = create<AppState>()(
 		// If deselecting: removes continent and all its countries
 		toggleContinent: (continent) => {
 			set((state) => {
-				const isSelected = state.selectedContinents.includes(continent);
+				const safeContinents = Array.isArray(state.selectedContinents) ? state.selectedContinents : [];
+				const isSelected = safeContinents.includes(continent);
 				const continentCountries =
 					CONTINENT_COUNTRY_MAP[
 						continent as keyof typeof CONTINENT_COUNTRY_MAP
@@ -397,20 +427,22 @@ export const useAppStore = create<AppState>()(
 
 				if (isSelected) {
 					// Deselecting continent - remove it and any of its individual countries
+					const safeCountries = Array.isArray(state.selectedCountries) ? state.selectedCountries : [];
 					return {
-						selectedContinents: state.selectedContinents.filter(
+						selectedContinents: safeContinents.filter(
 							(c) => c !== continent
 						),
-						selectedCountries: state.selectedCountries.filter(
+						selectedCountries: safeCountries.filter(
 							(country) => !continentCountries.includes(country)
 						),
 					};
 				} else {
 					// Selecting continent - add it and remove any individual countries from this continent
 					// This prevents duplicate filtering (continent + its individual countries)
+					const safeCountries = Array.isArray(state.selectedCountries) ? state.selectedCountries : [];
 					return {
-						selectedContinents: [...state.selectedContinents, continent],
-						selectedCountries: state.selectedCountries.filter(
+						selectedContinents: [...safeContinents, continent],
+						selectedCountries: safeCountries.filter(
 							(country) => !continentCountries.includes(country)
 						),
 					};
@@ -425,22 +457,24 @@ export const useAppStore = create<AppState>()(
 		toggleCountry: (country) => {
 			set((state) => {
 				const continent = COUNTRY_CONTINENT_MAP[country];
-				const isSelected = state.selectedCountries.includes(country);
+				const safeCountries = Array.isArray(state.selectedCountries) ? state.selectedCountries : [];
+				const isSelected = safeCountries.includes(country);
 
 				if (isSelected) {
 					// Simply remove the country
 					return {
-						selectedCountries: state.selectedCountries.filter(
+						selectedCountries: safeCountries.filter(
 							(c) => c !== country
 						),
 					};
 				} else {
 					// Add country and remove its continent to prevent double-inclusion
+					const safeContinents = Array.isArray(state.selectedContinents) ? state.selectedContinents : [];
 					return {
-						selectedContinents: state.selectedContinents.filter(
+						selectedContinents: safeContinents.filter(
 							(c) => c !== continent
 						),
-						selectedCountries: [...state.selectedCountries, country],
+						selectedCountries: [...safeCountries, country],
 					};
 				}
 			});
@@ -451,9 +485,11 @@ export const useAppStore = create<AppState>()(
 		// Combines countries from selected continents + individually selected countries
 		getEffectiveCountries: () => {
 			const { selectedContinents, selectedCountries } = get();
+			const safeContinents = Array.isArray(selectedContinents) ? selectedContinents : [];
+			const safeCountries = Array.isArray(selectedCountries) ? selectedCountries : [];
 
 			// Get all countries from selected continents
-			const countriesFromContinents = selectedContinents.flatMap(
+			const countriesFromContinents = safeContinents.flatMap(
 				(continent) =>
 					CONTINENT_COUNTRY_MAP[
 						continent as keyof typeof CONTINENT_COUNTRY_MAP
@@ -461,7 +497,7 @@ export const useAppStore = create<AppState>()(
 			);
 
 			// Combine and deduplicate using Set
-			return [...new Set([...countriesFromContinents, ...selectedCountries])];
+			return [...new Set([...countriesFromContinents, ...safeCountries])];
 		},
 
 		// Get count of nodes for a specific continent
@@ -504,11 +540,12 @@ export const useAppStore = create<AppState>()(
 		
 		toggleTag: (tag) => {
 			set((state) => {
-				const isSelected = state.selectedTags.includes(tag);
+				const safeTags = Array.isArray(state.selectedTags) ? state.selectedTags : [];
+				const isSelected = safeTags.includes(tag);
 				return {
 					selectedTags: isSelected
-						? state.selectedTags.filter((t) => t !== tag)
-						: [...state.selectedTags, tag],
+						? safeTags.filter((t) => t !== tag)
+						: [...safeTags, tag],
 				};
 			});
 			get().applyFilters();
@@ -521,16 +558,22 @@ export const useAppStore = create<AppState>()(
 
 		getAvailableTags: () => {
 			const { searchResults } = get();
+			const safeSearchResults = Array.isArray(searchResults) ? searchResults : [];
 			const tags = new Set<string>();
-			searchResults.forEach((node) => {
-				node.tags?.forEach((tag) => tags.add(tag));
+			safeSearchResults.forEach((node) => {
+				if (Array.isArray(node.tags)) {
+					node.tags.forEach((tag) => tags.add(tag));
+				}
 			});
 			return Array.from(tags).sort();
 		},
 
 		getNodeCountByTag: (tag: string) => {
 			const { filteredResults } = get();
-			return filteredResults.filter((node) => node.tags?.includes(tag)).length;
+			const safeFilteredResults = Array.isArray(filteredResults) ? filteredResults : [];
+			return safeFilteredResults.filter((node) => 
+				Array.isArray(node.tags) && node.tags.includes(tag)
+			).length;
 		},
 	}))
 );

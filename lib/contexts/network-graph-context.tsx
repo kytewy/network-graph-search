@@ -20,7 +20,7 @@ import {
 import { useLassoSelection } from '@/hooks/use-lasso-selection';
 import { useGraphVisualizationSettings } from '@/hooks/use-graph-visualization-settings';
 import { useGraphLayout } from '@/hooks/use-graph-layout';
-import { useGraphSelection } from '@/hooks/use-graph-selection';
+import { useGraphSelectionReagraph } from '@/hooks/use-graph-selection-reagraph';
 import { useGraphCoordination } from '@/hooks/use-graph-coordination';
 
 // Define the context interface
@@ -127,8 +127,11 @@ export function NetworkGraphProvider({
 	// AI Cluster functions - Now mutates nodes directly
 	const applyAiClusters = useCallback(
 		(assignments: Record<string, string>) => {
+			// Get current filteredResults to avoid dependency issues
+			const currentResults = useAppStore.getState().filteredResults;
+			
 			// Mutate the filteredResults nodes directly
-			filteredResults.forEach((node) => {
+			currentResults.forEach((node) => {
 				if (assignments[node.id]) {
 					node.ai_clusters = assignments[node.id];
 				}
@@ -141,19 +144,22 @@ export function NetworkGraphProvider({
 				setClusterMode('ai_clusters');
 			}
 		},
-		[filteredResults, setClusterMode]
+		[setClusterMode]
 	);
 
 	const clearAiClusters = useCallback(() => {
+		// Get current filteredResults to avoid dependency issues
+		const currentResults = useAppStore.getState().filteredResults;
+		
 		// Remove ai_clusters from all nodes
-		filteredResults.forEach((node) => {
+		currentResults.forEach((node) => {
 			delete node.ai_clusters;
 		});
 
 		setHasAiClusters(false);
 		// Switch back to no clustering
 		setClusterMode('none');
-	}, [filteredResults]);
+	}, [setClusterMode]);
 
 	// Detect if nodes already have ai_clusters assigned (e.g., from search results)
 	useEffect(() => {
@@ -191,26 +197,24 @@ export function NetworkGraphProvider({
 		closeLassoMenu: closeLassoMenuFromHook,
 	} = useLassoSelection();
 
-	// Hook 4: Coordination - provides refs first
-	const { graphRef, nodePositionsRef } = useGraphCoordination({
+	// Hook 3: Coordination - provides refs and handlers in one call
+	const { 
+		graphRef, 
+		nodePositionsRef, 
+		handleSendToContext, 
+		handleCloseLassoMenu: closeLassoMenu 
+	} = useGraphCoordination({
 		closeLassoMenuFromHook,
 	});
 
-	// Hook 3: Selection state management (needs graphRef from coordination hook)
+	// Hook 4: Selection state management (needs graphRef from coordination hook)
 	const {
 		selections,
 		selectedNode,
 		onNodeClick: handleCustomNodeClick,
 		onCanvasClick,
 		clearSelections,
-	} = useGraphSelection({ graphNodes, graphEdges, graphRef });
-
-	// Hook 4 continued: Coordination handlers (now with clearSelections available)
-	const { handleSendToContext, handleCloseLassoMenu: closeLassoMenu } =
-		useGraphCoordination({
-			closeLassoMenuFromHook,
-			clearSelections,
-		});
+	} = useGraphSelectionReagraph({ graphNodes, graphEdges, graphRef });
 
 	// Create the context value
 	const contextValue = useMemo(

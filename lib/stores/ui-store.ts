@@ -60,9 +60,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   setShowThemeAnalysis: (show) => set({ showThemeAnalysis: show }),
   toggleThemeCollapse: (theme) =>
     set((state) => ({
-      collapsedThemes: state.collapsedThemes.includes(theme)
+      collapsedThemes: Array.isArray(state.collapsedThemes) && state.collapsedThemes.includes(theme)
         ? state.collapsedThemes.filter((t) => t !== theme)
-        : [...state.collapsedThemes, theme],
+        : [...(Array.isArray(state.collapsedThemes) ? state.collapsedThemes : []), theme],
     })),
   setShowSummaryAnalysis: (show) => set({ showSummaryAnalysis: show }),
   setShowBusinessAnalysis: (show) => set({ showBusinessAnalysis: show }),

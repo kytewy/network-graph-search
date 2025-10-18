@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { FileText } from 'lucide-react';
+import { safeIncludes } from '@/lib/utils/array-safety';
 
 interface SourceTypeFiltersProps {
 	sourceTypes: string[];
@@ -28,10 +29,10 @@ export function SourceTypeFilters({
 					<Badge
 						key={sourceType}
 						variant={
-							selectedSourceTypes.includes(sourceType) ? 'default' : 'outline'
+							safeIncludes(selectedSourceTypes, sourceType) ? 'default' : 'outline'
 						}
 						className={`cursor-pointer transition-colors ${
-							selectedSourceTypes.includes(sourceType)
+							safeIncludes(selectedSourceTypes, sourceType)
 								? 'bg-primary text-primary-foreground hover:bg-primary/90'
 								: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
 						}`}

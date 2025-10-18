@@ -86,6 +86,7 @@ export function useGraphData(
 				id: node.id,
 				label: node.label || node.id,
 				fill: getNodeColor(node),
+				size: getNodeSize(node), // Actually use the size calculation
 				score: node.score || 0.5,
 				category: node.category || '',
 				data: node as any, // Store original node data for context menu and interactions

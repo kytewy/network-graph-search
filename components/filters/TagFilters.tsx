@@ -1,7 +1,9 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tag } from 'lucide-react';
+import { safeIncludes } from '@/lib/utils/array-safety';
 
 interface TagFiltersProps {
 	availableTags: string[];
@@ -29,7 +31,7 @@ export function TagFilters({
 			<div className="space-y-2 max-h-64 overflow-y-auto">
 				{availableTags.map((tag) => {
 					const count = getNodeCountByTag(tag);
-					const isSelected = selectedTags.includes(tag);
+					const isSelected = safeIncludes(selectedTags, tag);
 
 					return (
 						<div

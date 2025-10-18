@@ -23,10 +23,14 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 
 	// Get selected nodes from filtered results - memoized for performance
 	const selectedNodes = useMemo(
-		() => filteredResults.filter((node) => lassoSelectedNodes.includes(node.id)),
+		() => {
+			const safeFilteredResults = Array.isArray(filteredResults) ? filteredResults : [];
+			const safeLassoSelectedNodes = Array.isArray(lassoSelectedNodes) ? lassoSelectedNodes : [];
+			return safeFilteredResults.filter((node) => safeLassoSelectedNodes.includes(node.id));
+		},
 		[filteredResults, lassoSelectedNodes]
 	);
-	
+
 	const [expanded, setExpanded] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 
@@ -143,7 +147,9 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 										<td className="py-2 px-3 truncate max-w-[150px]">
 											{node.label}
 										</td>
-										<td className="py-2 px-3 text-muted-foreground">{node.type}</td>
+										<td className="py-2 px-3 text-muted-foreground">
+											{node.type}
+										</td>
 										<td className="py-2 px-3 text-right text-muted-foreground">
 											{(node.content?.length || 0).toLocaleString()} chars
 										</td>

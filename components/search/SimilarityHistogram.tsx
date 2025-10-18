@@ -1,8 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { useAppStore } from '@/lib/stores/app-state';
+import { safeIncludes, ensureArray } from '@/lib/utils/array-safety';
+import { logArrayOperation } from '@/lib/utils/error-tracker';
 
 /**
  * SimilarityHistogram component
@@ -10,6 +12,9 @@ import { useAppStore } from '@/lib/stores/app-state';
  * Allows filtering results by clicking on bars
  */
 export function SimilarityHistogram() {
+	const [isClient, setIsClient] = useState(false);
+
+	// Get state and actions from app store - MUST be called before conditional returns
 	const searchResults = useAppStore((state) => state.searchResults);
 	const selectedSimilarityRanges = useAppStore(
 		(state) => state.selectedSimilarityRanges
@@ -21,7 +26,7 @@ export function SimilarityHistogram() {
 		(state) => state.clearSimilarityRanges
 	);
 
-	// Generate histogram data from search results
+	// Generate histogram data from search results - MUST be called before conditional returns
 	const histogramData = useMemo(() => {
 		const ranges = [
 			{ range: '<20', min: 0, max: 19 },
@@ -32,7 +37,8 @@ export function SimilarityHistogram() {
 		];
 
 		// Always show bars if we have nodes
-		if (!searchResults || searchResults.length === 0) {
+		const safeSearchResults = ensureArray(searchResults);
+		if (safeSearchResults.length === 0) {
 			// Return minimal width bars (15%) when no results are available
 			return ranges.map(({ range, min, max }) => ({
 				range,
@@ -44,7 +50,7 @@ export function SimilarityHistogram() {
 		}
 
 		// Calculate based on search results using vector search scores
-		const processedResults = searchResults.map((node) => {
+		const processedResults = safeSearchResults.map((node) => {
 			// Handle different score formats:
 			// 1. _score from Pinecone API (already between 0-1)
 			// 2. score from processed results (already between 0-1)
@@ -82,6 +88,19 @@ export function SimilarityHistogram() {
 		});
 	}, [searchResults]);
 
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
+
+	if (!isClient) {
+		return (
+			<Card className="p-4">
+				<h2 className="text-xl font-semibold mb-2">Filter by Similarity</h2>
+				<div className="text-sm text-gray-500">Loading histogram...</div>
+			</Card>
+		);
+	}
+
 	return (
 		<Card className="p-4">
 			<h2 className="text-xl font-semibold mb-2">Filter by Similarity</h2>
@@ -97,7 +116,10 @@ export function SimilarityHistogram() {
 							<div className="flex-1 relative">
 								<div
 									className={`h-6 rounded cursor-pointer transition-all duration-200 flex items-center justify-end pr-2 ${
-										selectedSimilarityRanges.includes(bar.range)
+										(() => {
+											logArrayOperation('safeIncludes check', selectedSimilarityRanges, 'SimilarityHistogram bar selection');
+											return safeIncludes(selectedSimilarityRanges, bar.range);
+										})()
 											? 'bg-primary hover:bg-primary/90 shadow-md'
 											: 'bg-gray-300 hover:bg-gray-400'
 									}`}

@@ -110,8 +110,9 @@ export default function ClusteringInterface({
 			// Process clusters in parallel
 			const promises = clusterResults.clusters.map(async (cluster, index) => {
 				// Get actual nodes for this cluster
-				const clusterNodeIds = cluster.node_ids || [];
-				const clusterNodes = contextNodes.filter((node) =>
+				const clusterNodeIds = Array.isArray(cluster.node_ids) ? cluster.node_ids : [];
+				const safeContextNodes = Array.isArray(contextNodes) ? contextNodes : [];
+				const clusterNodes = safeContextNodes.filter((node) =>
 					clusterNodeIds.includes(node.id)
 				);
 
@@ -218,8 +219,9 @@ export default function ClusteringInterface({
 
 	const sendClusterToChat = (cluster: ClusterResult, index: number) => {
 		const suggestion = clusterSuggestions.get(index);
-		const clusterNodeIds = cluster.node_ids || [];
-		const clusterNodes = contextNodes.filter((node) =>
+		const clusterNodeIds = Array.isArray(cluster.node_ids) ? cluster.node_ids : [];
+		const safeContextNodes = Array.isArray(contextNodes) ? contextNodes : [];
+		const clusterNodes = safeContextNodes.filter((node) =>
 			clusterNodeIds.includes(node.id)
 		);
 
@@ -309,8 +311,10 @@ export default function ClusteringInterface({
 				sample_allNodes_ids: allNodes.slice(0, 5).map(n => n.id)
 			});
 			
-			const clusterNodes = allNodes.filter((node) =>
-				cluster.node_ids?.includes(node.id)
+			const safeAllNodes = Array.isArray(allNodes) ? allNodes : [];
+			const clusterNodeIds = Array.isArray(cluster.node_ids) ? cluster.node_ids : [];
+			const clusterNodes = safeAllNodes.filter((node) =>
+				clusterNodeIds.includes(node.id)
 			);
 			
 			if (clusterNodes.length === 0) {

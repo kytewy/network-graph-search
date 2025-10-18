@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import type { GraphCanvasRef } from 'reagraph';
 import { useContextStore } from '@/lib/stores/context-store';
 import { useNetworkStore } from '@/lib/stores/network-store';
@@ -27,8 +27,7 @@ import type { Node } from '@/lib/stores/app-state';
  *   handleSendToContext,
  *   handleCloseLassoMenu
  * } = useGraphCoordination({
- *   closeLassoMenuFromHook: lassoHook.closeLassoMenu,
- *   clearSelections: selectionHook.clearSelections
+ *   closeLassoMenuFromHook: lassoHook.closeLassoMenu
  * });
  * ```
  */
@@ -36,8 +35,6 @@ import type { Node } from '@/lib/stores/app-state';
 interface UseGraphCoordinationOptions {
 	/** Function to close lasso menu from lasso selection hook */
 	closeLassoMenuFromHook: () => void;
-	/** Function to clear Reagraph selections (optional, can be set later) */
-	clearSelections?: (value?: string[]) => void;
 }
 
 interface UseGraphCoordinationReturn {
@@ -62,10 +59,19 @@ interface UseGraphCoordinationReturn {
 export function useGraphCoordination(
 	options: UseGraphCoordinationOptions
 ): UseGraphCoordinationReturn {
-	const { closeLassoMenuFromHook, clearSelections } = options;
+	const { closeLassoMenuFromHook } = options;
+	
+	const [isClient, setIsClient] = useState(false);
 
-	// Get store actions
-	const addNodesToContext = useContextStore((state) => state.addNodesToContext);
+	// Detect when we're on the client side
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
+
+	// Get store actions with SSR safety
+	const addNodesToContext = useContextStore((state) => 
+		isClient ? state.addNodesToContext : () => {}
+	);
 
 	// Refs for graph canvas and node positions
 	const graphRef = useRef<GraphCanvasRef | null>(null);
@@ -83,47 +89,48 @@ export function useGraphCoordination(
 		(nodes: Node[]) => {
 			if (!nodes || nodes.length === 0) return;
 
-			// Show toast notification
-			toast.success(
-				`Added ${nodes.length} node${nodes.length > 1 ? 's' : ''} to context`,
-				{
-					description:
-						'Node content is now available in the Context Management panel',
-					duration: 3000,
-				}
-			);
+			// Only show toast and perform actions on client side
+			if (isClient) {
+				// Show toast notification
+				toast.success(
+					`Added ${nodes.length} node${nodes.length > 1 ? 's' : ''} to context`,
+					{
+						description:
+							'Node content is now available in the Context Management panel',
+						duration: 3000,
+					}
+				);
 
-			// Add to context store
-			addNodesToContext(nodes);
+				// Add to context store
+				addNodesToContext(nodes);
 
-			// Clear selections after sending to context
-			handleCloseLassoMenu();
+				// Clear selections after sending to context
+				handleCloseLassoMenu();
+			}
 		},
-		[addNodesToContext]
+		[isClient, addNodesToContext]
 	);
 
 	/**
 	 * Close lasso menu and clear all selection state
-	 * Coordinates cleanup across 3 different systems:
+	 * Coordinates cleanup across 2 different systems:
 	 * 1. Lasso selection hook state
-	 * 2. Reagraph selection state
-	 * 3. Network store selection state
+	 * 2. Network store selection state
+	 * Note: Reagraph selections are handled by the selection hook directly
 	 */
 	const handleCloseLassoMenu = useCallback(() => {
-		// 1. Close lasso menu (from hook)
-		closeLassoMenuFromHook();
+		// Only perform actions on client side
+		if (isClient) {
+			// 1. Close lasso menu (from hook)
+			closeLassoMenuFromHook();
 
-		// 2. Clear Reagraph selections
-		if (clearSelections) {
-			clearSelections();
+			// 2. Clear network store selections (if available)
+			const networkStore = useNetworkStore.getState();
+			if (networkStore.setSelectedNodes) {
+				networkStore.setSelectedNodes([]);
+			}
 		}
-
-		// 3. Clear network store selections (if available)
-		const networkStore = useNetworkStore.getState();
-		if (networkStore.setSelectedNodes) {
-			networkStore.setSelectedNodes([]);
-		}
-	}, [closeLassoMenuFromHook, clearSelections]);
+	}, [isClient, closeLassoMenuFromHook]);
 
 	/**
 	 * Wrapper for lasso end event

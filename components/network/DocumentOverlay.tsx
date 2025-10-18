@@ -127,7 +127,7 @@ export default function DocumentOverlay({
 		}
 
 		// Check for duplicates
-		if (tags.includes(tagInput.trim())) {
+		if (Array.isArray(tags) && tags.includes(tagInput.trim())) {
 			setTagError('This tag already exists');
 			return;
 		}

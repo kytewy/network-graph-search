@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Globe } from 'lucide-react';
+import { safeIncludes } from '@/lib/utils/array-safety';
 
 interface GeographicFiltersProps {
 	availableContinents: string[];
@@ -53,8 +54,8 @@ export function GeographicFilters({
 
 			<div className="space-y-2">
 				{availableContinents.map((continent) => {
-					const isSelected = selectedContinents.includes(continent);
-					const isExpanded = expandedContinents.includes(continent);
+					const isSelected = safeIncludes(selectedContinents, continent);
+					const isExpanded = safeIncludes(expandedContinents, continent);
 
 					return (
 						<div key={continent} className="space-y-1">
@@ -134,8 +135,7 @@ export function GeographicFilters({
 												</div>
 												<div className="grid grid-cols-1 gap-1">
 													{filteredCountries.map((country) => {
-														const isCountrySelected =
-															selectedCountries.includes(country);
+														const isCountrySelected = safeIncludes(selectedCountries, country);
 														const nodeCount = getNodeCountByCountry(country);
 
 														return (

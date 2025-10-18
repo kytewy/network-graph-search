@@ -52,9 +52,9 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
 	setSelectedNodes: (nodes) => set({ selectedNodes: nodes }),
 	addSelectedNode: (nodeId) =>
 		set((state) => ({
-			selectedNodes: state.selectedNodes.includes(nodeId)
+			selectedNodes: Array.isArray(state.selectedNodes) && state.selectedNodes.includes(nodeId)
 				? state.selectedNodes
-				: [...state.selectedNodes, nodeId],
+				: [...(Array.isArray(state.selectedNodes) ? state.selectedNodes : []), nodeId],
 		})),
 	removeSelectedNode: (nodeId) =>
 		set((state) => ({
@@ -62,9 +62,9 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
 		})),
 	toggleNodeExpansion: (nodeId) =>
 		set((state) => ({
-			expandedNodes: state.expandedNodes.includes(nodeId)
+			expandedNodes: Array.isArray(state.expandedNodes) && state.expandedNodes.includes(nodeId)
 				? state.expandedNodes.filter((id) => id !== nodeId)
-				: [...state.expandedNodes, nodeId],
+				: [...(Array.isArray(state.expandedNodes) ? state.expandedNodes : []), nodeId],
 		})),
 	setHighlightedNodes: (nodes) => set({ highlightedNodes: nodes }),
 	setHighlightedLinks: (links) => set({ highlightedLinks: links }),

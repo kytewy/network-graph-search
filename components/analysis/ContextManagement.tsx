@@ -69,6 +69,9 @@ export default function ContextManagement({
 	networkState = {},
 	filterState = {},
 }: ContextManagementProps) {
+	const [isClient, setIsClient] = useState(false);
+
+	// Get all store state - MUST be called before conditional returns
 	const showActiveNodes = useUIStore((state) => state.showActiveNodes);
 	const setShowActiveNodes = useUIStore((state) => state.setShowActiveNodes);
 
@@ -78,13 +81,6 @@ export default function ContextManagement({
 	// Also get from app store for comparison
 	const searchResults = useAppStore((state) => state.searchResults);
 
-	// DEBUG: Log both sources
-	console.warn('🔴 [ContextManagement] COMPONENT RENDERED - Data sources:', {
-		networkGraph_filteredResults_count: filteredResults?.length || 0,
-		appStore_searchResults_count: searchResults?.length || 0,
-		using_source: 'networkGraph_filteredResults'
-	});
-
 	// Get context nodes from context store
 	const contextNodes = useContextStore((state) => state.contextNodes);
 	const removeNodeFromContext = useContextStore(
@@ -92,10 +88,25 @@ export default function ContextManagement({
 	);
 	const clearContext = useContextStore((state) => state.clearContext);
 
-	// State for the DocumentOverlay
+	// ALL STATE HOOKS - MUST be called before conditional returns
 	const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 	const [showDocumentOverlay, setShowDocumentOverlay] = useState(false);
 	const [isNodeInContext, setIsNodeInContext] = useState(false);
+	const [searchQuery, setSearchQuery] = useState('');
+	const [activeTab, setActiveTab] = useState<
+		'nodes' | 'analysis' | 'clustering'
+	>('nodes');
+	const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
+		new Set()
+	);
+	const [selectAll, setSelectAll] = useState(false);
+	const [sortByTokens, setSortByTokens] = useState(false);
+	const [currentPage, setCurrentPage] = useState(1);
+
+	// ALL EFFECT HOOKS - MUST be called before conditional returns
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
 
 	// DEBUG: Log when searchResults changes
 	useEffect(() => {
@@ -105,26 +116,106 @@ export default function ContextManagement({
 		});
 	}, [searchResults]);
 
-	// State for search
-	const [searchQuery, setSearchQuery] = useState('');
-
-	// State for tabs view
-	const [activeTab, setActiveTab] = useState<
-		'nodes' | 'analysis' | 'clustering'
-	>('nodes');
-
-	// State for bulk selection
-	const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
-		new Set()
-	);
-	const [selectAll, setSelectAll] = useState(false);
-
-	// State for sorting by tokens
-	const [sortByTokens, setSortByTokens] = useState(false);
-
-	// State for pagination
-	const [currentPage, setCurrentPage] = useState(1);
+	// ALL COMPUTED VALUES - MUST be called before conditional returns
 	const itemsPerPage = 10; // Show 10 nodes per page
+
+	// Calculate context statistics
+	const calculateContextStats = useMemo((): ContextStats => {
+		// Calculate total characters and tokens
+		const totalChars = contextNodes.reduce(
+			(sum, node) => sum + (node.content?.length || 0),
+			0
+		);
+
+		// Rough token estimation (1 token ≈ 4 characters)
+		const estimatedTokens = Math.ceil(totalChars / 4);
+
+		// Count nodes by type
+		const nodesByType = contextNodes.reduce((acc, node) => {
+			const type = node.type || 'unknown';
+			acc[type] = (acc[type] || 0) + 1;
+			return acc;
+		}, {} as Record<string, number>);
+
+		// Calculate average content length
+		const avgContentLength = contextNodes.length > 0 
+			? Math.round(totalChars / contextNodes.length) 
+			: 0;
+
+		return {
+			totalNodes: contextNodes.length,
+			totalChars,
+			totalTokens: estimatedTokens,
+			averageCharsPerNode: avgContentLength,
+			averageTokensPerNode: contextNodes.length > 0 ? Math.round(estimatedTokens / contextNodes.length) : 0,
+			typeDistribution: [], // Will be implemented later if needed
+			countryDistribution: [], // Will be implemented later if needed
+		};
+	}, [contextNodes, maxTokenLimit]);
+
+	// Filter and sort nodes based on search query and sort options
+	const filteredNodes = useMemo(() => {
+		return contextNodes
+			.filter((node) => {
+				// Apply search query filter
+				if (!searchQuery.trim()) return true;
+				const query = searchQuery.toLowerCase();
+				return (
+					node.label?.toLowerCase().includes(query) ||
+					node.summary?.toLowerCase().includes(query) ||
+					node.content?.toLowerCase().includes(query) ||
+					node.id.toLowerCase().includes(query)
+				);
+			})
+			.sort((a, b) => {
+				if (sortByTokens) {
+					// Sort by content length (proxy for tokens)
+					const aLength = a.content?.length || 0;
+					const bLength = b.content?.length || 0;
+					return bLength - aLength; // Descending order
+				}
+				// Default sort by label
+				return (a.label || a.id).localeCompare(b.label || b.id);
+			});
+	}, [contextNodes, searchQuery, sortByTokens]);
+
+	// Calculate paginated nodes
+	const paginatedNodes = useMemo(() => {
+		const startIndex = (currentPage - 1) * itemsPerPage;
+		return filteredNodes.slice(startIndex, startIndex + itemsPerPage);
+	}, [filteredNodes, currentPage, itemsPerPage]);
+
+	// Effect to update selectAll state when selection changes
+	useEffect(() => {
+		if (selectedNodeIds.size === 0) {
+			setSelectAll(false);
+		} else if (
+			selectedNodeIds.size === filteredNodes.length &&
+			filteredNodes.length > 0
+		) {
+			setSelectAll(true);
+		}
+	}, [selectedNodeIds, filteredNodes]);
+
+	// Reset selection when search changes
+	useEffect(() => {
+		setSelectedNodeIds(new Set());
+		setSelectAll(false);
+		setCurrentPage(1); // Reset to first page when search changes
+	}, [searchQuery]);
+
+	if (!isClient) {
+		return (
+			<div className="text-sm text-gray-500">Loading analysis workspace...</div>
+		);
+	}
+
+	// DEBUG: Log both sources
+	console.warn('🔴 [ContextManagement] COMPONENT RENDERED - Data sources:', {
+		networkGraph_filteredResults_count: filteredResults?.length || 0,
+		appStore_searchResults_count: searchResults?.length || 0,
+		using_source: 'networkGraph_filteredResults'
+	});
 
 	// Function to check if a node is in context
 	const checkIfNodeInContext = (nodeId: string) => {
@@ -149,89 +240,6 @@ export default function ContextManagement({
 		// Approximate tokens as characters / 4 (rough estimate)
 		return Math.ceil(text.length / 4);
 	};
-
-	// Calculate context statistics
-	const calculateContextStats = useMemo((): ContextStats => {
-		// Calculate total characters and tokens
-		const totalChars = contextNodes.reduce(
-			(sum, node) => sum + (node.content?.length || 0),
-			0
-		);
-		const totalTokens = contextNodes.reduce(
-			(sum, node) => sum + estimateTokens(node.content),
-			0
-		);
-
-		// Calculate type distribution
-		const typeMap = new Map<string, NodeTypeStats>();
-		contextNodes.forEach((node) => {
-			const type = node.type || 'unknown';
-			const chars = node.content?.length || 0;
-			const tokens = estimateTokens(node.content);
-
-			if (!typeMap.has(type)) {
-				typeMap.set(type, { type, count: 0, totalChars: 0, totalTokens: 0 });
-			}
-
-			const stats = typeMap.get(type)!;
-			stats.count++;
-			stats.totalChars += chars;
-			stats.totalTokens += tokens;
-		});
-
-		// Calculate country distribution
-		const countryMap = new Map<string, number>();
-		contextNodes.forEach((node) => {
-			const country = node.country || 'unknown';
-			countryMap.set(country, (countryMap.get(country) || 0) + 1);
-		});
-
-		return {
-			totalNodes: contextNodes.length,
-			totalChars,
-			totalTokens,
-			averageCharsPerNode: contextNodes.length
-				? totalChars / contextNodes.length
-				: 0,
-			averageTokensPerNode: contextNodes.length
-				? totalTokens / contextNodes.length
-				: 0,
-			typeDistribution: Array.from(typeMap.values()),
-			countryDistribution: Array.from(countryMap.entries()).map(
-				([country, count]) => ({ country, count })
-			),
-		};
-	}, [contextNodes]);
-
-	// Filter and sort nodes based on search query and sort options
-	const filteredNodes = useMemo(() => {
-		return contextNodes
-			.filter((node) => {
-				// Apply search query filter
-				return (
-					!searchQuery ||
-					node.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-					(node.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ??
-						false)
-				);
-			})
-			.sort((a, b) => {
-				// Sort by tokens if enabled
-				if (sortByTokens) {
-					const tokensA = estimateTokens(a.content);
-					const tokensB = estimateTokens(b.content);
-					return tokensB - tokensA; // Sort by descending token count
-				}
-				// Default sort by label
-				return a.label.localeCompare(b.label);
-			});
-	}, [contextNodes, searchQuery, sortByTokens]);
-
-	// Calculate paginated nodes
-	const paginatedNodes = useMemo(() => {
-		const startIndex = (currentPage - 1) * itemsPerPage;
-		return filteredNodes.slice(startIndex, startIndex + itemsPerPage);
-	}, [filteredNodes, currentPage, itemsPerPage]);
 
 	// Handle bulk selection
 	const toggleNodeSelection = (nodeId: string) => {
@@ -284,25 +292,6 @@ export default function ContextManagement({
 		setSelectAll(false);
 	};
 
-	// Effect to update selectAll state when selection changes
-	useEffect(() => {
-		if (selectedNodeIds.size === 0) {
-			setSelectAll(false);
-		} else if (
-			selectedNodeIds.size === filteredNodes.length &&
-			filteredNodes.length > 0
-		) {
-			setSelectAll(true);
-		}
-	}, [selectedNodeIds, filteredNodes]);
-
-	// Reset selection when search changes
-	useEffect(() => {
-		setSelectedNodeIds(new Set());
-		setSelectAll(false);
-		setCurrentPage(1); // Reset to first page when search changes
-	}, [searchQuery]);
-
 	// Create a simple summary object for the selected nodes
 	const selectedNodesSummary = {
 		nodes: contextNodes,
@@ -323,7 +312,7 @@ export default function ContextManagement({
 						Token Usage
 					</div>
 					<div className="text-xs text-sidebar-foreground/50">
-						{calculateContextStats.totalTokens.toLocaleString()} /{' '}
+						{calculateContextStats.totalTokens?.toLocaleString() || '0'} /{' '}
 						{maxTokenLimit.toLocaleString()}
 					</div>
 				</div>
@@ -332,14 +321,14 @@ export default function ContextManagement({
 				<div className="w-full bg-muted/30 h-2 rounded-full overflow-hidden">
 					<div
 						className={`h-full ${
-							calculateContextStats.totalTokens > maxTokenLimit
+							(calculateContextStats.totalTokens || 0) > maxTokenLimit
 								? 'bg-destructive/70'
 								: 'bg-primary/70'
 						}`}
 						style={{
 							width: `${Math.min(
 								100,
-								(calculateContextStats.totalTokens / maxTokenLimit) * 100
+								((calculateContextStats.totalTokens || 0) / maxTokenLimit) * 100
 							)}%`,
 						}}
 					/>

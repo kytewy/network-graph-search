@@ -112,8 +112,10 @@ export async function PATCH(request: NextRequest) {
 
 			// Add or remove tag
 			if (action === 'add') {
-				if (!tags.includes(tag)) {
+				if (Array.isArray(tags) && !tags.includes(tag)) {
 					tags.push(tag);
+				} else if (!Array.isArray(tags)) {
+					tags = [tag];
 				}
 			} else if (action === 'remove') {
 				tags = tags.filter((t: string) => t !== tag);
