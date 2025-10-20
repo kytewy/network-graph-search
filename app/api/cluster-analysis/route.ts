@@ -68,20 +68,26 @@ export async function POST(request: NextRequest) {
  */
 function runPythonScript(scriptPath: string, inputData: any): Promise<any> {
 	return new Promise((resolve, reject) => {
-		// Try to use venv Python first (Windows: venv/Scripts/python.exe, Unix: venv/bin/python)
-		const projectRoot = process.cwd();
-		const venvPaths = [
-			path.join(projectRoot, 'backend', 'clustering', 'venv', 'Scripts', 'python.exe'), // Windows
-			path.join(projectRoot, 'backend', 'clustering', 'venv', 'bin', 'python'), // Unix
-		];
+		// Use environment-based Python path for Docker/Render compatibility
+		let pythonCommand = process.env.PYTHON_PATH || 'python3';
+		
+		// Fallback to venv if running locally (development)
+		if (!process.env.PYTHON_PATH) {
+			const projectRoot = process.cwd();
+			const venvPaths = [
+				path.join(projectRoot, 'backend', 'clustering', 'venv', 'Scripts', 'python.exe'), // Windows
+				path.join(projectRoot, 'backend', 'clustering', 'venv', 'bin', 'python'), // Unix
+			];
 
-		let pythonCommand = 'python'; // Fallback to system Python
-		for (const venvPath of venvPaths) {
-			if (existsSync(venvPath)) {
-				pythonCommand = venvPath;
-				break;
+			for (const venvPath of venvPaths) {
+				if (existsSync(venvPath)) {
+					pythonCommand = venvPath;
+					break;
+				}
 			}
 		}
+
+		console.log(`[Cluster Analysis] Using Python: ${pythonCommand}`);
 
 		const python = spawn(pythonCommand, [scriptPath]);
 

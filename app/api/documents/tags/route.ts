@@ -1,21 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pinecone } from '@pinecone-database/pinecone';
 
-const pc = new Pinecone({
-	apiKey: process.env.PINECONE_API_KEY!,
-});
+function getPineconeIndex() {
+	if (!process.env.PINECONE_API_KEY || !process.env.PINECONE_INDEX_NAME) {
+		throw new Error('Pinecone configuration missing');
+	}
 
-// Get the index - check if you have PINECONE_NAMESPACE in your .env
-const indexName = process.env.PINECONE_INDEX_NAME!;
-const namespace = process.env.PINECONE_NAMESPACE || ''; // Default to empty namespace
+	const pc = new Pinecone({
+		apiKey: process.env.PINECONE_API_KEY,
+	});
 
-const index = namespace 
-	? pc.index(indexName).namespace(namespace)
-	: pc.index(indexName);
+	const indexName = process.env.PINECONE_INDEX_NAME;
+	const namespace = process.env.PINECONE_NAMESPACE || '';
+
+	return namespace 
+		? pc.index(indexName).namespace(namespace)
+		: pc.index(indexName);
+}
 
 // GET endpoint to fetch tags for a document
 export async function GET(request: NextRequest) {
 	try {
+		// Check if Pinecone is configured
+		if (!process.env.PINECONE_API_KEY || !process.env.PINECONE_INDEX_NAME) {
+			return NextResponse.json({ tags: [] }, { status: 200 });
+		}
+
 		const { searchParams } = new URL(request.url);
 		const documentId = searchParams.get('documentId');
 
@@ -27,6 +37,7 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Fetch document from Pinecone
+		const index = getPineconeIndex();
 		const fetchResponse = await index.fetch([documentId]);
 
 		if (!fetchResponse.records || !fetchResponse.records[documentId]) {
@@ -51,6 +62,14 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
 	try {
+		// Check if Pinecone is configured
+		if (!process.env.PINECONE_API_KEY || !process.env.PINECONE_INDEX_NAME) {
+			return NextResponse.json(
+				{ error: 'Pinecone not configured' },
+				{ status: 500 }
+			);
+		}
+
 		const body = await request.json();
 		const { documentIds, tag, action } = body;
 
@@ -79,8 +98,10 @@ export async function PATCH(request: NextRequest) {
 			);
 		}
 
+		// Get Pinecone index
+		const index = getPineconeIndex();
+
 		// Fetch current metadata for each document
-		// Note: Adjust namespace if your Pinecone uses namespaces
 		const fetchResponse = await index.fetch(documentIds);
 		
 		console.log('Fetch response:', fetchResponse); // Debug log
