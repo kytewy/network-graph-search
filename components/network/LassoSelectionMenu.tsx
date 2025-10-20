@@ -2,7 +2,7 @@
 
 import { useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import type { Node } from '@/lib/types/node';
+import { Node } from '@/lib/config/types';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { useClickOutside } from '@/hooks/use-click-outside';
 import { useMultiNodeContextOperations } from '@/hooks/use-node-context-operations';

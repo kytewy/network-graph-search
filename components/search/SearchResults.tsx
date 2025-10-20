@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { useAppStore } from '@/lib/stores/app-state';
+import { SEARCH_CONFIG } from '@/lib/config/search-config';
 
 /**
  * SearchResults component
@@ -32,7 +33,7 @@ export function SearchResults() {
   }
 
   return (
-    <Card className="p-4 overflow-auto max-h-[500px]">
+    <Card className={`p-4 overflow-auto ${SEARCH_CONFIG.RESULTS.MAX_HEIGHT}`}>
       <h3 className="text-lg font-semibold mb-2">
         Search Results: {safeFilteredResults.length} of {safeSearchResults.length}
       </h3>
@@ -43,7 +44,7 @@ export function SearchResults() {
               #{index + 1} - {result.label || result.id}
             </span>
             <span className="text-sm bg-blue-100 px-2 py-1 rounded">
-              Score: {result.score ? result.score.toFixed(4) : 'N/A'}
+              Score: {result.score ? result.score.toFixed(SEARCH_CONFIG.RESULTS.SCORE_DECIMAL_PLACES) : 'N/A'}
             </span>
           </div>
           <div className="text-sm text-gray-500 mt-1">
@@ -51,8 +52,8 @@ export function SearchResults() {
             {result.type || 'Unknown'}
           </div>
           <p className="mt-2 text-sm">
-            {result.text?.substring(0, 200) ||
-              result.content?.substring(0, 200) ||
+            {result.text?.substring(0, SEARCH_CONFIG.CONTENT_PREVIEW_LENGTH) ||
+              result.content?.substring(0, SEARCH_CONFIG.CONTENT_PREVIEW_LENGTH) ||
               'No content available'}
             ...
           </p>

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useAppStore } from '@/lib/stores/app-state';
+import { SEARCH_CONFIG, SearchConfigHelpers } from '@/lib/config/search-config';
 import { Search, Loader2, X, Plus, Minus } from 'lucide-react';
 
 /**
@@ -61,7 +62,7 @@ export function SearchInput() {
 			{/* Full-width search input */}
 			<div className="relative">
 				<Input
-					placeholder="Search across 300+ documents..."
+					placeholder={SearchConfigHelpers.getSearchPlaceholder()}
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
 					onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -79,14 +80,14 @@ export function SearchInput() {
 
 			{/* Results to fetch + Search button */}
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-				<span className="text-sm text-muted-foreground">Results to fetch</span>
+				<span className="text-sm text-muted-foreground">{SEARCH_CONFIG.RESULTS_TO_FETCH_LABEL}</span>
 				<div className="flex items-center gap-2">
 					<div className="flex items-center gap-1 border rounded-md p-1">
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => setTopK(Math.max(20, topK - 5))}
-							disabled={topK <= 20}
+							onClick={() => setTopK(SearchConfigHelpers.getNextTopK(topK, false))}
+							disabled={topK <= SEARCH_CONFIG.MIN_TOP_K}
 							className="h-7 w-7">
 							<Minus className="h-3 w-3" />
 						</Button>
@@ -96,7 +97,8 @@ export function SearchInput() {
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => setTopK(topK + 5)}
+							onClick={() => setTopK(SearchConfigHelpers.getNextTopK(topK, true))}
+						disabled={topK >= SEARCH_CONFIG.MAX_TOP_K}
 							className="h-7 w-7">
 							<Plus className="h-3 w-3" />
 						</Button>

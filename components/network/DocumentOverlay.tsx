@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { X, Tag, Plus, Check } from 'lucide-react';
-import { Z_INDEX } from '@/lib/constants/graph-config';
-import type { Node } from '@/lib/types/node';
+import { Z_INDEX } from '@/lib/config/graph-config';
+import { Node } from '@/lib/config/types';
 import { useAppStore } from '@/lib/stores/app-state';
 
 /**

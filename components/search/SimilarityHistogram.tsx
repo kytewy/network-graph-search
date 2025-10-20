@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { useAppStore } from '@/lib/stores/app-state';
 import { safeIncludes, ensureArray } from '@/lib/utils/array-safety';
 import { logArrayOperation } from '@/lib/utils/error-tracker';
+import { SEARCH_CONFIG } from '@/lib/config/search-config';
 
 /**
  * SimilarityHistogram component
@@ -28,22 +29,16 @@ export function SimilarityHistogram() {
 
 	// Generate histogram data from search results - MUST be called before conditional returns
 	const histogramData = useMemo(() => {
-		const ranges = [
-			{ range: '<20', min: 0, max: 19 },
-			{ range: '21-40', min: 20, max: 40 },
-			{ range: '41-60', min: 41, max: 60 },
-			{ range: '61-80', min: 61, max: 80 },
-			{ range: '81-100', min: 81, max: 100 },
-		];
+		const ranges = SEARCH_CONFIG.SIMILARITY_RANGES;
 
 		// Always show bars if we have nodes
 		const safeSearchResults = ensureArray(searchResults);
 		if (safeSearchResults.length === 0) {
-			// Return minimal width bars (15%) when no results are available
+			// Return minimal width bars when no results are available
 			return ranges.map(({ range, min, max }) => ({
 				range,
 				count: 0,
-				width: 15,
+				width: SEARCH_CONFIG.HISTOGRAM.MIN_BAR_WIDTH,
 				min,
 				max,
 			}));
@@ -81,9 +76,14 @@ export function SimilarityHistogram() {
 
 		// Calculate widths based on the maximum count
 		return rangeCounts.map(({ range, count, min, max }) => {
-			// If count is 0, show a minimal bar width (15%)
+			// If count is 0, show a minimal bar width
 			// Otherwise, scale the width based on the proportion of the maximum count
-			const width = count === 0 ? 15 : Math.max(15, (count / maxCount) * 100);
+			const width = count === 0 
+				? SEARCH_CONFIG.HISTOGRAM.MIN_BAR_WIDTH 
+				: Math.max(
+						SEARCH_CONFIG.HISTOGRAM.MIN_BAR_WIDTH, 
+						(count / maxCount) * SEARCH_CONFIG.HISTOGRAM.MAX_BAR_WIDTH
+					);
 			return { range, count, width, min, max };
 		});
 	}, [searchResults]);
@@ -115,7 +115,7 @@ export function SimilarityHistogram() {
 							</div>
 							<div className="flex-1 relative">
 								<div
-									className={`h-6 rounded cursor-pointer transition-all duration-200 flex items-center justify-end pr-2 ${
+									className={`${SEARCH_CONFIG.HISTOGRAM.BAR_HEIGHT} rounded cursor-pointer transition-all ${SEARCH_CONFIG.HISTOGRAM.ANIMATION_DURATION} flex items-center justify-end pr-2 ${
 										(() => {
 											logArrayOperation('safeIncludes check', selectedSimilarityRanges, 'SimilarityHistogram bar selection');
 											return safeIncludes(selectedSimilarityRanges, bar.range);

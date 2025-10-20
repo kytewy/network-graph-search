@@ -5,12 +5,8 @@ import { LassoSelectionMenu } from './LassoSelectionMenu';
 import { VisualizationControls } from '@/components/network/VisualizationControls';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { NodeContextMenu } from './NodeContextMenu';
-import {
-	GRAPH_LAYOUT_CONFIG,
-	Z_INDEX,
-	PERFORMANCE_CONFIG,
-	NODE_SIZE,
-} from '@/lib/constants/graph-config';
+import { GRAPH_LAYOUT_CONFIG, PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/config/graph-config';
+import { Z_INDEX } from '@/lib/config/graph-config';
 import { logArrayOperation } from '@/lib/utils/error-tracker';
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility

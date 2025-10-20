@@ -4,10 +4,10 @@ import { useState, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import DocumentOverlay, { nodeToReadingItem } from './DocumentOverlay';
-import { Z_INDEX } from '@/lib/constants/graph-config';
+import { Z_INDEX } from '@/lib/config/graph-config';
 import { useClickOutside } from '@/hooks/use-click-outside';
 import { useNodeContextOperations } from '@/hooks/use-node-context-operations';
-import type { Node } from '@/lib/types/node';
+import type { Node } from '@/lib/config/types';
 
 /**
  * NodeContextMenu Component

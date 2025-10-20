@@ -4,7 +4,7 @@
  * 
  * @example
  * ```tsx
- * import { BRAND_COLORS, PATTERNS } from '@/lib/constants/theme-tokens';
+ * import { BRAND_COLORS, PATTERNS } from '@/lib/config/theme-config';
  * 
  * // Use token classes
  * <button className="bg-primary text-primary-foreground hover:bg-primary/90">
