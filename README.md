@@ -12,9 +12,7 @@
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (Recommended)
-
-**Prerequisites:** Docker and Docker Compose
+**Prerequisites:** Docker and Docker Compose only
 
 ```bash
 # 1. Clone the repository
@@ -23,35 +21,42 @@ cd network-graph-search
 
 # 2. Set up environment variables
 cp .env.example .env
-# Edit .env and add your API keys (optional for demo)
+# Edit .env and add your API keys (PINECONE_API_KEY, PINECONE_HOST, OPENAI_API_KEY)
 
-# 3. Run with Docker
-docker-compose up --build
-```
-
-**→ Visit [localhost:3001/graph](http://localhost:3001/graph)**
-
-### Option 2: Local Development
-
-**Prerequisites:** Node.js 18+ and Python 3.9+
-
-```bash
-# 1. Install dependencies
-pnpm install
-pip install -r requirements.txt
-
-# 2. Set up environment
-cp .env.example .env
-# Edit .env and add your Pinecone credentials
-
-# 3. Upload sample documents (299 EU AI Act articles)
-python scripts/upload_all_data.py
-
-# 4. Run the app
-pnpm dev
+# 3. Start the application
+docker compose up
 ```
 
 **→ Visit [localhost:3000/graph](http://localhost:3000/graph)**
+
+✨ **Hot reload enabled** - code changes refresh automatically!
+
+### First Time Setup
+
+If this is your first time running the app, you'll need to upload sample documents:
+
+```bash
+# Upload 299 EU AI Act articles to Pinecone
+docker compose exec app python scripts/upload_all_data.py
+```
+
+### Production Deployment
+
+For production deployment (Render.com, etc.), use the production Dockerfile:
+
+```bash
+# Build production image
+docker build -f Dockerfile -t network-graph-search .
+
+# Run production container
+docker run -p 3000:3000 \
+  -e NODE_ENV=production \
+  -e PYTHON_PATH=/usr/bin/python3 \
+  -e PINECONE_API_KEY=your_key \
+  -e PINECONE_HOST=your_host \
+  -e OPENAI_API_KEY=your_key \
+  network-graph-search
+```
 
 ## 🎯 The Problem
 
