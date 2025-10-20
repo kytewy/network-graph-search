@@ -1,4 +1,4 @@
-# Development Dockerfile for Next.js + Python with full ML stack
+# Production Dockerfile for Next.js + Python with ML stack
 FROM node:18
 
 WORKDIR /app
@@ -14,25 +14,30 @@ RUN apt-get update && apt-get install -y \
 # Enable pnpm
 RUN corepack enable pnpm
 
-# Copy and install dependencies
+# Copy and install Node dependencies
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Copy and install Python dependencies
 COPY requirements.txt ./
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Build Next.js
+# Build Next.js (creates .next/standalone/)
 RUN pnpm build
 
-# Environment variables
+# Copy standalone output and static files
+RUN cp -r .next/standalone/. . && \
+    cp -r .next/static .next/standalone/.next/static && \
+    cp -r public .next/standalone/public
+
+# Runtime environment variables
 ENV NODE_ENV=production
 ENV PYTHON_PATH=/usr/bin/python3
 
 EXPOSE 3000
 
-# Start the app
-CMD ["pnpm", "start"]
+# Use standalone server instead of next start
+CMD ["node", "server.js"]
