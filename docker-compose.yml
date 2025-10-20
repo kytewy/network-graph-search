@@ -1,0 +1,16 @@
+services:
+  # Main service - Ubuntu with full ML stack, clustering enabled
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile  # Uses requirements-dev.txt for full functionality
+    ports:
+      - '3001:3000'
+    environment:
+      - NODE_ENV=development
+      - PYTHON_PATH=/usr/bin/python3
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-network-graph}
+      - PINECONE_HOST=${PINECONE_HOST}
+      - PINECONE_NAMESPACE=${PINECONE_NAMESPACE:-example-namespace}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}

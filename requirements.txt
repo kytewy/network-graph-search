@@ -1,7 +1,5 @@
 beautifulsoup4
 requests
-bertopic 
-sentence-transformers 
 openai 
-pinecone
 python-dotenv
+scikit-learn

@@ -12,36 +12,46 @@
 
 ## 🚀 Quick Start
 
-**Prerequisites:**
+### Option 1: Docker (Recommended)
 
-- Node.js 18+ and Python 3.9+
-- Pinecone API key ([sign up free](https://www.pinecone.io/))
+**Prerequisites:** Docker and Docker Compose
 
 ```bash
-# 1. Clone and install frontend
+# 1. Clone the repository
 git clone https://github.com/kytewy/network-graph-search
 cd network-graph-search
-pnpm install
 
-# 2. Set up Python virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# 2. Set up environment variables
+cp .env.example .env
+# Edit .env and add your API keys (optional for demo)
+
+# 3. Run with Docker
+docker-compose up --build
+```
+
+**→ Visit [localhost:3001/graph](http://localhost:3001/graph)**
+
+### Option 2: Local Development
+
+**Prerequisites:** Node.js 18+ and Python 3.9+
+
+```bash
+# 1. Install dependencies
+pnpm install
 pip install -r requirements.txt
 
-# 3. Set up environment
+# 2. Set up environment
 cp .env.example .env
 # Edit .env and add your Pinecone credentials
 
-# 4. Upload sample documents (299 EU AI Act articles)
+# 3. Upload sample documents (299 EU AI Act articles)
 python scripts/upload_all_data.py
 
-# 5. Run the app
+# 4. Run the app
 pnpm dev
 ```
 
 **→ Visit [localhost:3000/graph](http://localhost:3000/graph)**
-
-Search "AI regulations" to see 299 documents clustered in < 2 seconds.
 
 ## 🎯 The Problem
 

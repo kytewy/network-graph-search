@@ -9,6 +9,12 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Enable standalone output for Docker
+  output: 'standalone',
+  // Experimental features for better Docker support
+  experimental: {
+    outputFileTracingRoot: process.cwd(),
+  },
 }
 
 export default nextConfig
