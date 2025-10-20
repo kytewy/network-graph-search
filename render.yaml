@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: network-graph-search
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free # or starter/standard
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PYTHON_PATH
+        value: /usr/bin/python3
+      - key: PINECONE_API_KEY
+        sync: false # Set manually (secret)
+      - key: PINECONE_HOST
+        sync: false # Set manually (secret)
+      - key: PINECONE_INDEX_NAME
+        value: network-graph
+      - key: PINECONE_NAMESPACE
+        value: example-namespace
+      - key: OPENAI_API_KEY
+        sync: false # Set manually (secret)
