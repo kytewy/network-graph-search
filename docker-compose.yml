@@ -1,13 +1,18 @@
 services:
-  # Main service - Ubuntu with full ML stack, clustering enabled
   app:
     build:
       context: .
-      dockerfile: Dockerfile  # Uses requirements-dev.txt for full functionality
+      dockerfile: Dockerfile.dev # ← Changed
     ports:
-      - '3001:3000'
+      - '3000:3000' # ← Changed to 3000 (standard dev port)
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      # Prevent overwriting installed dependencies
+      - /app/node_modules
+      - /app/.next
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development # ← Changed to development
       - PYTHON_PATH=/usr/bin/python3
       - PINECONE_API_KEY=${PINECONE_API_KEY}
       - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-network-graph}

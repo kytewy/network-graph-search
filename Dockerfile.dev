@@ -1,0 +1,36 @@
+# Development Dockerfile for Next.js + Python
+FROM node:18
+
+WORKDIR /app
+
+# Install Python and system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Enable pnpm
+RUN corepack enable pnpm
+
+# Copy and install Node dependencies
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Copy and install Python dependencies
+COPY requirements.txt ./
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+
+# Copy backend Python code (needed at runtime)
+COPY backend ./backend
+
+# Don't copy the rest - volumes will mount the source code
+
+ENV NODE_ENV=development
+ENV PYTHON_PATH=/usr/bin/python3
+
+EXPOSE 3000
+
+# Run dev server with hot reload
+CMD ["pnpm", "dev"]
