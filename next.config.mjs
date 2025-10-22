@@ -9,19 +9,18 @@ const nextConfig = {
 	images: {
 		unoptimized: true,
 	},
-	// Enable standalone output for Docker
-	output: 'standalone',
-	// Experimental features for better Docker support
-	experimental: {
-		outputFileTracingRoot: process.cwd(),
-	},
-	// Enable webpack polling for Docker on Windows
-	// This allows Next.js to detect file changes in Docker volumes
+
 	webpack: (config, { dev }) => {
 		if (dev) {
 			config.watchOptions = {
-				poll: 500, // Check for changes every second
-				aggregateTimeout: 200, // Delay before rebuilding
+				poll: 1000,
+				aggregateTimeout: 300,
+				ignored: [
+					'**/node_modules/**',
+					'**/.next/**',
+					'**/.git/**',
+					'**/backend/**',
+				],
 			};
 		}
 		return config;
