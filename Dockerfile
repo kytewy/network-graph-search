@@ -1,5 +1,5 @@
 # Production Dockerfile for Next.js + Python with ML stack
-FROM node:18
+FROM node:20-slim AS base
 
 WORKDIR /app
 
@@ -11,33 +11,46 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Enable pnpm
-RUN corepack enable pnpm
+# Dependencies stage
+FROM base AS deps
+COPY package.json package-lock.json ./
+RUN npm ci --only=production
 
-# Copy and install Node dependencies
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# Builder stage
+FROM base AS builder
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Copy and install Python dependencies
-COPY requirements.txt ./
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
-
-# Copy application code
 COPY . .
 
-# Build Next.js (creates .next/standalone/)
-RUN pnpm build
+# Install Python dependencies
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
-# Copy standalone output and static files
-RUN cp -r .next/standalone/. . && \
-    cp -r .next/static .next/standalone/.next/static && \
-    cp -r public .next/standalone/public
+# Build Next.js
+RUN npm run build
 
-# Runtime environment variables
+# Runner stage
+FROM base AS runner
+
 ENV NODE_ENV=production
 ENV PYTHON_PATH=/usr/bin/python3
 
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy Python dependencies from builder
+COPY --from=builder /usr/local/lib/python3.*/dist-packages /usr/local/lib/python3.11/dist-packages
+
+# Copy Next.js standalone output
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/backend ./backend
+
+USER nextjs
+
 EXPOSE 3000
 
-# Use standalone server instead of next start
+ENV PORT 3000
+
 CMD ["node", "server.js"]
