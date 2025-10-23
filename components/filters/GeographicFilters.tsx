@@ -1,8 +1,6 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Globe } from 'lucide-react';
 import { safeIncludes } from '@/lib/utils/array-safety';
 
 interface GeographicFiltersProps {
@@ -35,24 +33,7 @@ export function GeographicFilters({
 	getCountriesByContinent,
 }: GeographicFiltersProps) {
 	return (
-		<div className="space-y-3">
-			<div className="flex items-center gap-2">
-				<Globe className="h-4 w-4 text-sidebar-foreground" />
-				<Label className="text-sidebar-foreground font-medium text-sm">
-					Geographic Filters
-				</Label>
-			</div>
-
-			<div className="space-y-2">
-				<div className="relative">
-					<div className="text-xs text-sidebar-foreground/70 mb-2">
-						Filter by geography - {availableContinents.length} continents,{' '}
-						{filteredResultsCount} nodes
-					</div>
-				</div>
-			</div>
-
-			<div className="space-y-2">
+		<div className="space-y-2">
 				{availableContinents.map((continent) => {
 					const isSelected = safeIncludes(selectedContinents, continent);
 					const isExpanded = safeIncludes(expandedContinents, continent);
@@ -201,7 +182,6 @@ export function GeographicFilters({
 						No countries found matching "{countrySearchTerm}"
 					</div>
 				)}
-			</div>
 		</div>
 	);
 }

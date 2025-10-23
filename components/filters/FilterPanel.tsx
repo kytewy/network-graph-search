@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Filter } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Filter, Target, Globe, Tag } from 'lucide-react';
 import { useAppStore } from '@/lib/stores/app-state';
 import { SimilarityHistogram } from '@/components/filters/SimilarityHistogram';
 import { GeographicFilters } from './GeographicFilters';
@@ -55,6 +55,10 @@ const FilterPanel = () => {
 	const getAvailableTags = useAppStore((state) => state.getAvailableTags);
 	const getNodeCountByTag = useAppStore((state) => state.getNodeCountByTag);
 
+	// Similarity filtering state and actions
+	const selectedSimilarityRanges = useAppStore((state) => state.selectedSimilarityRanges);
+	const clearSimilarityRanges = useAppStore((state) => state.clearSimilarityRanges);
+
 	// Local UI state
 	const [selectedSourceTypes, setSelectedSourceTypes] = useState<string[]>([]);
 	const [expandedContinents, setExpandedContinents] = useState<string[]>([]);
@@ -94,6 +98,7 @@ const FilterPanel = () => {
 	const clearAllFilters = () => {
 		clearLocationFilters();
 		clearTagFilters();
+		clearSimilarityRanges();
 		setSelectedSourceTypes([]);
 	};
 
@@ -104,58 +109,92 @@ const FilterPanel = () => {
 		...new Set(filteredResults.map((node) => node.type || '').filter(Boolean)),
 	];
 
+	const totalFiltersActive = selectedContinents.length + selectedCountries.length + selectedTags.length + selectedSimilarityRanges.length;
+
 	return (
-		<div className="flex flex-col h-full rounded-lg bg-card">
-			<div className="shrink-0 p-4 border-b border-sidebar-border">
-				<Label className="text-sidebar-foreground font-medium text-base">
-					Data Filters
-				</Label>
+		<div className="space-y-4">
+			{/* Header */}
+			<div className="flex items-center justify-between">
+				<h3 className="text-lg font-semibold">Filters</h3>
+				{totalFiltersActive > 0 && (
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={clearAllFilters}
+						className="h-8 gap-1 text-xs">
+						<Filter className="h-3 w-3" />
+						Clear All
+					</Button>
+				)}
 			</div>
-			<div className="flex-1 overflow-y-auto p-4 space-y-4">
-				{/* Similarity Filter */}
-				<div className="space-y-2">
-					<Label className="text-sm text-sidebar-foreground/90">
-						Filter by Similarity
-					</Label>
-					<SimilarityHistogram />
-				</div>
-				<GeographicFilters
-					availableContinents={availableContinents}
-					selectedContinents={selectedContinents}
-					selectedCountries={selectedCountries}
-					expandedContinents={expandedContinents}
-					countrySearchTerm={countrySearchTerm}
-					filteredResultsCount={filteredResults.length}
-					toggleContinent={toggleContinent}
-					toggleCountry={toggleCountry}
-					toggleExpandedContinent={toggleExpandedContinent}
-					getNodeCountByContinent={getNodeCountByContinent}
-					getNodeCountByCountry={getNodeCountByCountry}
-					getCountriesByContinent={getCountriesByContinent}
-				/>
 
-				{/* TODO Update Upload for more fields
-				<SourceTypeFilters
-					sourceTypes={sourceTypes}
-					selectedSourceTypes={selectedSourceTypes}
-					toggleSourceType={toggleSourceType}
-				/> */}
+			{/* Similarity Score Card */}
+			<Card>
+				<CardContent className="p-4 space-y-2">
+					<div className="flex items-start gap-3">
+						<Target className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+						<div className="flex-1 min-w-0">
+							<h4 className="font-semibold text-base mb-1">Similarity Score</h4>
+							<p className="text-sm text-muted-foreground mb-2">
+								Filter results by vector similarity score distribution
+							</p>
+							<SimilarityHistogram />
+						</div>
+					</div>
+				</CardContent>
+			</Card>
 
-				<TagFilters
-					availableTags={availableTags}
-					selectedTags={selectedTags}
-					toggleTag={toggleTag}
-					getNodeCountByTag={getNodeCountByTag}
-				/>
+			{/* Geographic Filters Card */}
+			<Card>
+				<CardContent className="p-4 space-y-2">
+					<div className="flex items-start gap-3">
+						<Globe className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+						<div className="flex-1 min-w-0">
+							<h4 className="font-semibold text-base mb-1">Geographic Filters</h4>
+							<p className="text-sm text-muted-foreground mb-2">
+								Filter by continent or region ({availableContinents.length} continents, {filteredResults.length} nodes)
+							</p>
+							<GeographicFilters
+								availableContinents={availableContinents}
+								selectedContinents={selectedContinents}
+								selectedCountries={selectedCountries}
+								expandedContinents={expandedContinents}
+								countrySearchTerm={countrySearchTerm}
+								filteredResultsCount={filteredResults.length}
+								toggleContinent={toggleContinent}
+								toggleCountry={toggleCountry}
+								toggleExpandedContinent={toggleExpandedContinent}
+								getNodeCountByContinent={getNodeCountByContinent}
+								getNodeCountByCountry={getNodeCountByCountry}
+								getCountriesByContinent={getCountriesByContinent}
+							/>
+						</div>
+					</div>
+				</CardContent>
+			</Card>
 
-				<Button
-					onClick={clearAllFilters}
-					variant="outline"
-					className="w-full border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground bg-transparent">
-					<Filter className="h-4 w-4 mr-2" />
-					Clear All Filters
-				</Button>
-			</div>
+			{/* Tags Card */}
+			{availableTags.length > 0 && (
+				<Card>
+					<CardContent className="p-4 space-y-2">
+						<div className="flex items-start gap-3">
+							<Tag className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+							<div className="flex-1 min-w-0">
+								<h4 className="font-semibold text-base mb-1">Tags</h4>
+								<p className="text-sm text-muted-foreground mb-2">
+									Filter by document tags or categories
+								</p>
+								<TagFilters
+									availableTags={availableTags}
+									selectedTags={selectedTags}
+									toggleTag={toggleTag}
+									getNodeCountByTag={getNodeCountByTag}
+								/>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+			)}
 		</div>
 	);
 };

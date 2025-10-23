@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
 import { useAppStore } from '@/lib/stores/app-state';
 import { safeIncludes, ensureArray } from '@/lib/utils/array-safety';
 import { logArrayOperation } from '@/lib/utils/error-tracker';
@@ -94,48 +93,40 @@ export function SimilarityHistogram() {
 
 	if (!isClient) {
 		return (
-			<Card className="p-4">
-				<h2 className="text-xl font-semibold mb-2">Filter by Similarity</h2>
-				<div className="text-sm text-gray-500">Loading histogram...</div>
-			</Card>
+			<div className="text-sm text-muted-foreground">Loading histogram...</div>
 		);
 	}
 
 	return (
-		<Card className="p-4">
-			<h2 className="text-xl font-semibold mb-2">Filter by Similarity</h2>
-
-			{/* Histogram visualization */}
-			<div className="w-full">
-				<div className="space-y-2">
-					{histogramData.map((bar) => (
-						<div key={bar.range} className="flex items-center gap-3">
-							<div className="w-16 text-xs text-gray-600 text-right">
-								{bar.range}%
-							</div>
-							<div className="flex-1 relative">
-								<div
-									className={`${SEARCH_CONFIG.HISTOGRAM.BAR_HEIGHT} rounded cursor-pointer transition-all ${SEARCH_CONFIG.HISTOGRAM.ANIMATION_DURATION} flex items-center justify-end pr-2 ${
-										(() => {
-											logArrayOperation('safeIncludes check', selectedSimilarityRanges, 'SimilarityHistogram bar selection');
-											return safeIncludes(selectedSimilarityRanges, bar.range);
-										})()
-											? 'bg-primary hover:bg-primary/90 shadow-md'
-											: 'bg-gray-300 hover:bg-gray-400'
-									}`}
-									style={{ width: `${bar.width}%` }}
-									onClick={() => toggleSimilarityRange(bar.range)}>
-									{bar.count > 0 && (
-										<span className="text-xs font-medium text-white">
-											{bar.count}
-										</span>
-									)}
-								</div>
+		<div className="w-full">
+			<div className="space-y-2">
+				{histogramData.map((bar) => (
+					<div key={bar.range} className="flex items-center gap-3">
+						<div className="w-16 text-xs text-muted-foreground text-right">
+							{bar.range}%
+						</div>
+						<div className="flex-1 relative">
+							<div
+								className={`${SEARCH_CONFIG.HISTOGRAM.BAR_HEIGHT} rounded cursor-pointer transition-all ${SEARCH_CONFIG.HISTOGRAM.ANIMATION_DURATION} flex items-center justify-end pr-2 ${
+									(() => {
+										logArrayOperation('safeIncludes check', selectedSimilarityRanges, 'SimilarityHistogram bar selection');
+										return safeIncludes(selectedSimilarityRanges, bar.range);
+									})()
+										? 'bg-primary hover:bg-primary/90 shadow-md'
+										: 'bg-muted hover:bg-muted/80'
+								}`}
+								style={{ width: `${bar.width}%` }}
+								onClick={() => toggleSimilarityRange(bar.range)}>
+								{bar.count > 0 && (
+									<span className="text-xs font-medium text-white">
+										{bar.count}
+									</span>
+								)}
 							</div>
 						</div>
-					))}
-				</div>
+					</div>
+				))}
 			</div>
-		</Card>
+		</div>
 	);
 }

@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/lib/stores/app-state';
 import { SearchDataNormalizer } from '@/lib/utils/search-data-normalizer';
-import { ExternalLink, ArrowUpDown } from 'lucide-react';
+import { BookOpen, ArrowUpDown } from 'lucide-react';
+import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
+import { useContextStore } from '@/lib/stores/context-store';
+import type { Node } from '@/lib/config/types';
 
 /**
  * Get score color based on similarity ranges (aligned with node-colors.ts)
@@ -32,10 +35,16 @@ const getScoreColor = (score: number): string => {
 export function SearchResults() {
 	const [isClient, setIsClient] = useState(false);
 	const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+	const [showDocumentOverlay, setShowDocumentOverlay] = useState(false);
+	const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
 	// Get state from app store
 	const searchResults = useAppStore((state) => state.searchResults);
 	const filteredResults = useAppStore((state) => state.filteredResults);
+	
+	// Get context store methods
+	const contextNodes = useContextStore((state) => state.contextNodes);
+	const toggleNodeInContext = useContextStore((state) => state.toggleNodeInContext);
 
 	useEffect(() => {
 		setIsClient(true);
@@ -44,6 +53,22 @@ export function SearchResults() {
 	// Toggle sort direction
 	const toggleSort = () => {
 		setSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+	};
+
+	// Open document in reading mode
+	const openReadingMode = (node: Node) => {
+		setSelectedNode(node);
+		setShowDocumentOverlay(true);
+	};
+
+	// Check if node is in context
+	const isNodeInContext = (nodeId: string) => {
+		return contextNodes.some((n) => n.id === nodeId);
+	};
+
+	// Handle toggling context
+	const handleToggleContext = (nodeId: string) => {
+		toggleNodeInContext(nodeId);
 	};
 
 	// Normalize and sort results by score
@@ -78,8 +103,9 @@ export function SearchResults() {
 	}
 
 	return (
-		<Card className="flex flex-col h-full min-h-0">
-			<CardHeader className="pb-3 shrink-0">
+		<>
+		<Card className="flex flex-col">
+			<CardHeader className="pb-3">
 				<div className="flex items-center justify-between">
 					<h3 className="text-lg font-semibold">
 						Results ({processedResults.length})
@@ -102,7 +128,7 @@ export function SearchResults() {
 				</div>
 			</CardHeader>
 
-			<CardContent className="flex-1 overflow-y-auto space-y-2 p-4 pt-0">
+			<CardContent className="space-y-2 p-4 pt-0">
 				{processedResults.map((result, index) => {
 					const scorePercent = Math.round(result.score * 100);
 					const scoreColor = getScoreColor(result.score);
@@ -135,17 +161,15 @@ export function SearchResults() {
 									</div>
 								</div>
 
-								{/* External Link Button */}
-								{result.url && (
-									<Button
-										size="sm"
-										variant="ghost"
-										onClick={() => window.open(result.url, '_blank')}
-										className="h-7 w-7 p-0 shrink-0"
-										title="Open Link">
-										<ExternalLink className="h-3 w-3" />
-									</Button>
-								)}
+								{/* Reading Mode Button */}
+								<Button
+									size="sm"
+									variant="ghost"
+									onClick={() => openReadingMode(result as Node)}
+									className="h-7 w-7 p-0 shrink-0"
+									title="Open in Reading Mode">
+									<BookOpen className="h-3 w-3" />
+								</Button>
 							</div>
 
 							{/* Content Preview */}
@@ -184,5 +208,15 @@ export function SearchResults() {
 				)}
 			</CardContent>
 		</Card>
+		{/* Document Overlay */}
+		{showDocumentOverlay && selectedNode && (
+			<DocumentOverlay
+				document={nodeToReadingItem(selectedNode)}
+				onClose={() => setShowDocumentOverlay(false)}
+				isInContext={isNodeInContext(selectedNode.id)}
+				onToggleContext={() => handleToggleContext(selectedNode.id)}
+			/>
+		)}
+		</>
 	);
 }

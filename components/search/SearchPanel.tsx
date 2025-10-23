@@ -60,7 +60,7 @@ export function SearchPanel() {
 	return (
 		<div className="w-96 bg-sidebar border-r border-sidebar-border flex flex-col h-screen">
 			{/* Header - Always visible */}
-			<div className="p-6 pb-4 border-b border-sidebar-border">
+			<div className="p-6 pb-4 border-b border-sidebar-border shrink-0">
 				<h1 className="text-2xl font-bold text-sidebar-foreground mb-4"></h1>
 				{/* Search Input - Always visible */}
 				<SearchInput />
@@ -73,9 +73,11 @@ export function SearchPanel() {
 					onValueChange={(value) => setActiveTab(value as any)}
 					className="flex h-full flex-col">
 					{/* Tab Headers */}
-					<div className="px-6 pt-4 pb-2 border-b border-sidebar-border bg-sidebar">
-						<TabsList className="grid w-full grid-cols-2">
-							<TabsTrigger value="results" className="flex items-center gap-2">
+					<div className="px-6 pt-4 pb-0 bg-sidebar shrink-0">
+						<TabsList className="grid w-full grid-cols-2 bg-transparent p-0 h-auto gap-0">
+							<TabsTrigger
+								value="results"
+								className="flex items-center gap-2 rounded-t-md border-b-2 border-transparent pb-3 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-transparent">
 								<Search className="h-3 w-3" />
 								<span>Results</span>
 								{searchCount > 0 && (
@@ -85,7 +87,9 @@ export function SearchPanel() {
 								)}
 							</TabsTrigger>
 
-							<TabsTrigger value="filters" className="flex items-center gap-2">
+							<TabsTrigger
+								value="filters"
+								className="flex items-center gap-2 rounded-t-md border-b-2 border-transparent pb-3 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-transparent">
 								<Filter className="h-3 w-3" />
 								<span>Filters</span>
 								{filteredCount !== searchCount && searchCount > 0 && (
@@ -100,12 +104,10 @@ export function SearchPanel() {
 					{/* Results Tab */}
 					<TabsContent
 						value="results"
-						className="flex-1 data-[state=inactive]:hidden">
-						<div className="h-full p-6 pt-4 flex flex-col">
+						className="flex-1 overflow-y-auto data-[state=inactive]:hidden">
+						<div className="p-6 pt-4">
 							{searchCount > 0 ? (
-								<div className="flex-1 overflow-y-auto">
-									<SearchResults />
-								</div>
+								<SearchResults />
 							) : (
 								<div className="flex flex-col items-center justify-center h-full">
 									<Search className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
@@ -123,20 +125,22 @@ export function SearchPanel() {
 					{/* Filters Tab */}
 					<TabsContent
 						value="filters"
-						className="flex-1 overflow-y-auto p-6 pt-4 space-y-4 data-[state=inactive]:hidden">
-						{searchCount > 0 ? (
-							<FilterPanel />
-						) : (
-							<div className="flex flex-col items-center justify-center h-full py-12">
-								<Filter className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-								<p className="text-sm text-muted-foreground">
-									Filters will be available after searching
-								</p>
-								<p className="text-xs text-muted-foreground mt-1">
-									Use filters to refine your search results
-								</p>
-							</div>
-						)}
+						className="flex-1 overflow-y-auto data-[state=inactive]:hidden">
+						<div className="p-6 pt-4">
+							{searchCount > 0 ? (
+								<FilterPanel />
+							) : (
+								<div className="flex flex-col items-center justify-center h-full py-12">
+									<Filter className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+									<p className="text-sm text-muted-foreground">
+										Filters will be available after searching
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										Use filters to refine your search results
+									</p>
+								</div>
+							)}
+						</div>
 					</TabsContent>
 				</Tabs>
 			</div>
