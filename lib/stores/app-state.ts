@@ -1,37 +1,8 @@
 import { create } from 'zustand';
+import { Node, Link } from '@/lib/config/types';
+import { SearchDataNormalizer } from '@/lib/utils/search-data-normalizer';
 import { devtools } from 'zustand/middleware';
 import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from './country_map';
-
-// Define Node and Link types
-export interface Node {
-	id: string;
-	label: string;
-	category?: string;
-	score?: number;
-	similarity?: number;
-	text?: string;
-	content?: string;
-	summary?: string;
-	type?: string;
-	// Direct properties for easier access and consistent data structure
-	country?: string;
-	continent?: string;
-	ai_clusters?: string; // AI cluster assignment (e.g., "cluster_0", "cluster_1")
-	tags?: string[]; // User-defined tags for categorization and filtering
-	// Keep fields for backward compatibility and other metadata
-	fields?: any;
-	data?: any;
-}
-
-export interface Link {
-	id: string;
-	source: string;
-	target: string;
-	label?: string;
-	type?: string;
-	weight?: number;
-	data?: any;
-}
 
 // Define the app state interface
 interface AppState {

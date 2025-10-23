@@ -80,13 +80,17 @@ export function SearchInput() {
 
 			{/* Results to fetch + Search button */}
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-				<span className="text-sm text-muted-foreground">{SEARCH_CONFIG.RESULTS_TO_FETCH_LABEL}</span>
+				<span className="text-sm text-muted-foreground">
+					{SEARCH_CONFIG.RESULTS_TO_FETCH_LABEL}
+				</span>
 				<div className="flex items-center gap-2">
 					<div className="flex items-center gap-1 border rounded-md p-1">
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => setTopK(SearchConfigHelpers.getNextTopK(topK, false))}
+							onClick={() =>
+								setTopK(SearchConfigHelpers.getNextTopK(topK, false))
+							}
 							disabled={topK <= SEARCH_CONFIG.MIN_TOP_K}
 							className="h-7 w-7">
 							<Minus className="h-3 w-3" />
@@ -97,8 +101,10 @@ export function SearchInput() {
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => setTopK(SearchConfigHelpers.getNextTopK(topK, true))}
-						disabled={topK >= SEARCH_CONFIG.MAX_TOP_K}
+							onClick={() =>
+								setTopK(SearchConfigHelpers.getNextTopK(topK, true))
+							}
+							disabled={topK >= SEARCH_CONFIG.MAX_TOP_K}
 							className="h-7 w-7">
 							<Plus className="h-3 w-3" />
 						</Button>

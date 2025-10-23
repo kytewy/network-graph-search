@@ -5,9 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ColorLegend } from '@/components/network/ColorLegend';
 import { NetworkGraphCanvas } from '@/components/network/NetworkGraphCanvas';
 import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
-import { SearchInput } from '@/components/search/SearchInput';
-import { SimilarityHistogram } from '@/components/search/SimilarityHistogram';
-import FilterPanel from '@/components/filters/FilterPanel';
+import { SearchPanel } from '@/components/search/SearchPanel';
 import ContextManagement from '@/components/analysis/ContextManagement';
 import { useAppStore } from '@/lib/stores/app-state';
 import { setupErrorTracking } from '@/lib/utils/error-tracker';
@@ -27,23 +25,8 @@ export function GraphPageClient() {
 	return (
 		<NetworkGraphProvider>
 			<div className="flex h-screen overflow-hidden bg-background">
-				{/* Sidebar */}
-				<div className="w-96 bg-sidebar border-r border-sidebar-border p-6 overflow-y-auto [scrollbar-gutter:stable]">
-					<div className="space-y-4">
-						{/* Header */}
-						<div className="mb-4">
-							<h1 className="text-2xl font-bold text-sidebar-foreground">
-								Graph Explorer
-							</h1>
-						</div>
-
-						<SearchInput />
-
-						<SimilarityHistogram />
-
-						<FilterPanel />
-					</div>
-				</div>
+				{/* Sidebar - Unified Search & Filter Panel */}
+				<SearchPanel />
 
 				{/* Main Graph Area */}
 				<div className="flex-1 relative h-screen overflow-hidden">

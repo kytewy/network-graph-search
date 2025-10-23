@@ -5,12 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Filter } from 'lucide-react';
 import { useAppStore } from '@/lib/stores/app-state';
+import { SimilarityHistogram } from '@/components/filters/SimilarityHistogram';
 import { GeographicFilters } from './GeographicFilters';
 import { SourceTypeFilters } from './SourceTypeFilters';
 import { TagFilters } from './TagFilters';
 
 /**
  * FilterPanel - Main coordinator for filtering options
+ *
+ * Centralizes all filtering functionality:
+ * - Similarity filtering (histogram)
+ * - Geographic filtering (continents/countries)
+ * - Tag filtering
+ * - Source type filtering (TODO)
+ *
  * Manages state and delegates rendering to sub-components
  */
 const FilterPanel = () => {
@@ -97,47 +105,57 @@ const FilterPanel = () => {
 	];
 
 	return (
-		<div className="rounded-lg p-4 space-y-4 bg-card">
-			<Label className="text-sidebar-foreground font-medium text-base">
-				Data Filters
-			</Label>
+		<div className="flex flex-col h-full rounded-lg bg-card">
+			<div className="shrink-0 p-4 border-b border-sidebar-border">
+				<Label className="text-sidebar-foreground font-medium text-base">
+					Data Filters
+				</Label>
+			</div>
+			<div className="flex-1 overflow-y-auto p-4 space-y-4">
+				{/* Similarity Filter */}
+				<div className="space-y-2">
+					<Label className="text-sm text-sidebar-foreground/90">
+						Filter by Similarity
+					</Label>
+					<SimilarityHistogram />
+				</div>
+				<GeographicFilters
+					availableContinents={availableContinents}
+					selectedContinents={selectedContinents}
+					selectedCountries={selectedCountries}
+					expandedContinents={expandedContinents}
+					countrySearchTerm={countrySearchTerm}
+					filteredResultsCount={filteredResults.length}
+					toggleContinent={toggleContinent}
+					toggleCountry={toggleCountry}
+					toggleExpandedContinent={toggleExpandedContinent}
+					getNodeCountByContinent={getNodeCountByContinent}
+					getNodeCountByCountry={getNodeCountByCountry}
+					getCountriesByContinent={getCountriesByContinent}
+				/>
 
-			<GeographicFilters
-				availableContinents={availableContinents}
-				selectedContinents={selectedContinents}
-				selectedCountries={selectedCountries}
-				expandedContinents={expandedContinents}
-				countrySearchTerm={countrySearchTerm}
-				filteredResultsCount={filteredResults.length}
-				toggleContinent={toggleContinent}
-				toggleCountry={toggleCountry}
-				toggleExpandedContinent={toggleExpandedContinent}
-				getNodeCountByContinent={getNodeCountByContinent}
-				getNodeCountByCountry={getNodeCountByCountry}
-				getCountriesByContinent={getCountriesByContinent}
-			/>
+				{/* TODO Update Upload for more fields
+				<SourceTypeFilters
+					sourceTypes={sourceTypes}
+					selectedSourceTypes={selectedSourceTypes}
+					toggleSourceType={toggleSourceType}
+				/> */}
 
-			{/* TODO Update Upload for more fields
-			<SourceTypeFilters
-				sourceTypes={sourceTypes}
-				selectedSourceTypes={selectedSourceTypes}
-				toggleSourceType={toggleSourceType}
-			/> */}
+				<TagFilters
+					availableTags={availableTags}
+					selectedTags={selectedTags}
+					toggleTag={toggleTag}
+					getNodeCountByTag={getNodeCountByTag}
+				/>
 
-			<TagFilters
-				availableTags={availableTags}
-				selectedTags={selectedTags}
-				toggleTag={toggleTag}
-				getNodeCountByTag={getNodeCountByTag}
-			/>
-
-			<Button
-				onClick={clearAllFilters}
-				variant="outline"
-				className="w-full border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground bg-transparent">
-				<Filter className="h-4 w-4 mr-2" />
-				Clear All Filters
-			</Button>
+				<Button
+					onClick={clearAllFilters}
+					variant="outline"
+					className="w-full border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground bg-transparent">
+					<Filter className="h-4 w-4 mr-2" />
+					Clear All Filters
+				</Button>
+			</div>
 		</div>
 	);
 };
