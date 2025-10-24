@@ -6,7 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useAppStore } from '@/lib/stores/app-state';
 import { SEARCH_CONFIG, SearchConfigHelpers } from '@/lib/config/search-config';
-import { Search, Loader2, X, Plus, Minus } from 'lucide-react';
+import { Search, Loader2, X, Plus, Minus, Globe, ChevronDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 /**
  * SearchInput - Main search interface component
@@ -30,6 +38,13 @@ export function SearchInput() {
 	const performSearch = useAppStore((state) => state.performSearch);
 	const searchResults = useAppStore((state) => state.searchResults);
 	const setSearchResults = useAppStore((state) => state.setSearchResults);
+
+	// Metadata filter state
+	const selectedContinents = useAppStore((state) => state.selectedContinents);
+	const selectedCountries = useAppStore((state) => state.selectedCountries);
+	const toggleContinent = useAppStore((state) => state.toggleContinent);
+	const clearLocationFilters = useAppStore((state) => state.clearLocationFilters);
+	const getAvailableContinents = useAppStore((state) => state.getAvailableContinents);
 
 	useEffect(() => {
 		setIsClient(true);
@@ -55,6 +70,20 @@ export function SearchInput() {
 		setSearchResults([]);
 	};
 
+	// Metadata filter data
+	const availableContinents = getAvailableContinents();
+	const commonContinents = [
+		'North America',
+		'Europe',
+		'Asia',
+		'Africa',
+		'South America',
+		'Oceania',
+	];
+	const displayContinents =
+		availableContinents.length > 0 ? availableContinents : commonContinents;
+	const geoCount = selectedContinents.length + selectedCountries.length;
+
 	return (
 		<Card className="p-4">
 			{/* <h2 className="text-xl font-semibold mb-4">Search</h2> */}
@@ -78,11 +107,68 @@ export function SearchInput() {
 				)}
 			</div>
 
+			{/* Metadata Filters */}
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+				<span className="text-sm text-muted-foreground">Metadata:</span>
+				
+				{/* Geography Filter */}
+				<Popover>
+					<PopoverTrigger asChild>
+						<Button
+							variant={geoCount > 0 ? 'default' : 'outline'}
+							size="sm"
+							className="h-7 gap-1 text-xs">
+							<Globe className="h-3 w-3" />
+							Geography
+							{geoCount > 0 && (
+								<Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
+									{geoCount}
+								</Badge>
+							)}
+							<ChevronDown className="h-3 w-3 ml-1" />
+						</Button>
+					</PopoverTrigger>
+					<PopoverContent className="w-64 p-3" align="start">
+						<div className="space-y-3">
+							<div className="flex items-center justify-between">
+								<h4 className="font-semibold text-sm">Geography</h4>
+								{geoCount > 0 && (
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={clearLocationFilters}
+										className="h-6 px-2 text-xs">
+										Clear
+									</Button>
+								)}
+							</div>
+							<div className="space-y-2 max-h-64 overflow-y-auto">
+								{displayContinents.map((continent) => (
+									<div key={continent} className="flex items-center space-x-2">
+										<Checkbox
+											id={`continent-${continent}`}
+											checked={selectedContinents.includes(continent)}
+											onCheckedChange={() => toggleContinent(continent)}
+										/>
+										<Label
+											htmlFor={`continent-${continent}`}
+											className="text-sm cursor-pointer flex-1">
+											{continent}
+										</Label>
+									</div>
+								))}
+							</div>
+						</div>
+					</PopoverContent>
+				</Popover>
+			</div>
+
 			{/* Results to fetch + Search button */}
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
 				<span className="text-sm text-muted-foreground">
 					{SEARCH_CONFIG.RESULTS_TO_FETCH_LABEL}
 				</span>
+
 				<div className="flex items-center gap-2">
 					<div className="flex items-center gap-1 border rounded-md p-1">
 						<Button

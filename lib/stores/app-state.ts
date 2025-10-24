@@ -352,11 +352,21 @@ export const useAppStore = create<AppState>()(
 			state.setError(null);
 			state.setQuery(query);
 
+			// Collect filter metadata to send to API
+			const filters = {
+				continents: state.selectedContinents || [],
+				countries: state.selectedCountries || [],
+				tags: state.selectedTags || [],
+				similarityRanges: state.selectedSimilarityRanges || [],
+			};
+
+			console.log('[Store] Sending filters to API:', filters);
+
 			try {
 				const response = await fetch('/api/reranked-vector-search', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ query, topK }),
+					body: JSON.stringify({ query, topK, filters }),
 				});
 
 				const data = await response.json();

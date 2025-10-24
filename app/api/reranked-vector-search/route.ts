@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchPinecone } from '@/lib/services/vector_search';
+import { buildPineconeFilter, logFilterExpression } from '@/lib/utils/pinecone-filters';
 
 export async function POST(request: NextRequest) {
 	try {
 		// Parse the request body
 		const body = await request.json();
-		const { query, topK = 10 } = body;
+		const { 
+			query, 
+			topK = 10,
+			filters = {} // New: filter metadata
+		} = body;
 
 		// Validate required parameters
 		if (!query) {
@@ -15,8 +20,12 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Use the searchPinecone function with reranking enabled
-		const { results } = await searchPinecone(query, topK, true);
+		// Build Pinecone metadata filter expression from user filters
+		const pineconeFilter = buildPineconeFilter(filters);
+		logFilterExpression(filters, pineconeFilter);
+
+		// Use the searchPinecone function with reranking enabled and filters
+		const { results } = await searchPinecone(query, topK, true, pineconeFilter);
 
 		// Log the results structure to understand the format
 		console.log('Results structure:', JSON.stringify(results, null, 2));

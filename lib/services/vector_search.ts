@@ -61,8 +61,8 @@ export async function searchPinecone(
 		// Get the namespace
 		const namespace = index.namespace(PINECONE_NAMESPACE);
 
-		// Search using the exact pattern from the documentation
-		const response = await namespace.searchRecords({
+		// Build the search query with optional filters
+		const searchQuery: any = {
 			query: {
 				topK,
 				inputs: { text: query },
@@ -82,7 +82,16 @@ export async function searchPinecone(
 				'embedding',
 				'tags',
 			],
-		});
+		};
+
+		// Add metadata filters if provided
+		if (filters && Object.keys(filters).length > 0) {
+			searchQuery.query.filter = filters;
+			console.log('[Vector Search] Applying Pinecone filters:', JSON.stringify(filters, null, 2));
+		}
+
+		// Search using the exact pattern from the documentation
+		const response = await namespace.searchRecords(searchQuery);
 
 		return { results: response };
 	} catch (error) {
