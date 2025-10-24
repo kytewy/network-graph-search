@@ -9,7 +9,6 @@ const nextConfig = {
 	images: {
 		unoptimized: true,
 	},
-	output: 'standalone',
 	webpack: (config, { dev }) => {
 		if (dev) {
 			config.watchOptions = {
