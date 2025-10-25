@@ -349,19 +349,19 @@ export default function ContextManagement({
 				<TabsList className="grid w-full grid-cols-3">
 					<TabsTrigger
 						value="nodes"
-						className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+						className="gap-1 transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent/50">
 						<CheckSquare className="h-3.5 w-3.5" />
 						<span className="hidden sm:inline">Nodes</span>
 					</TabsTrigger>
 					<TabsTrigger
 						value="analysis"
-						className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+						className="gap-1 transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent/50">
 						<MessageSquare className="h-3.5 w-3.5" />
 						<span className="hidden sm:inline">Analysis</span>
 					</TabsTrigger>
 					<TabsTrigger
 						value="clustering"
-						className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+						className="gap-1 transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent/50">
 						<Network className="h-3.5 w-3.5" />
 						<span className="hidden sm:inline">Clustering</span>
 					</TabsTrigger>

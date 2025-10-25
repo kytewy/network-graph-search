@@ -46,7 +46,7 @@ export function GeographicFilters({
 									className={`cursor-pointer transition-colors flex-1 justify-between ${
 										isSelected
 											? 'bg-primary text-primary-foreground hover:bg-primary/90'
-											: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+											: 'hover:bg-accent/50'
 									}`}
 									onClick={() => toggleContinent(continent)}>
 									<span>
@@ -122,10 +122,10 @@ export function GeographicFilters({
 														return (
 															<div
 																key={country}
-																className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${
+																className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer transition-colors ${
 																	isCountrySelected
-																		? 'bg-primary text-primary-foreground'
-																		: 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+																		? 'bg-primary text-primary-foreground hover:bg-primary/90'
+																		: 'hover:bg-accent/50'
 																}`}
 																onClick={() => toggleCountry(country)}>
 																<span className="text-xs font-medium">
