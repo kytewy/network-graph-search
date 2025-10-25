@@ -1,5 +1,6 @@
 beautifulsoup4
 requests
-openai 
+openai
+pinecone
 python-dotenv
 scikit-learn
