@@ -130,7 +130,7 @@ export function SearchPanel() {
 							{searchCount > 0 ? (
 								<FilterPanel />
 							) : (
-								<div className="flex flex-col items-center justify-center h-full py-12">
+								<div className="flex flex-col items-center justify-center h-full">
 									<Filter className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
 									<p className="text-sm text-muted-foreground">
 										Filters will be available after searching
