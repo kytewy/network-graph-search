@@ -191,7 +191,7 @@ export default function ChatInterface({
 							setChatInput(prompt);
 							setPlaceholder(CHAT_PLACEHOLDERS.summary);
 						}}
-						className={`rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+						className={`rounded-lg px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
 							selectedPill === 'Summary'
 								? 'bg-primary text-primary-foreground border-primary shadow-lg'
 								: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
@@ -209,13 +209,31 @@ export default function ChatInterface({
 							setChatInput(prompt);
 							setPlaceholder(CHAT_PLACEHOLDERS.businessImpact);
 						}}
-						className={`rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+						className={`rounded-lg px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
 							selectedPill === 'Business Impact'
 								? 'bg-primary text-primary-foreground border-primary shadow-lg'
 								: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
 						}`}
 						disabled={isThinking}>
 						Business Impact
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => {
+							setSelectedPill('Citations');
+							const hasSelection = safeSelectedNodes.length > 0;
+							const prompt = getQuickPrompt('citations', hasSelection);
+							setChatInput(prompt);
+							setPlaceholder(CHAT_PLACEHOLDERS.citations);
+						}}
+						className={`rounded-lg px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+							selectedPill === 'Citations'
+								? 'bg-primary text-primary-foreground border-primary shadow-lg'
+								: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+						}`}
+						disabled={isThinking}>
+						Citations
 					</Button>
 				</div>
 				<div className="relative mb-6">

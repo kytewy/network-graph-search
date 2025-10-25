@@ -95,7 +95,9 @@ export function formatNodesForPrompt(
 
 			return `**[${node.name || node.id}]**
 ${metadata ? `Metadata: ${metadata}` : ''}
-Content: ${text.substring(0, charLimit)}${text.length > charLimit ? '...' : ''}`;
+Content: ${text.substring(0, charLimit)}${
+				text.length > charLimit ? '...' : ''
+			}`;
 		})
 		.join('\n\n---\n\n');
 }
@@ -222,12 +224,16 @@ export function buildClusterAnalysisPrompt(
 		.map((doc) => {
 			const content = doc.content || doc.text || doc.summary || '';
 			const excerpt = content.substring(0, charLimitPerDoc);
-			return `**[${doc.label}]**\n${excerpt}${content.length > charLimitPerDoc ? '...' : ''}`;
+			return `**[${doc.label}]**\n${excerpt}${
+				content.length > charLimitPerDoc ? '...' : ''
+			}`;
 		})
 		.join('\n\n');
-	
+
 	const moreText =
-		remainingCount > 0 ? `\n\n*...and ${remainingCount} more documents in this cluster*` : '';
+		remainingCount > 0
+			? `\n\n*...and ${remainingCount} more documents in this cluster*`
+			: '';
 
 	return `## Cluster Analysis Request
 
@@ -292,6 +298,24 @@ export const QUICK_PROMPTS = {
 		withoutSelection:
 			'Analyze the strategic implications revealed by this network. What are the key patterns, central topics, and potential opportunities or risks?',
 	},
+	citations: {
+		withSelection: `### Your Question
+[Enter your question or analysis request here]
+
+### Citation Instructions
+
+**Important:** When making claims or observations, cite the relevant document(s) using their actual titles in brackets.
+
+**Example:** [Article 76: Supervision Testing in Real World Conditions by Market Surveillance Authorities]`,
+		withoutSelection: `### Your Question
+[Enter your question or analysis request here]
+
+### Citation Instructions
+
+**Important:** When making claims or observations, cite the relevant document(s) using their actual titles in brackets.
+
+**Example:** [Article 76: Supervision Testing in Real World Conditions by Market Surveillance Authorities]`,
+	},
 } as const;
 
 /**
@@ -316,4 +340,5 @@ export const CHAT_PLACEHOLDERS = {
 	default: 'Ask questions about your network data...',
 	summary: 'What key themes and patterns should I highlight?',
 	businessImpact: 'What strategic insights can I extract from this network?',
+	citations: 'What insights can you provide with proper document citations?',
 } as const;
