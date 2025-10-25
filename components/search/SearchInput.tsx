@@ -44,7 +44,6 @@ export function SearchInput() {
 	const selectedCountries = useAppStore((state) => state.selectedCountries);
 	const toggleContinent = useAppStore((state) => state.toggleContinent);
 	const clearLocationFilters = useAppStore((state) => state.clearLocationFilters);
-	const getAvailableContinents = useAppStore((state) => state.getAvailableContinents);
 
 	useEffect(() => {
 		setIsClient(true);
@@ -70,9 +69,8 @@ export function SearchInput() {
 		setSearchResults([]);
 	};
 
-	// Metadata filter data
-	const availableContinents = getAvailableContinents();
-	const commonContinents = [
+	// Metadata filter data - Always show these 6 continents for pre-search filtering
+	const continents = [
 		'North America',
 		'Europe',
 		'Asia',
@@ -80,8 +78,6 @@ export function SearchInput() {
 		'South America',
 		'Oceania',
 	];
-	const displayContinents =
-		availableContinents.length > 0 ? availableContinents : commonContinents;
 	const geoCount = selectedContinents.length + selectedCountries.length;
 
 	return (
@@ -143,7 +139,7 @@ export function SearchInput() {
 								)}
 							</div>
 							<div className="space-y-2 max-h-64 overflow-y-auto">
-								{displayContinents.map((continent) => (
+								{continents.map((continent) => (
 									<div key={continent} className="flex items-center space-x-2">
 										<Checkbox
 											id={`continent-${continent}`}
