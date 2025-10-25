@@ -1,6 +1,8 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { safeIncludes } from '@/lib/utils/array-safety';
 
 interface TagFiltersProps {
@@ -21,7 +23,7 @@ export function TagFilters({
 	}
 
 	return (
-		<div className="space-y-2 max-h-64 overflow-y-auto">
+		<div className="space-y-1 max-h-64 overflow-y-auto">
 				{availableTags.map((tag) => {
 					const count = getNodeCountByTag(tag);
 					const isSelected = safeIncludes(selectedTags, tag);
@@ -29,24 +31,22 @@ export function TagFilters({
 					return (
 						<div
 							key={tag}
-							className="flex items-center justify-between hover:bg-sidebar-accent/50 p-1.5 rounded cursor-pointer transition-colors"
+							className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer group"
 							onClick={() => toggleTag(tag)}>
 							<div className="flex items-center space-x-2">
-								<input
-									type="checkbox"
+								<Checkbox
 									id={`tag-${tag}`}
 									checked={isSelected}
-									onChange={() => toggleTag(tag)}
-									onClick={(e) => e.stopPropagation()}
-									className="w-4 h-4 rounded border-sidebar-border bg-sidebar text-primary cursor-pointer"
+									onCheckedChange={() => toggleTag(tag)}
+									className="transition-transform group-hover:scale-110"
 								/>
-								<label
+								<Label
 									htmlFor={`tag-${tag}`}
-									className="text-sm cursor-pointer text-sidebar-foreground flex items-center gap-2">
+									className="text-sm cursor-pointer select-none flex items-center gap-2">
 									{tag}
-								</label>
+								</Label>
 							</div>
-							<span className="text-xs text-muted-foreground bg-sidebar-accent px-2 py-0.5 rounded-full">
+							<span className="text-xs text-muted-foreground bg-accent px-2 py-0.5 rounded-full">
 								{count}
 							</span>
 						</div>

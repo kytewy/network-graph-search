@@ -138,17 +138,22 @@ export function SearchInput() {
 									</Button>
 								)}
 							</div>
-							<div className="space-y-2 max-h-64 overflow-y-auto">
+							<div className="space-y-1 max-h-64 overflow-y-auto">
 								{continents.map((continent) => (
-									<div key={continent} className="flex items-center space-x-2">
+									<div 
+										key={continent} 
+										className="flex items-center space-x-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer group"
+										onClick={() => toggleContinent(continent)}
+									>
 										<Checkbox
 											id={`continent-${continent}`}
 											checked={selectedContinents.includes(continent)}
 											onCheckedChange={() => toggleContinent(continent)}
+											className="transition-transform group-hover:scale-110"
 										/>
 										<Label
 											htmlFor={`continent-${continent}`}
-											className="text-sm cursor-pointer flex-1">
+											className="text-sm cursor-pointer flex-1 select-none">
 											{continent}
 										</Label>
 									</div>
