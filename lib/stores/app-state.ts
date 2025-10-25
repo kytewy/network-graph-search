@@ -101,7 +101,7 @@ export const useAppStore = create<AppState>()(
 		query: '',
 		isLoading: false,
 		error: null,
-		topK: 10,
+		topK: 50,
 		hasSearched: false, // Moved from ui-store (Phase 1)
 		searchStatus: '', // Moved from ui-store (Phase 1)
 		searchResults: [],
