@@ -9,7 +9,7 @@ import {
 	X,
 	CheckSquare,
 	Square,
-	BarChart4,
+	Network,
 	MessageSquare,
 	Trash2,
 	ArrowUpDown,
@@ -77,7 +77,7 @@ export default function ContextManagement({
 
 	// Get nodes from NetworkGraph context (same source as the graph itself!)
 	const { filteredResults } = useNetworkGraph();
-	
+
 	// Also get from app store for comparison
 	const searchResults = useAppStore((state) => state.searchResults);
 
@@ -112,7 +112,7 @@ export default function ContextManagement({
 	useEffect(() => {
 		console.warn('🟡 [ContextManagement] searchResults CHANGED:', {
 			count: searchResults?.length || 0,
-			hasData: searchResults && searchResults.length > 0
+			hasData: searchResults && searchResults.length > 0,
 		});
 	}, [searchResults]);
 
@@ -138,16 +138,20 @@ export default function ContextManagement({
 		}, {} as Record<string, number>);
 
 		// Calculate average content length
-		const avgContentLength = contextNodes.length > 0 
-			? Math.round(totalChars / contextNodes.length) 
-			: 0;
+		const avgContentLength =
+			contextNodes.length > 0
+				? Math.round(totalChars / contextNodes.length)
+				: 0;
 
 		return {
 			totalNodes: contextNodes.length,
 			totalChars,
 			totalTokens: estimatedTokens,
 			averageCharsPerNode: avgContentLength,
-			averageTokensPerNode: contextNodes.length > 0 ? Math.round(estimatedTokens / contextNodes.length) : 0,
+			averageTokensPerNode:
+				contextNodes.length > 0
+					? Math.round(estimatedTokens / contextNodes.length)
+					: 0,
 			typeDistribution: [], // Will be implemented later if needed
 			countryDistribution: [], // Will be implemented later if needed
 		};
@@ -214,7 +218,7 @@ export default function ContextManagement({
 	console.warn('🔴 [ContextManagement] COMPONENT RENDERED - Data sources:', {
 		networkGraph_filteredResults_count: filteredResults?.length || 0,
 		appStore_searchResults_count: searchResults?.length || 0,
-		using_source: 'networkGraph_filteredResults'
+		using_source: 'networkGraph_filteredResults',
 	});
 
 	// Function to check if a node is in context
@@ -358,7 +362,7 @@ export default function ContextManagement({
 					<TabsTrigger
 						value="clustering"
 						className="gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-						<BarChart4 className="h-3.5 w-3.5" />
+						<Network className="h-3.5 w-3.5" />
 						<span className="hidden sm:inline">Clustering</span>
 					</TabsTrigger>
 				</TabsList>
@@ -373,7 +377,8 @@ export default function ContextManagement({
 									Context Nodes
 								</h4>
 								<span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
-									{contextNodes.length} {contextNodes.length === 1 ? 'node' : 'nodes'}
+									{contextNodes.length}{' '}
+									{contextNodes.length === 1 ? 'node' : 'nodes'}
 								</span>
 							</div>
 							<p className="text-sm text-gray-600">
@@ -529,7 +534,10 @@ export default function ContextManagement({
 									) : (
 										<div className="space-y-2">
 											<p className="font-medium">No nodes in context yet</p>
-											<p className="text-sm">Click nodes on the graph to add them to your analysis context</p>
+											<p className="text-sm">
+												Click nodes on the graph to add them to your analysis
+												context
+											</p>
 										</div>
 									)}
 								</div>
@@ -589,10 +597,13 @@ export default function ContextManagement({
 				<TabsContent value="clustering" className="mt-0">
 					{(() => {
 						// DEBUG: Log what we're about to pass
-						console.warn(' [ContextManagement] Passing to ClusteringInterface:', {
-							allNodes_being_passed_count: filteredResults?.length || 0,
-							allNodes_source: 'NetworkGraph.filteredResults'
-						});
+						console.warn(
+							' [ContextManagement] Passing to ClusteringInterface:',
+							{
+								allNodes_being_passed_count: filteredResults?.length || 0,
+								allNodes_source: 'NetworkGraph.filteredResults',
+							}
+						);
 						return null;
 					})()}
 					<ClusteringInterface
