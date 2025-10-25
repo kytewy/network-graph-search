@@ -46,11 +46,6 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 			name: 'Force Directed',
 			description: 'Physics-based natural spacing',
 		},
-		{
-			id: 'forceatlas2',
-			name: 'ForceAtlas2',
-			description: 'Optimized for large graphs',
-		},
 		// Radial layout
 		{
 			id: 'radialOut2d',
