@@ -304,7 +304,7 @@ export default function ContextManagement({
 	};
 
 	return (
-		<div className={rightPanelExpanded ? 'space-y-4' : 'space-y-4'}>
+		<div className="space-y-4">
 			<h4 className="text-lg font-semibold text-sidebar-foreground border-b border-sidebar-border pb-2">
 				Context Management
 			</h4>

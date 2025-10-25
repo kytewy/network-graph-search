@@ -53,8 +53,10 @@ export default function ClusteringInterface({
 		allNodes_count: allNodes?.length || 0,
 		allNodes_type: typeof allNodes,
 		allNodes_isArray: Array.isArray(allNodes),
-		allNodes_sample: allNodes?.slice(0, 3).map(n => ({ id: n?.id, label: n?.label })),
-		contextNodes_count: contextNodes?.length || 0
+		allNodes_sample: allNodes
+			?.slice(0, 3)
+			.map((n) => ({ id: n?.id, label: n?.label })),
+		contextNodes_count: contextNodes?.length || 0,
 	});
 
 	// Tag management state
@@ -110,8 +112,12 @@ export default function ClusteringInterface({
 			// Process clusters in parallel
 			const promises = clusterResults.clusters.map(async (cluster, index) => {
 				// Get actual nodes for this cluster
-				const clusterNodeIds = Array.isArray(cluster.node_ids) ? cluster.node_ids : [];
-				const safeContextNodes = Array.isArray(contextNodes) ? contextNodes : [];
+				const clusterNodeIds = Array.isArray(cluster.node_ids)
+					? cluster.node_ids
+					: [];
+				const safeContextNodes = Array.isArray(contextNodes)
+					? contextNodes
+					: [];
 				const clusterNodes = safeContextNodes.filter((node) =>
 					clusterNodeIds.includes(node.id)
 				);
@@ -219,7 +225,9 @@ export default function ClusteringInterface({
 
 	const sendClusterToChat = (cluster: ClusterResult, index: number) => {
 		const suggestion = clusterSuggestions.get(index);
-		const clusterNodeIds = Array.isArray(cluster.node_ids) ? cluster.node_ids : [];
+		const clusterNodeIds = Array.isArray(cluster.node_ids)
+			? cluster.node_ids
+			: [];
 		const safeContextNodes = Array.isArray(contextNodes) ? contextNodes : [];
 		const clusterNodes = safeContextNodes.filter((node) =>
 			clusterNodeIds.includes(node.id)
@@ -301,38 +309,43 @@ export default function ClusteringInterface({
 			cluster.node_ids.forEach((nodeId) => {
 				removeNodeFromContext(nodeId);
 			});
-			console.log('[Clustering] Removed cluster from context:', cluster.cluster_id);
+			console.log(
+				'[Clustering] Removed cluster from context:',
+				cluster.cluster_id
+			);
 		} else {
 			// Add cluster nodes to context - filter from ALL available nodes
 			console.log('[Clustering] Attempting to add cluster:', {
 				cluster_id: cluster.cluster_id,
 				cluster_node_ids: cluster.node_ids,
 				allNodes_count: allNodes.length,
-				sample_allNodes_ids: allNodes.slice(0, 5).map(n => n.id)
+				sample_allNodes_ids: allNodes.slice(0, 5).map((n) => n.id),
 			});
-			
+
 			const safeAllNodes = Array.isArray(allNodes) ? allNodes : [];
-			const clusterNodeIds = Array.isArray(cluster.node_ids) ? cluster.node_ids : [];
+			const clusterNodeIds = Array.isArray(cluster.node_ids)
+				? cluster.node_ids
+				: [];
 			const clusterNodes = safeAllNodes.filter((node) =>
 				clusterNodeIds.includes(node.id)
 			);
-			
+
 			if (clusterNodes.length === 0) {
 				const errorMsg = `Could not find nodes for this cluster. Available nodes: ${allNodes.length}, Cluster expects: ${cluster.node_ids.length} nodes`;
 				console.error('[Clustering] Error:', {
 					error: errorMsg,
 					cluster_node_ids: cluster.node_ids,
-					available_node_ids: allNodes.map(n => n.id)
+					available_node_ids: allNodes.map((n) => n.id),
 				});
 				setError(errorMsg);
 				return;
 			}
-			
+
 			addNodesToContext(clusterNodes);
 			console.log('[Clustering] Added cluster to context:', {
 				cluster_id: cluster.cluster_id,
 				nodes_added: clusterNodes.length,
-				node_ids: clusterNodes.map(n => n.id)
+				node_ids: clusterNodes.map((n) => n.id),
 			});
 		}
 	};
@@ -457,7 +470,8 @@ export default function ClusteringInterface({
 							Cluster Analysis
 						</h4>
 						<span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
-							{contextNodes.length} {contextNodes.length === 1 ? 'node' : 'nodes'}
+							{contextNodes.length}{' '}
+							{contextNodes.length === 1 ? 'node' : 'nodes'}
 						</span>
 					</div>
 					<p className="text-sm text-gray-600">
@@ -515,7 +529,9 @@ export default function ClusteringInterface({
 									Clusters ({clusterResults.clusters.length})
 								</h5>
 								<p className="text-xs text-gray-600">
-									Total: {clusterResults.clusters.reduce((sum, c) => sum + c.size, 0)} nodes across all clusters
+									Total:{' '}
+									{clusterResults.clusters.reduce((sum, c) => sum + c.size, 0)}{' '}
+									nodes across all clusters
 								</p>
 							</div>
 							{loadingSuggestions && (
@@ -528,7 +544,8 @@ export default function ClusteringInterface({
 						{clusterResults.clusters.map((cluster, index) => {
 							const isExpanded = expandedClusters.has(cluster.cluster_id);
 							const suggestion = clusterSuggestions.get(index);
-							const inContext = isClusterInContext.get(cluster.cluster_id) || false;
+							const inContext =
+								isClusterInContext.get(cluster.cluster_id) || false;
 
 							return (
 								<div
@@ -546,7 +563,9 @@ export default function ClusteringInterface({
 												? 'bg-primary/10 hover:bg-primary/20 text-primary'
 												: 'bg-gray-100 hover:bg-gray-200 text-gray-600'
 										}`}
-										title={inContext ? 'Remove from context' : 'Add to context'}>
+										title={
+											inContext ? 'Remove from context' : 'Add to context'
+										}>
 										{inContext ? (
 											<CheckCircle className="w-5 h-5" />
 										) : (

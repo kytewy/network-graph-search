@@ -54,6 +54,7 @@ export default function ChatInterface({
 			if (!promptToSend.trim()) return;
 
 			setIsAnalyzing(true);
+			setIsThinking(true);
 			
 			// If updating an existing conversation, update it; otherwise create new
 			if (conversationIdToUpdate) {
@@ -115,6 +116,7 @@ export default function ChatInterface({
 				});
 			} finally {
 				setIsAnalyzing(false);
+				setIsThinking(false);
 				setChatInput('');
 				setEditingConversationId(null);
 				setEditedPrompt('');
@@ -295,21 +297,21 @@ export default function ChatInterface({
 					</Button>
 				</div>
 				{isThinking && (
-					<div className="flex justify-start mb-4">
-						<div className="bg-sidebar-accent/10 rounded-xl border border-sidebar-border shadow-sm px-4 py-3 max-w-xs">
-							<div className="flex items-center gap-1">
-								<span className="text-sidebar-foreground/70 text-sm italic">
-									Thinking
-								</span>
-								<span className="text-sidebar-foreground/70 text-sm">
-									<span className="inline-block animate-[dots_1.5s_ease-in-out_infinite]">
-										...
-									</span>
-								</span>
+				<div className="flex justify-start mb-4">
+					<div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200 shadow-sm px-4 py-3 max-w-xs">
+						<div className="flex items-center gap-2">
+							<span className="text-gray-700 text-sm font-medium">
+								Thinking
+							</span>
+							<div className="flex gap-1">
+								<span className="w-1.5 h-1.5 bg-primary rounded-full animate-[ping_1s_ease-in-out_infinite]" style={{ animationDelay: '0ms' }}></span>
+								<span className="w-1.5 h-1.5 bg-primary rounded-full animate-[ping_1s_ease-in-out_infinite]" style={{ animationDelay: '200ms' }}></span>
+								<span className="w-1.5 h-1.5 bg-primary rounded-full animate-[ping_1s_ease-in-out_infinite]" style={{ animationDelay: '400ms' }}></span>
 							</div>
 						</div>
 					</div>
-				)}
+				</div>
+			)}
 				{conversations.length > 0 && (
 					<div className="space-y-6">
 						{conversations

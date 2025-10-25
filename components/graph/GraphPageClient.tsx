@@ -53,7 +53,8 @@ export function GraphPageClient() {
 					</div>
 
 					<div className="p-6 flex-1">
-						<div className="space-y-6">
+						{/* Centered container for entire analysis workspace */}
+						<div className="mx-auto max-w-5xl w-full space-y-6">
 							<div className="flex items-center justify-between mb-3">
 								<div>
 									<h3 className="text-2xl font-bold text-sidebar-foreground">
