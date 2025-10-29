@@ -379,6 +379,7 @@ export const useAppStore = create<AppState>()(
 
 				state.setSearchResults(nodes);
 				state.setLinks(links);
+				state.setHasSearched(true);
 			} catch (err: any) {
 				console.error('Search error:', err);
 				state.setError(err.message || 'An error occurred during search');
