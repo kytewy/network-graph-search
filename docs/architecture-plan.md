@@ -37,15 +37,16 @@ Browser (client-only graph page)
 Next.js route handlers  (one HTTP surface; zod-validated contracts in lib/contracts)
 ├── /api/search               Pinecone searchRecords + rerank → toApiNode()
 ├── /api/clusters             k-means on stored embeddings (TypeScript, no Python)
-├── /api/analyze/*            LLM calls with timeouts, spend cap, Langfuse tracing
+├── /api/analyze/*            LLM calls with timeouts, spend cap, LangSmith tracing
 ├── /api/workspaces, /chats   Postgres via Drizzle
-└── /api/inngest              scheduled ingestion and radar workflows (Phase 4)
+└── /api/radar/run            daily cron trigger → LangGraph.js workflows (Phase 4)
 
 Data
 ├── Postgres (Neon or Supabase) system of record: documents, versions, chunks, tags,
 │                               workspaces, chats, llm_calls, use cases, impact cells
 ├── Pinecone                    vectors + filterable metadata only (IDs, type, country, version)
 ├── Upstash Redis               rate limits and daily spend counter
+├── LangGraph checkpoints       radar workflow state in Postgres, so runs resume after a crash
 └── Exa Monitors                discovery of new interpretations (Phase 4)
 ```
 
@@ -117,7 +118,8 @@ Data
 - Playwright: search → results and node count; filter → URL updates; select → cluster.
 - Expose `data-node-count` on the graph container for tests.
 - `scripts/eval/golden.json` (50+ queries → expected article IDs) and `scripts/eval/run.ts` (recall@5, recall@10, MRR). Record the baseline.
-- Langfuse tracing on every LLM call; one JSON log line per request with route, status, latency, Pinecone read units and tokens.
+- LangSmith tracing: wrap the OpenAI client with `wrapOpenAI` and the search, cluster and analyze functions with `traceable` from the `langsmith` package (no LangChain needed); set `LANGSMITH_TRACING`, `LANGSMITH_API_KEY` and `LANGSMITH_PROJECT`. One JSON log line per request with route, status, latency, Pinecone read units and tokens.
+- Run the golden set as a LangSmith dataset and experiment, so each retrieval change is compared side by side.
 - CI: separate `tsc --noEmit`, ESLint, Vitest, Playwright and eval jobs.
 
 **Success criteria**
@@ -129,7 +131,7 @@ Data
 - [ ] `app-state.ts` is gone; no store file exceeds 200 lines; the context holds at most 3 values.
 - [ ] Baseline recall@10 is recorded in `docs/eval-results.md`.
 - [ ] 3 Playwright tests and the eval run pass in CI.
-- [ ] Every LLM call appears in Langfuse with tokens and cost.
+- [ ] Every LLM call appears in LangSmith with tokens, latency and cost, grouped under its request.
 
 ## Holiday buffer (Dec 21–Jan 3)
 
@@ -185,11 +187,11 @@ Light work only: label the golden set and 30 impact cells with a lawyer or compl
 | Change | Files |
 |---|---|
 | Tables: `regulators`, `obligations`, `use_cases`, `impact_cells` (risk, reason, clause, model, prompt version, review status), `interpretations` (source, tier, stance, claims, citations), `snapshots`, `changes` | `db/schema.ts` |
-| Obligation extraction: LLM drafts obligations per article; a person approves them | `lib/radar/extract-obligations.ts`, review UI |
+| Obligation extraction as a LangGraph graph: the LLM drafts obligations per article, then an `interrupt` pauses for a person to approve or edit before saving | `lib/radar/graphs/obligations.ts`, review UI |
 | Impact scoring: Haiku per cell, citing a clause; results stored with review status | `lib/radar/score-impact.ts` |
-| Inngest cron: fetch official sources (EUR-Lex, AI Office) with conditional GETs, hash each paragraph, write `changes`, re-embed and re-score only what changed | `app/api/inngest/route.ts`, `lib/radar/jobs/` |
-| Exa Monitors v2 webhook: new commentary becomes `interpretations` after an extraction step logged to `llm_calls` | `app/api/webhooks/exa/route.ts` |
-| Summary tree: small model at leaves, larger model at the top, recomputed only along changed branches | `lib/radar/summary-tree.ts` |
+| LangGraph.js ingestion graph: fetch official sources (EUR-Lex, AI Office) with conditional GETs → hash each paragraph → write `changes` → re-embed and re-score only what changed. A Postgres checkpointer (`@langchain/langgraph-checkpoint-postgres`) lets a failed run resume; a daily cron job (Render Cron Job) calls `/api/radar/run` | `lib/radar/graphs/ingest.ts`, `app/api/radar/run/route.ts` |
+| Exa Monitors v2 webhook: each new item starts a LangGraph run that extracts source, stance and citations into `interpretations`, logged to `llm_calls` | `app/api/webhooks/exa/route.ts` |
+| Summary tree as a LangGraph graph: small model at leaves, larger model at the top, recomputed only along changed branches | `lib/radar/graphs/summary-tree.ts` |
 | Views: impact table, interpretation map with divergence, timeline slider over `changes`, ingredient label | `components/radar/` |
 
 **Success criteria**
@@ -209,6 +211,35 @@ Light work only: label the golden set and 30 impact cells with a lawyer or compl
 - [ ] At least 1 paying customer or signed letter of intent.
 - [ ] YC Spring 2027 application submitted with these usage numbers (confirm the deadline on YC's site).
 
+## Working week with Claude
+
+The plan assumes about 15–20 hours a week. Claude writes and tests the code; you decide what gets built, review every change and do the work only you can do (customer calls, labelling, judging impact scores).
+
+**Weekly rhythm**
+
+| When | Time | What |
+|---|---|---|
+| Monday | 1 hour | Pick the next unchecked items in the current phase. Ask Claude (in plan mode) to turn each into a task brief: goal, files, test to write, done-when. Save them as GitHub issues |
+| Tuesday–Thursday | 3 sessions of 3–4 hours | One task per Claude session, one branch per task (e.g. `p1/search-contract`). Claude writes the test first, implements, runs the checks and commits on the branch. You review the diff and click through the app for 5 minutes |
+| Friday | 1–2 hours | Run the phase's success criteria, tick what passed, merge finished branches into `main`, note progress in `docs/progress.md`, record a short demo clip |
+| Weekend | Optional | Customer conversations, labelling the golden set, writing |
+
+**Rules that keep sessions productive**
+
+- **Small tasks.** Aim for under about 300 changed lines per session; split anything bigger.
+- **Same opening prompt.** "Read `CLAUDE.md` and `docs/architecture-plan.md`. Do Phase N, item X only. Write the test first. Run the type check, tests and eval. Don't change files outside the list."
+- **Always verify.** No merge until `tsc --noEmit`, the unit tests, Playwright and (from Phase 1) the eval script pass.
+- **One branch per task, merge on Friday.** `main` always runs.
+- **Keep a `CLAUDE.md`** at the repo root with the commands, the architecture rules (contracts in `lib/contracts`, no server data in Zustand, one registry per concept), branch naming and "never edit `.env`".
+
+**First three weeks as Claude tasks**
+
+| Week | Claude sessions | Your work |
+|---|---|---|
+| Nov 23–29 (Phase 0) | 1: clustering text field + search error message, with tests. 2: reranking + single-place filtering + abort signals. 3: OpenAI timeouts, error pages, `/` redirect, Sentry, remove Vercel Analytics | Curate 10–20 Article 50 interpretations; move Render to Starter |
+| Nov 30–Dec 6 (demo) | 1: add the `interpretation` document type and colors. 2: demo polish and a fixed demo URL. 3: buffer for fixes | Record the 60-second video, publish by Dec 2, book conversations |
+| Dec 7–13 (Phase 1) | 1: zod contracts + `toApiNode()` for search. 2: TanStack Query hooks + typed client. 3: nuqs URL state | Start labelling golden queries |
+
 ## Decisions and alternatives
 
 | Decision | Chosen | Alternative, and when to switch |
@@ -219,9 +250,9 @@ Light work only: label the golden set and 30 impact cells with a lawyer or compl
 | Database | Postgres (Neon or Supabase) + Drizzle | Prisma 7 if you prefer nested writes and Studio |
 | Vectors | Keep Pinecone (integrated embedding + rerank) | pgvector once SQL joins in filters matter; corpus is small enough |
 | Clustering | TypeScript k-means on embeddings | FastAPI or Modal with BERTopic for corpus-wide topics |
-| Jobs | Inngest (runs inside the app) | Trigger.dev for long, CPU-heavy summary builds |
-| Observability | Sentry + Langfuse + JSON logs | OpenTelemetry directly if dashboards are built in-house |
-| Graph | Reagraph behind `GraphView` | Sigma.js + Graphology above 1–2k interactive nodes |
+| Workflows | LangGraph.js 1.x with a Postgres checkpointer, started by a daily cron call | Inngest or Trigger.dev if you need many scheduled, non-LLM jobs with fan-out and retries |
+| Observability | Sentry + LangSmith + JSON logs | Langfuse if you want open-source self-hosting or more free seats |
+| Graph | Reagraph 4.32.0 (latest, June 2026) behind `GraphView` | Sigma.js + Graphology above 1–2k interactive nodes |
 | Framework | Stay on Next.js 15.5 | Next.js 16 after Phase 4, when the refactor is stable |
 
 ## Risks
@@ -229,6 +260,7 @@ Light work only: label the golden set and 30 impact cells with a lawyer or compl
 - **Reranking may not help on legal text.** A legal benchmark (LegalBench-RAG) found a reranker underperformed no reranker on contracts. Keep reranking only if the golden set says so.
 - **Pinecone may not return vectors from `searchRecords`.** Clustering on embeddings may need a separate `fetch` by ID; confirm early in Phase 3.
 - **Reagraph performance figures are dated** (a 2023 report of 12–28 FPS at 400+ nodes). Measure with real data before switching renderers.
+- **LangSmith's free plan is small.** The Developer plan has 1 seat and 5,000 base traces a month with 14-day retention; extra traces cost $2.50 per 1,000, and Plus is $39 per seat a month. A LangGraph run can produce several traces, so watch usage once Phase 4 workflows run daily.
 - **Prices change.** Exa Monitors dropped to $2 per 1,000 runs in October 2026; Render Starter is $7/month; check both before relying on them.
 - **Part-time capacity.** The plan assumes about 15–20 hours a week and takes about 7–8 weeks full-time. The holiday buffer absorbs one slipped week; a second slip moves pilots into March.
 
@@ -240,3 +272,5 @@ Light work only: label the golden set and 30 impact cells with a lawyer or compl
 - Graph performance: [Reagraph issue #113](https://github.com/reaviz/reagraph/issues/113)
 - Next.js testing: [Vitest setup](https://nextjs.org/docs/14/app/building-your-application/testing/vitest)
 - Hosting: [Render free tier](https://render.com/articles/platforms-with-a-real-free-tier-for-developers-in-2026)
+- LangSmith: [tracing OpenAI calls](https://docs.langchain.com/langsmith/trace-openai), [pricing guide](https://inference.net/content/langsmith-pricing/)
+- LangGraph: [v1 release notes](https://docs.langchain.com/oss/javascript/releases/langgraph-v1), [checkpointers](https://docs.langchain.com/oss/javascript/langgraph/checkpointers)
