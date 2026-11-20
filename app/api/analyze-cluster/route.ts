@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getJSONCompletion } from '@/lib/utils/openai-client';
 import { buildClusterNamingPrompt, PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
+import { LIMITS, badRequest, rateLimit, serverError } from '@/lib/utils/api-guard';
 
 export async function POST(request: NextRequest) {
+	const limited = rateLimit(request, 'llm');
+	if (limited) return limited;
+
 	try {
 		const { clusterNodes, clusterIndex } = await request.json();
 
@@ -12,6 +16,10 @@ export async function POST(request: NextRequest) {
 				{ error: 'Invalid cluster nodes provided' },
 				{ status: 400 }
 			);
+		}
+
+		if (clusterNodes.length > LIMITS.MAX_NODES_CLUSTER) {
+			return badRequest(`A cluster can have at most ${LIMITS.MAX_NODES_CLUSTER} nodes`);
 		}
 
 		// Sample first 10 documents from cluster
@@ -32,10 +40,6 @@ export async function POST(request: NextRequest) {
 			description: result.description || 'No description available',
 		});
 	} catch (error) {
-		console.error('Error analyzing cluster:', error);
-		return NextResponse.json(
-			{ error: 'Failed to analyze cluster', details: error instanceof Error ? error.message : 'Unknown error' },
-			{ status: 500 }
-		);
+		return serverError('analyze-cluster', error, 'Failed to analyze cluster');
 	}
 }

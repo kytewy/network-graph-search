@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { Node, Link } from '@/lib/config/types';
+import type { Node, Link } from '@/lib/config/types';
+
+// Re-export so existing imports from this store keep working.
+// The single source of truth for these types is lib/config/types.ts.
+export type { Node, Link };
 import { SearchDataNormalizer } from '@/lib/utils/search-data-normalizer';
 import { devtools } from 'zustand/middleware';
 import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from './country_map';

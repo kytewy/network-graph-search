@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import path from 'path';
+import { LIMITS, badRequest, rateLimit, serverError, truncate } from '@/lib/utils/api-guard';
 
 interface NodeInput {
 	id: string;
 	label: string;
 	content: string;
+	summary?: string;
 	type: string;
 }
 
@@ -17,12 +19,14 @@ interface ClusterAnalysisRequest {
 /**
  * POST /api/cluster-analysis
  * 
- * Accepts an array of nodes and returns cluster assignments using BERTopic.
- * Features:
- * - Step 1.2: ✅ Real BERTopic clustering with semantic embeddings
- * - Step 1.3: ✅ GPT-4 interpretation (when OPENAI_API_KEY is set)
+ * Accepts an array of nodes and returns cluster assignments using
+ * TF-IDF + KMeans (backend/clustering/analyzer.py).
+ * Cluster naming with an LLM happens separately in /api/analyze-cluster.
  */
 export async function POST(request: NextRequest) {
+	const limited = rateLimit(request, 'cluster');
+	if (limited) return limited;
+
 	try {
 		const body: ClusterAnalysisRequest = await request.json();
 		const { nodes } = body;
@@ -42,24 +46,30 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Path to BERTopic Python script (in backend/clustering/)
+		if (nodes.length > LIMITS.MAX_NODES_CLUSTER) {
+			return badRequest(`At most ${LIMITS.MAX_NODES_CLUSTER} nodes can be clustered at once`);
+		}
+
+		// Keep only the fields the analyzer uses, with long text truncated
+		const safeNodes: NodeInput[] = nodes.map((node) => ({
+			id: truncate(node?.id, 200),
+			label: truncate(node?.label, 500),
+			content: truncate(node?.content, LIMITS.MAX_CONTENT_CHARS),
+			summary: truncate(node?.summary, LIMITS.MAX_CONTENT_CHARS),
+			type: truncate(node?.type, 100),
+		}));
+
+		// Path to the clustering script (in backend/clustering/)
 		const scriptPath = path.join(process.cwd(), 'backend', 'clustering', 'cli.py');
 
 		// Spawn Python process
-		const result = await runPythonScript(scriptPath, { nodes });
+		const result = await runPythonScript(scriptPath, { nodes: safeNodes });
 
 		// Return the result
 		return NextResponse.json(result);
 
 	} catch (error) {
-		console.error('[Cluster Analysis API] Error:', error);
-		return NextResponse.json(
-			{ 
-				error: 'Internal server error',
-				details: error instanceof Error ? error.message : 'Unknown error'
-			},
-			{ status: 500 }
-		);
+		return serverError('cluster-analysis', error, 'Clustering failed');
 	}
 }
 
@@ -93,6 +103,13 @@ function runPythonScript(scriptPath: string, inputData: any): Promise<any> {
 
 		let stdout = '';
 		let stderr = '';
+		let timedOut = false;
+
+		// Kill the process if it runs too long
+		const timer = setTimeout(() => {
+			timedOut = true;
+			python.kill('SIGKILL');
+		}, LIMITS.PYTHON_TIMEOUT_MS);
 
 		// Write input to stdin
 		python.stdin.write(JSON.stringify(inputData));
@@ -110,6 +127,11 @@ function runPythonScript(scriptPath: string, inputData: any): Promise<any> {
 
 		// Handle process completion
 		python.on('close', (code) => {
+			clearTimeout(timer);
+			if (timedOut) {
+				reject(new Error(`Python script timed out after ${LIMITS.PYTHON_TIMEOUT_MS}ms`));
+				return;
+			}
 			if (code !== 0) {
 				reject(new Error(`Python script failed with code ${code}: ${stderr}`));
 				return;
@@ -131,6 +153,7 @@ function runPythonScript(scriptPath: string, inputData: any): Promise<any> {
 
 		// Handle errors
 		python.on('error', (error) => {
+			clearTimeout(timer);
 			reject(new Error(`Failed to start Python process: ${error.message}`));
 		});
 	});

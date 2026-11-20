@@ -88,7 +88,7 @@ export const SEARCH_CONFIG = {
 } as const;
 
 // Type definitions for better TypeScript support
-export type SimilarityRange = typeof SEARCH_CONFIG.SIMILARITY_RANGES[0];
+export type SimilarityRange = (typeof SEARCH_CONFIG.SIMILARITY_RANGES)[number];
 export type SearchConfigType = typeof SEARCH_CONFIG;
 
 // Helper functions for working with configuration

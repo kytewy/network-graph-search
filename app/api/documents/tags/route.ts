@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pinecone } from '@pinecone-database/pinecone';
+import { LIMITS, badRequest, rateLimit, serverError, tagWritesAllowed } from '@/lib/utils/api-guard';
 
 function getPineconeIndex() {
 	if (!process.env.PINECONE_API_KEY || !process.env.PINECONE_INDEX_NAME) {
@@ -61,6 +62,17 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+	const limited = rateLimit(request, 'tags');
+	if (limited) return limited;
+
+	// Writes change data in Pinecone; the public demo is read-only by default
+	if (!tagWritesAllowed()) {
+		return NextResponse.json(
+			{ error: 'Tag editing is turned off on this deployment' },
+			{ status: 403 }
+		);
+	}
+
 	try {
 		// Check if Pinecone is configured
 		if (!process.env.PINECONE_API_KEY || !process.env.PINECONE_INDEX_NAME) {
@@ -73,22 +85,18 @@ export async function PATCH(request: NextRequest) {
 		const body = await request.json();
 		const { documentIds, tag, action } = body;
 
-		console.log('[Tags PATCH] Request body:', { documentIds, tag, action });
-
 		// Validation
-		if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
-			console.error('[Tags PATCH] Invalid documentIds:', documentIds);
-			return NextResponse.json(
-				{ error: 'documentIds must be a non-empty array' },
-				{ status: 400 }
-			);
+		if (
+			!Array.isArray(documentIds) ||
+			documentIds.length === 0 ||
+			documentIds.length > LIMITS.MAX_TAG_DOCS ||
+			!documentIds.every((id: unknown) => typeof id === 'string')
+		) {
+			return badRequest(`documentIds must be 1 to ${LIMITS.MAX_TAG_DOCS} strings`);
 		}
 
-		if (!tag || typeof tag !== 'string' || tag.trim() === '') {
-			return NextResponse.json(
-				{ error: 'tag must be a non-empty string' },
-				{ status: 400 }
-			);
+		if (!tag || typeof tag !== 'string' || tag.trim() === '' || tag.length > LIMITS.MAX_TAG_CHARS) {
+			return badRequest(`tag must be 1 to ${LIMITS.MAX_TAG_CHARS} characters`);
 		}
 
 		if (action !== 'add' && action !== 'remove') {
@@ -104,11 +112,9 @@ export async function PATCH(request: NextRequest) {
 		// Fetch current metadata for each document
 		const fetchResponse = await index.fetch(documentIds);
 		
-		console.log('Fetch response:', fetchResponse); // Debug log
-		
 		if (!fetchResponse.records) {
 			return NextResponse.json(
-				{ error: 'Failed to fetch documents from Pinecone', debug: 'No records returned' },
+				{ error: 'Failed to fetch documents' },
 				{ status: 500 }
 			);
 		}
@@ -162,10 +168,6 @@ export async function PATCH(request: NextRequest) {
 			message: `${action === 'add' ? 'Added' : 'Removed'} tag "${tag}" ${action === 'add' ? 'to' : 'from'} ${updated} document(s)`,
 		});
 	} catch (error) {
-		console.error('Error updating tags:', error);
-		return NextResponse.json(
-			{ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-			{ status: 500 }
-		);
+		return serverError('tags-patch', error, 'Failed to update tags');
 	}
 }

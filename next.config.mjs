@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	eslint: {
+		// ESLint isn't configured for this project yet; type errors still fail the build.
 		ignoreDuringBuilds: true,
 	},
 	typescript: {
-		ignoreBuildErrors: true,
+		ignoreBuildErrors: false,
 	},
 	images: {
 		unoptimized: true,

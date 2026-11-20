@@ -26,5 +26,6 @@ export * from './theme-config';
 export * from './types';
 
 // Resolve naming conflicts by explicitly re-exporting
+export type { SimilarityRange } from './types';
 export type { SimilarityRange as SearchSimilarityRange } from './search-config';
 export type { SimilarityRange as TypesSimilarityRange } from './types';

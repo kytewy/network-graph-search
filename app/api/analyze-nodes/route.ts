@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { openai } from '@/lib/utils/openai-client';
 import { buildAnalyzeNodesPrompt, PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
+import { LIMITS, badRequest, rateLimit, serverError } from '@/lib/utils/api-guard';
 
 export async function POST(request: NextRequest) {
+	const limited = rateLimit(request, 'llm');
+	if (limited) return limited;
+
 	try {
-		const { nodes, analysisType, customPrompt } = await request.json();
+		const { nodes, customPrompt } = await request.json();
 
 		// Validate input
 		if (!nodes || !Array.isArray(nodes)) {
@@ -12,6 +16,17 @@ export async function POST(request: NextRequest) {
 				{ error: 'Invalid nodes provided' },
 				{ status: 400 }
 			);
+		}
+
+		if (nodes.length === 0 || nodes.length > LIMITS.MAX_NODES_LLM) {
+			return badRequest(`Send between 1 and ${LIMITS.MAX_NODES_LLM} nodes`);
+		}
+
+		if (
+			customPrompt !== undefined &&
+			(typeof customPrompt !== 'string' || customPrompt.length > LIMITS.MAX_PROMPT_CHARS)
+		) {
+			return badRequest(`Prompt must be text under ${LIMITS.MAX_PROMPT_CHARS} characters`);
 		}
 
 		// Build prompt using centralized prompt library
@@ -35,10 +50,6 @@ export async function POST(request: NextRequest) {
 			summary,
 		});
 	} catch (error) {
-		console.error('Error analyzing nodes:', error);
-		return NextResponse.json(
-			{ error: 'Failed to analyze nodes', details: error instanceof Error ? error.message : 'Unknown error' },
-			{ status: 500 }
-		);
+		return serverError('analyze-nodes', error, 'Failed to analyze nodes');
 	}
 }

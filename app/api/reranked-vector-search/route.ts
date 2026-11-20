@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchPinecone } from '@/lib/services/vector_search';
 import { buildPineconeFilter, logFilterExpression } from '@/lib/utils/pinecone-filters';
+import { LIMITS, badRequest, rateLimit, serverError } from '@/lib/utils/api-guard';
 
 export async function POST(request: NextRequest) {
+	const limited = rateLimit(request, 'search');
+	if (limited) return limited;
+
 	try {
 		// Parse the request body
 		const body = await request.json();
@@ -13,11 +17,17 @@ export async function POST(request: NextRequest) {
 		} = body;
 
 		// Validate required parameters
-		if (!query) {
-			return NextResponse.json(
-				{ error: 'Query parameter is required' },
-				{ status: 400 }
-			);
+		if (!query || typeof query !== 'string') {
+			return badRequest('Query parameter is required');
+		}
+
+		if (query.length > LIMITS.MAX_QUERY_CHARS) {
+			return badRequest(`Query must be under ${LIMITS.MAX_QUERY_CHARS} characters`);
+		}
+
+		const requestedTopK = Number(topK);
+		if (!Number.isInteger(requestedTopK) || requestedTopK < 1 || requestedTopK > LIMITS.MAX_TOP_K) {
+			return badRequest(`topK must be a whole number from 1 to ${LIMITS.MAX_TOP_K}`);
 		}
 
 		// Build Pinecone metadata filter expression from user filters
@@ -25,10 +35,8 @@ export async function POST(request: NextRequest) {
 		logFilterExpression(filters, pineconeFilter);
 
 		// Use the searchPinecone function with reranking enabled and filters
-		const { results } = await searchPinecone(query, topK, true, pineconeFilter);
+		const { results } = await searchPinecone(query, requestedTopK, true, pineconeFilter);
 
-		// Log the results structure to understand the format
-		console.log('Results structure:', JSON.stringify(results, null, 2));
 
 		// Define interfaces for nodes and edges
 		interface Node {
@@ -102,14 +110,6 @@ export async function POST(request: NextRequest) {
 				return node;
 			});
 
-			// Log tags for each node
-			console.log('[Search] Nodes with tags:');
-			nodes.forEach(node => {
-				if (node.tags && node.tags.length > 0) {
-					console.log(`  ${node.id}: [${node.tags.join(', ')}]`);
-				}
-			});
-
 			// Then create edges based on connected_to field
 			// This is similar to the Python example's edge creation logic
 			hits.forEach((hit: any) => {
@@ -143,15 +143,7 @@ export async function POST(request: NextRequest) {
 			edges,
 			rawResponse: results, // Include raw response for processApiResponse
 		});
-	} catch (error: any) {
-		console.error('Error in reranked vector search:', error);
-		return NextResponse.json(
-			{
-				error: 'Failed to perform reranked vector search',
-				message: error.message,
-				stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-			},
-			{ status: 500 }
-		);
+	} catch (error) {
+		return serverError('reranked-vector-search', error, 'Search failed');
 	}
 }

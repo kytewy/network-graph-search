@@ -44,7 +44,8 @@ export function SearchResults() {
 	
 	// Get context store methods
 	const contextNodes = useContextStore((state) => state.contextNodes);
-	const toggleNodeInContext = useContextStore((state) => state.toggleNodeInContext);
+	const addNodesToContext = useContextStore((state) => state.addNodesToContext);
+	const removeNodeFromContext = useContextStore((state) => state.removeNodeFromContext);
 
 	useEffect(() => {
 		setIsClient(true);
@@ -68,7 +69,12 @@ export function SearchResults() {
 
 	// Handle toggling context
 	const handleToggleContext = (nodeId: string) => {
-		toggleNodeInContext(nodeId);
+		if (isNodeInContext(nodeId)) {
+			removeNodeFromContext(nodeId);
+			return;
+		}
+		const node = filteredResults.find((n) => n.id === nodeId);
+		if (node) addNodesToContext([node]);
 	};
 
 	// Normalize and sort results by score

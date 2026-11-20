@@ -67,6 +67,7 @@ export interface Link {
   target: string;
   weight?: number;
   type?: string;
+  label?: string;
 }
 
 /**

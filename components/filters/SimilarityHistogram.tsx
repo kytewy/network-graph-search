@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/stores/app-state';
+import type { Node } from '@/lib/config/types';
 import { safeIncludes, ensureArray } from '@/lib/utils/array-safety';
 import { logArrayOperation } from '@/lib/utils/error-tracker';
 import { SEARCH_CONFIG } from '@/lib/config/search-config';
@@ -49,7 +50,11 @@ export function SimilarityHistogram() {
 			// 1. _score from Pinecone API (already between 0-1)
 			// 2. score from processed results (already between 0-1)
 			// 3. similarity from other sources (already between 0-1)
-			const similarity = node._score || node.score || node.similarity || 0;
+			const similarity =
+				(node as Node & { _score?: number })._score ||
+				node.score ||
+				node.similarity ||
+				0;
 
 			return {
 				...node,

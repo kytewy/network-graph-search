@@ -180,6 +180,8 @@ describe('Search Functionality', () => {
           tags: [],
           url: '',
           fields: {},
+          size: 10,
+          color: '#000000',
         },
         {
           id: 'doc2',
@@ -196,6 +198,8 @@ describe('Search Functionality', () => {
           tags: [],
           url: '',
           fields: {},
+          size: 10,
+          color: '#000000',
         },
         {
           id: 'doc3',
@@ -212,6 +216,8 @@ describe('Search Functionality', () => {
           tags: [],
           url: '',
           fields: {},
+          size: 10,
+          color: '#000000',
         },
       ];
 
