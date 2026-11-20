@@ -6,7 +6,7 @@
 
 ### Frontend
 
-- **Next.js 14** - React framework with App Router
+- **Next.js 15** - React framework with App Router
 - **Reagraph** - Network graph visualization (WebGL powered)
 - **TypeScript** - Type safety throughout
 - **Tailwind CSS + shadcn/ui** - Modern UI components
@@ -49,7 +49,7 @@
 │                              ↓                                      │
 │                   ┌────────────────────────┐                        │
 │                   │   Reagraph Canvas      │                        │
-│                   │   (3D Force Graph)     │                        │
+│                   │   (2D Force Graph)     │                        │
 │                   └────────────────────────┘                        │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘

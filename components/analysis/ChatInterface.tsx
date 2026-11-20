@@ -1,4 +1,5 @@
 'use client';
+import { debugLog } from '@/lib/utils/debug';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -138,7 +139,7 @@ export default function ChatInterface({
 			// Auto-send the message
 			handleSendMessage(message);
 
-			console.log('[ChatInterface] Received cluster analysis request:', {
+			debugLog('[ChatInterface] Received cluster analysis request:', {
 				nodeCount: nodes?.length || 0,
 			});
 		};

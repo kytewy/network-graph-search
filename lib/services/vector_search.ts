@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/utils/debug';
 /**
  * Pinecone client service for vector search operations
  * Updated to use official Pinecone JavaScript SDK v6.1.2 with integrated embeddings
@@ -87,7 +88,7 @@ export async function searchPinecone(
 		// Add metadata filters if provided
 		if (filters && Object.keys(filters).length > 0) {
 			searchQuery.query.filter = filters;
-			console.log('[Vector Search] Applying Pinecone filters:', JSON.stringify(filters, null, 2));
+			debugLog('[Vector Search] Applying Pinecone filters:', JSON.stringify(filters, null, 2));
 		}
 
 		// Search using the exact pattern from the documentation

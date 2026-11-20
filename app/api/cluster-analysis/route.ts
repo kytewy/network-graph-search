@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/utils/debug';
 import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
@@ -97,7 +98,7 @@ function runPythonScript(scriptPath: string, inputData: any): Promise<any> {
 			}
 		}
 
-		console.log(`[Cluster Analysis] Using Python: ${pythonCommand}`);
+		debugLog(`[Cluster Analysis] Using Python: ${pythonCommand}`);
 
 		const python = spawn(pythonCommand, [scriptPath]);
 

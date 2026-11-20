@@ -1,4 +1,5 @@
 'use client';
+import { debugLog } from '@/lib/utils/debug';
 
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ export function GraphPageClient() {
 
 	// Setup error tracking on component mount
 	useEffect(() => {
-		console.log('🔧 [GraphPageClient] Setting up error tracking...');
+		debugLog('🔧 [GraphPageClient] Setting up error tracking...');
 		setupErrorTracking();
 	}, []);
 

@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/utils/debug';
 import { create } from 'zustand';
 import type { Node, Link } from '@/lib/config/types';
 
@@ -157,7 +158,7 @@ export const useAppStore = create<AppState>()(
 		// Toggle a similarity range selection
 		toggleSimilarityRange: (range) => {
 			set((state) => {
-				console.log('🔍 [toggleSimilarityRange] Called with:', {
+				debugLog('🔍 [toggleSimilarityRange] Called with:', {
 					range,
 					selectedSimilarityRanges: state.selectedSimilarityRanges,
 					isArray: Array.isArray(state.selectedSimilarityRanges)
@@ -192,7 +193,7 @@ export const useAppStore = create<AppState>()(
 					selectedTags,
 				} = state;
 
-				console.log('🔍 [applyFilters] Starting with state:', {
+				debugLog('🔍 [applyFilters] Starting with state:', {
 					searchResultsCount: Array.isArray(searchResults) ? searchResults.length : 'Not array',
 					selectedSimilarityRanges: selectedSimilarityRanges,
 					selectedContinents: selectedContinents,
@@ -364,7 +365,7 @@ export const useAppStore = create<AppState>()(
 				similarityRanges: state.selectedSimilarityRanges || [],
 			};
 
-			console.log('[Store] Sending filters to API:', filters);
+			debugLog('[Store] Sending filters to API:', filters);
 
 			try {
 				const response = await fetch('/api/reranked-vector-search', {

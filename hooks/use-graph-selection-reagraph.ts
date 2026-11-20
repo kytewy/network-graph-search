@@ -1,4 +1,5 @@
 'use client';
+import { debugLog } from '@/lib/utils/debug';
 
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
@@ -35,7 +36,7 @@ export function useGraphSelectionReagraph(
 
   // Get selected nodes and edges based on IDs
   const selections = useMemo(() => {
-    console.log('🔍 [useGraphSelectionReagraph] Creating selections with:', {
+    debugLog('🔍 [useGraphSelectionReagraph] Creating selections with:', {
       selectedNodeIds,
       selectedNodeIdsType: typeof selectedNodeIds,
       selectedNodeIdsIsArray: Array.isArray(selectedNodeIds),
@@ -61,7 +62,7 @@ export function useGraphSelectionReagraph(
       edges: selectedEdges,
     };
 
-    console.log('🔍 [useGraphSelectionReagraph] Selections result:', {
+    debugLog('🔍 [useGraphSelectionReagraph] Selections result:', {
       selectedNodesCount: selectedNodes.length,
       selectedEdgesCount: selectedEdges.length,
       result
@@ -72,10 +73,10 @@ export function useGraphSelectionReagraph(
 
   // Handle node click - toggle selection and update context panel
   const handleNodeClick = useCallback((node: GraphNode) => {
-    console.log('🔍 [useGraphSelectionReagraph] Node clicked:', { node: node.id });
+    debugLog('🔍 [useGraphSelectionReagraph] Node clicked:', { node: node.id });
     
     setSelectedNodeIds(prev => {
-      console.log('🔍 [useGraphSelectionReagraph] Previous selectedNodeIds:', prev);
+      debugLog('🔍 [useGraphSelectionReagraph] Previous selectedNodeIds:', prev);
       const safeArray = Array.isArray(prev) ? prev : [];
       logArrayOperation('handleNodeClick includes check', safeArray, `useGraphSelectionReagraph checking if ${node.id} is selected`);
       const isSelected = safeArray.includes(node.id);

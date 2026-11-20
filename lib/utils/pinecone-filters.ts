@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/utils/debug';
 /**
  * Utility functions for building Pinecone metadata filter expressions
  * 
@@ -113,11 +114,11 @@ export function buildPineconeFilter(filters: FilterMetadata): Record<string, any
  * Log the filter expression in a readable format for debugging
  */
 export function logFilterExpression(filters: FilterMetadata, expression: Record<string, any> | undefined) {
-	console.log('[Pinecone Filter] Input filters:', JSON.stringify(filters, null, 2));
+	debugLog('[Pinecone Filter] Input filters:', JSON.stringify(filters, null, 2));
 	
 	if (expression) {
-		console.log('[Pinecone Filter] Generated expression:', JSON.stringify(expression, null, 2));
+		debugLog('[Pinecone Filter] Generated expression:', JSON.stringify(expression, null, 2));
 	} else {
-		console.log('[Pinecone Filter] No filters applied');
+		debugLog('[Pinecone Filter] No filters applied');
 	}
 }

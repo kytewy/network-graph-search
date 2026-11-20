@@ -116,7 +116,7 @@ def test_scraper():
                     "title": title,
                     "content": content,
                     "continent": "Europe",
-                    "sourceType": "NGO",
+                    "sourceType": "Government",
                     "url": url,
                     "content_length": len(content)
                 }

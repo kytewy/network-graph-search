@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/utils/debug';
 /**
  * Error Tracking Utilities
  * 
@@ -12,7 +13,7 @@ export function setupErrorTracking() {
     const errorMessage = args.join(' ');
     
     if (errorMessage.includes('includes is not a function')) {
-      console.log('🚨 [ERROR TRACKER] INCLUDES ERROR DETECTED!', {
+      debugLog('🚨 [ERROR TRACKER] INCLUDES ERROR DETECTED!', {
         timestamp: new Date().toISOString(),
         errorMessage,
         stackTrace: new Error().stack,
@@ -20,7 +21,7 @@ export function setupErrorTracking() {
       });
       
       // Try to get more context about what triggered this
-      console.log('🚨 [ERROR TRACKER] Current component stack:', {
+      debugLog('🚨 [ERROR TRACKER] Current component stack:', {
         reactFiberNode: (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__?.getFiberRoots?.(1)?.[0]?.current?.child?.type?.name || 'Unknown'
       });
     }
@@ -32,7 +33,7 @@ export function setupErrorTracking() {
   // Also catch unhandled errors
   window.addEventListener('error', (event) => {
     if (event.message.includes('includes is not a function')) {
-      console.log('🚨 [ERROR TRACKER] UNHANDLED INCLUDES ERROR!', {
+      debugLog('🚨 [ERROR TRACKER] UNHANDLED INCLUDES ERROR!', {
         timestamp: new Date().toISOString(),
         message: event.message,
         filename: event.filename,
@@ -44,12 +45,12 @@ export function setupErrorTracking() {
     }
   });
 
-  console.log('✅ [ERROR TRACKER] Error tracking setup complete');
+  debugLog('✅ [ERROR TRACKER] Error tracking setup complete');
 }
 
 // Function to log array operations
 export function logArrayOperation(operation: string, array: any, context: string) {
-  console.log(`🔍 [ARRAY OP] ${operation} in ${context}:`, {
+  debugLog(`🔍 [ARRAY OP] ${operation} in ${context}:`, {
     array,
     type: typeof array,
     isArray: Array.isArray(array),

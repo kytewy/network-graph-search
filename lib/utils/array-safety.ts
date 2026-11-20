@@ -1,3 +1,4 @@
+import { debugLog } from '@/lib/utils/debug';
 /**
  * Array Safety Utilities
  * 
@@ -13,7 +14,7 @@
  */
 export function safeIncludes<T>(array: T[] | undefined | null, value: T): boolean {
   // Add detailed logging to track usage
-  console.log('🔍 [safeIncludes] Called with:', {
+  debugLog('🔍 [safeIncludes] Called with:', {
     array: array,
     arrayType: typeof array,
     isArray: Array.isArray(array),
@@ -26,7 +27,7 @@ export function safeIncludes<T>(array: T[] | undefined | null, value: T): boolea
   const isValidArray = Array.isArray(array);
   const result = isValidArray && array.includes(value);
   
-  console.log('🔍 [safeIncludes] Result:', {
+  debugLog('🔍 [safeIncludes] Result:', {
     isValidArray,
     result,
     arrayContent: isValidArray ? array.slice(0, 5) : 'Invalid array' // First 5 items for debugging

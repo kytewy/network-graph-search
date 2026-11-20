@@ -40,7 +40,7 @@ class EUAIActStandardizedScraper:
                 'type': 'article',
                 'title': self._extract_title(soup),
                 'continent': 'Europe',
-                'sourceType': 'NGO',
+                'sourceType': 'Government',
                 'content': content,
                 'content_length': len(content) if content else 0,
                 'summary': summary,
@@ -108,6 +108,8 @@ class EUAIActStandardizedScraper:
                 content = match.group(1).strip()
                 # Clean up HTML tags and extra whitespace
                 content = re.sub(r'<[^>]+>', '', content)
+                # Drop a tag cut off at the end of the match (e.g. '<span class="nav-')
+                content = re.sub(r'<[^>]*$', '', content)
                 content = re.sub(r'\s+', ' ', content)
                 if len(content) > 100:  # Must be substantial content
                     return self._clean_content_text(content)
@@ -485,7 +487,7 @@ class EUAIActStandardizedScraper:
             'total_articles': len(content_nodes),
             'scraped_at': datetime.now().isoformat(),
             'continent': 'Europe',
-            'sourceType': 'NGO'
+            'sourceType': 'Government'
         }
         
         # Just return the array of flattened article objects

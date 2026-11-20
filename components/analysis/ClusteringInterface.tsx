@@ -1,4 +1,5 @@
 'use client';
+import { debugLog } from '@/lib/utils/debug';
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -49,7 +50,7 @@ export default function ClusteringInterface({
 	const [error, setError] = useState<string | null>(null);
 
 	// DEBUG: Log received props
-	console.log('[ClusteringInterface] Received props:', {
+	debugLog('[ClusteringInterface] Received props:', {
 		allNodes_count: allNodes?.length || 0,
 		allNodes_type: typeof allNodes,
 		allNodes_isArray: Array.isArray(allNodes),
@@ -155,7 +156,7 @@ export default function ClusteringInterface({
 			});
 
 			setClusterSuggestions(suggestions);
-			console.log('[Clustering] Generated LLM suggestions:', suggestions);
+			debugLog('[Clustering] Generated LLM suggestions:', suggestions);
 		} catch (error) {
 			console.error('[Clustering] Error generating suggestions:', error);
 		} finally {
@@ -194,7 +195,7 @@ export default function ClusteringInterface({
 			const data: ClusterAnalysisResponse = await response.json();
 
 			// Log what we received from API
-			console.log('[Clustering] API Response:', {
+			debugLog('[Clustering] API Response:', {
 				cluster_count: data.clusters?.length,
 				clusters_with_node_ids: data.clusters?.map((c) => ({
 					id: c.cluster_id,
@@ -268,7 +269,7 @@ export default function ClusteringInterface({
 			);
 		}, 100);
 
-		console.log('[Clustering] Sent cluster to chat:', {
+		debugLog('[Clustering] Sent cluster to chat:', {
 			cluster: suggestion?.clusterName || cluster.cluster_id,
 			nodeCount: clusterNodes.length,
 		});
@@ -309,13 +310,13 @@ export default function ClusteringInterface({
 			cluster.node_ids.forEach((nodeId) => {
 				removeNodeFromContext(nodeId);
 			});
-			console.log(
+			debugLog(
 				'[Clustering] Removed cluster from context:',
 				cluster.cluster_id
 			);
 		} else {
 			// Add cluster nodes to context - filter from ALL available nodes
-			console.log('[Clustering] Attempting to add cluster:', {
+			debugLog('[Clustering] Attempting to add cluster:', {
 				cluster_id: cluster.cluster_id,
 				cluster_node_ids: cluster.node_ids,
 				allNodes_count: allNodes.length,
@@ -342,7 +343,7 @@ export default function ClusteringInterface({
 			}
 
 			addNodesToContext(clusterNodes);
-			console.log('[Clustering] Added cluster to context:', {
+			debugLog('[Clustering] Added cluster to context:', {
 				cluster_id: cluster.cluster_id,
 				nodes_added: clusterNodes.length,
 				node_ids: clusterNodes.map((n) => n.id),
@@ -370,7 +371,7 @@ export default function ClusteringInterface({
 		setIsTagging(true);
 		setError(null);
 
-		console.log('[Tagging] Adding tag to cluster:', {
+		debugLog('[Tagging] Adding tag to cluster:', {
 			cluster_id: cluster.cluster_id,
 			node_ids: cluster.node_ids,
 			tag: tagInput.trim(),

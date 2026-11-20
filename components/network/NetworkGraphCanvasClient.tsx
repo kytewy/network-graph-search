@@ -1,4 +1,5 @@
 'use client';
+import { debugLog } from '@/lib/utils/debug';
 
 import dynamic from 'next/dynamic';
 import { LassoSelectionMenu } from './LassoSelectionMenu';
@@ -51,7 +52,7 @@ export function NetworkGraphCanvasClient() {
 		clusterMode !== 'none' ? clusterMode : undefined;
 
 	// Log the selections prop being passed to GraphCanvas
-	console.log('🔍 [NetworkGraphCanvasClient] About to render GraphCanvas with:', {
+	debugLog('🔍 [NetworkGraphCanvasClient] About to render GraphCanvas with:', {
 		selectionsType: typeof selections,
 		selections: selections,
 		selectionsNodes: selections?.nodes,
@@ -78,7 +79,7 @@ export function NetworkGraphCanvasClient() {
 	const safeGraphNodes = Array.isArray(graphNodes) ? graphNodes : [];
 	const safeGraphEdges = Array.isArray(graphEdges) ? graphEdges : [];
 
-	console.log('🔍 [NetworkGraphCanvasClient] Safe props created:', {
+	debugLog('🔍 [NetworkGraphCanvasClient] Safe props created:', {
 		safeSelections,
 		safeGraphNodesLength: safeGraphNodes.length,
 		safeGraphEdgesLength: safeGraphEdges.length

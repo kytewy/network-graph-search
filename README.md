@@ -193,7 +193,7 @@ network-graph-search/
 - **Graph Layout:** Reagraph force-directed algorithm (WebGL-accelerated)
 
 **Full-Stack:**
-- **Frontend:** Next.js 14 (App Router), React, TypeScript, TailwindCSS
+- **Frontend:** Next.js 15 (App Router), React, TypeScript, TailwindCSS
 - **State:** Zustand (4 domain-specific stores)
 - **Backend:** Next.js API routes + Python subprocess
 - **Testing:** Jest + React Testing Library, GitHub Actions CI
@@ -206,6 +206,17 @@ network-graph-search/
 - **[System Architecture](./docs/sys-architecture.md)** - Tech stack, system design, and data flow
 - **[Technical Decisions](./docs/tech-decisions.md)** - Why we chose these technologies
 - **[Data Pipeline](./docs/data-pipeline.md)** - Data upload scripts and ingestion process
+
+---
+
+### Optional Settings
+
+Add these to `.env` if you need them:
+
+- `NEXT_PUBLIC_DEBUG=true` turns on debug logging in the browser console and server output.
+- `ALLOW_TAG_WRITES=true` allows tag editing in production. It is always allowed in development.
+
+Public API routes are rate limited per IP and cap request sizes; see `lib/utils/api-guard.ts`.
 
 ---
 
