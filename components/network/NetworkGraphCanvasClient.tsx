@@ -6,10 +6,11 @@ import { LassoSelectionMenu } from './LassoSelectionMenu';
 import { VisualizationControls } from '@/components/network/VisualizationControls';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { NodeContextMenu } from './NodeContextMenu';
-import { GRAPH_LAYOUT_CONFIG, PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/config/graph-config';
+import { PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/config/graph-config';
 import { Z_INDEX } from '@/lib/config/graph-config';
 import { logArrayOperation } from '@/lib/utils/error-tracker';
 import { useNetworkStore } from '@/lib/stores/network-store';
+import { useLayoutOverrides } from '@/hooks/use-layout-overrides';
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
 const GraphCanvas = dynamic(
@@ -54,6 +55,7 @@ export function NetworkGraphCanvasClient() {
 	// Simply use the clusterMode as the attribute name since all properties are attached to nodes
 	const activeClusterAttribute =
 		clusterMode !== 'none' ? clusterMode : undefined;
+	const layoutOverrides = useLayoutOverrides(Boolean(activeClusterAttribute));
 
 	// Log the selections prop being passed to GraphCanvas
 	debugLog('🔍 [NetworkGraphCanvasClient] About to render GraphCanvas with:', {
@@ -120,11 +122,8 @@ export function NetworkGraphCanvasClient() {
 						nodes={safeGraphNodes}
 						edges={safeGraphEdges}
 						layoutType={layoutType}
-						layoutOverrides={{
-							clusterStrength: activeClusterAttribute ? GRAPH_LAYOUT_CONFIG.clusterStrength : 0,
-							linkDistance: GRAPH_LAYOUT_CONFIG.linkDistance,
-							nodeStrength: GRAPH_LAYOUT_CONFIG.nodeStrength,
-						}}
+						// Same object between renders, or reagraph re-runs the layout
+						layoutOverrides={layoutOverrides}
 						// Temporarily disable selections to isolate the error
 						// selections={safeSelections}
 						// Recolours hovered nodes without moving the layout
