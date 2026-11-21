@@ -1,4 +1,5 @@
 import { debugLog } from '@/lib/utils/debug';
+import { createLatestRequest, isAbortError } from '@/lib/utils/latest-request';
 import { create } from 'zustand';
 import type { Node, Link } from '@/lib/config/types';
 
@@ -8,6 +9,9 @@ export type { Node, Link };
 import { SearchDataNormalizer } from '@/lib/utils/search-data-normalizer';
 import { devtools } from 'zustand/middleware';
 import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from './country_map';
+
+// A new search cancels the one still running
+const searchRequests = createLatestRequest();
 
 // Define the app state interface
 interface AppState {
@@ -357,14 +361,19 @@ export const useAppStore = create<AppState>()(
 
 			debugLog('[Store] Sending filters to API:', filters);
 
+			const signal = searchRequests.next();
+
 			try {
 				const response = await fetch('/api/reranked-vector-search', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ query, topK, filters }),
+					signal,
 				});
 
 				const data = await response.json();
+				// A newer search started while this one was in flight
+				if (signal.aborted) return;
 
 				if (!response.ok) {
 					// API routes return { error }; older responses used { message }
@@ -381,10 +390,12 @@ export const useAppStore = create<AppState>()(
 				}
 				state.setHasSearched(true);
 			} catch (err: any) {
+				if (signal.aborted || isAbortError(err)) return;
 				console.error('Search error:', err);
 				state.setError(err.message || 'An error occurred during search');
 			} finally {
-				state.setIsLoading(false);
+				// The newer search owns the spinner
+				if (!signal.aborted) state.setIsLoading(false);
 			}
 		},
 

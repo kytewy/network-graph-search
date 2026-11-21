@@ -117,6 +117,54 @@ describe('Search Functionality', () => {
       expect(useAppStore.getState().error).toBe('Query must be under 500 characters');
     });
 
+    it('ignores an older search that finishes after a newer one', async () => {
+      const reply = (label: string) => ({
+        ok: true,
+        json: async () => ({
+          rawResponse: { result: { hits: [{ _id: label, _score: 0.9, fields: { label } }] } },
+        }),
+      });
+      let finishFirst: (value: unknown) => void = () => {};
+      (global.fetch as jest.Mock)
+        .mockImplementationOnce(() => new Promise((resolve) => { finishFirst = resolve; }))
+        .mockResolvedValueOnce(reply('asia'));
+
+      const store = useAppStore.getState();
+      const first = store.performSearch('europe');
+      await store.performSearch('asia');
+      finishFirst(reply('europe'));
+      await first;
+
+      const state = useAppStore.getState();
+      expect(state.searchResults.map((n) => n.id)).toEqual(['asia']);
+      expect(state.error).toBeNull();
+      expect(state.isLoading).toBe(false);
+      const [firstCall, secondCall] = (global.fetch as jest.Mock).mock.calls;
+      expect(firstCall[1].signal.aborted).toBe(true);
+      expect(secondCall[1].signal.aborted).toBe(false);
+    });
+
+    it('keeps the spinner on while the newer search is still running', async () => {
+      let finishSecond: (value: unknown) => void = () => {};
+      (global.fetch as jest.Mock)
+        .mockImplementationOnce((_url, init) => new Promise((_resolve, reject) => {
+          init.signal.addEventListener('abort', () =>
+            reject(Object.assign(new Error('aborted'), { name: 'AbortError' })));
+        }))
+        .mockImplementationOnce(() => new Promise((resolve) => { finishSecond = resolve; }));
+
+      const store = useAppStore.getState();
+      const first = store.performSearch('europe');
+      const second = store.performSearch('asia');
+      await first;
+
+      expect(useAppStore.getState().isLoading).toBe(true);
+      expect(useAppStore.getState().error).toBeNull();
+      finishSecond({ ok: true, json: async () => ({ rawResponse: { result: { hits: [] } } }) });
+      await second;
+      expect(useAppStore.getState().isLoading).toBe(false);
+    });
+
     it('should not search with empty query', async () => {
       const store = useAppStore.getState();
       

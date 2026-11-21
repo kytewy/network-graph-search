@@ -9,6 +9,7 @@ import { X, Tag, Plus, Check } from 'lucide-react';
 import { Z_INDEX } from '@/lib/config/graph-config';
 import { Node } from '@/lib/config/types';
 import { useAppStore } from '@/lib/stores/app-state';
+import { isAbortError } from '@/lib/utils/latest-request';
 
 /**
  * Document display interface for reading mode
@@ -85,19 +86,24 @@ export default function DocumentOverlay({
 
 	// Fetch existing tags when document opens
 	useEffect(() => {
+		// Switching documents or closing the overlay cancels the old load
+		const controller = new AbortController();
 		const fetchTags = async () => {
 			try {
-				const response = await fetch(`/api/documents/tags?documentId=${documentItem.id}`);
+				const response = await fetch(`/api/documents/tags?documentId=${documentItem.id}`, {
+					signal: controller.signal,
+				});
 				if (response.ok) {
 					const data = await response.json();
-					setTags(data.tags || []);
+					if (!controller.signal.aborted) setTags(data.tags || []);
 				}
 			} catch (err) {
-				console.error('[Fetch Tags] Error:', err);
+				if (!isAbortError(err)) console.error('[Fetch Tags] Error:', err);
 			}
 		};
 
 		fetchTags();
+		return () => controller.abort();
 	}, [documentItem.id]);
 
 	// Set up and clean up when component mounts/unmounts
