@@ -22,6 +22,10 @@ interface AppState {
 	// Results state
 	searchResults: Node[];
 	filteredResults: Node[];
+	// Results the filter options are listed from: the latest search for this
+	// query without location or tag filters, so filtering doesn't hide options
+	facetResults: Node[];
+	facetQuery: string;
 	links: Link[];
 	filteredLinks: Link[];
 
@@ -84,7 +88,7 @@ interface AppState {
 	toggleContinent: (continent: string) => void; // Smart toggle: selects continent, deselects its individual countries
 	toggleCountry: (country: string) => void; // Smart toggle: selects country, deselects its continent
 	clearLocationFilters: () => void; // Reset all location filters
-	getEffectiveCountries: () => string[]; // Get all countries that should be included (from both continent and country selections)
+	rerunSearch: () => Promise<void>; // Re-run the last search so Pinecone applies changed filters
 
 	// Helper functions for counts and data access
 	getNodeCountByContinent: (continent: string) => number; // Get count of nodes for a specific continent
@@ -111,6 +115,8 @@ export const useAppStore = create<AppState>()(
 		searchStatus: '', // Moved from ui-store (Phase 1)
 		searchResults: [],
 		filteredResults: [],
+		facetResults: [],
+		facetQuery: '',
 		links: [],
 		filteredLinks: [],
 		colorMode: 'continent',
@@ -213,24 +219,9 @@ export const useAppStore = create<AppState>()(
 
 				let filtered = safeSearchResults;
 				
-				// STEP 1: Apply location filter (continent/country)
-				const effectiveCountries = get().getEffectiveCountries();
-				if (Array.isArray(effectiveCountries) && effectiveCountries.length > 0) {
-					// Use direct country property instead of fields.country
-					filtered = filtered.filter((node) =>
-						effectiveCountries.includes(node.country || '')
-					);
-				}
-
-				// STEP 2: Apply tag filter
-				const safeSelectedTags = Array.isArray(selectedTags) ? selectedTags : [];
-				if (safeSelectedTags.length > 0) {
-					filtered = filtered.filter((node) =>
-						Array.isArray(node.tags) && node.tags.some((tag: any) => safeSelectedTags.includes(tag))
-					);
-				}
-				
-				// STEP 3: Apply similarity range filter
+				// Location and tag filters run in Pinecone (see rerunSearch); the browser
+				// only applies similarity ranges, which depend on this search's scores.
+				// Similarity range filter (display only)
 				if (safeSelectedSimilarityRanges.length > 0) {
 					filtered = filtered.filter((node) => {
 						const similarity = Math.round((node.score || 0) * 100);
@@ -253,7 +244,7 @@ export const useAppStore = create<AppState>()(
 					});
 				}
 
-				// STEP 4: Filter links to only show connections between visible nodes
+				// Only show links between visible nodes
 				const nodeIds = new Set(filtered.map((node) => node.id));
 				const safeLinks = Array.isArray(state.links) ? state.links : [];
 				const filteredLinks = safeLinks.filter(
@@ -357,12 +348,11 @@ export const useAppStore = create<AppState>()(
 			state.setError(null);
 			state.setQuery(query);
 
-			// Collect filter metadata to send to API
+			// Filters Pinecone applies; similarity ranges stay in the browser
 			const filters = {
 				continents: state.selectedContinents || [],
 				countries: state.selectedCountries || [],
 				tags: state.selectedTags || [],
-				similarityRanges: state.selectedSimilarityRanges || [],
 			};
 
 			debugLog('[Store] Sending filters to API:', filters);
@@ -385,6 +375,10 @@ export const useAppStore = create<AppState>()(
 
 				state.setSearchResults(nodes);
 				state.setLinks(links);
+				const unfiltered = !filters.continents.length && !filters.countries.length && !filters.tags.length;
+				if (unfiltered || query !== get().facetQuery) {
+					set({ facetResults: nodes, facetQuery: query });
+				}
 				state.setHasSearched(true);
 			} catch (err: any) {
 				console.error('Search error:', err);
@@ -398,7 +392,7 @@ export const useAppStore = create<AppState>()(
 
 		clearLocationFilters: () => {
 			set({ selectedContinents: [], selectedCountries: [] });
-			get().applyFilters();
+			void get().rerunSearch();
 		},
 
 		// Smart continent toggling
@@ -436,7 +430,7 @@ export const useAppStore = create<AppState>()(
 					};
 				}
 			});
-			get().applyFilters();
+			void get().rerunSearch();
 		},
 
 		// Smart country toggling
@@ -466,26 +460,14 @@ export const useAppStore = create<AppState>()(
 					};
 				}
 			});
-			get().applyFilters();
+			void get().rerunSearch();
 		},
 
-		// Helper function to get all effective countries for filtering
-		// Combines countries from selected continents + individually selected countries
-		getEffectiveCountries: () => {
-			const { selectedContinents, selectedCountries } = get();
-			const safeContinents = Array.isArray(selectedContinents) ? selectedContinents : [];
-			const safeCountries = Array.isArray(selectedCountries) ? selectedCountries : [];
-
-			// Get all countries from selected continents
-			const countriesFromContinents = safeContinents.flatMap(
-				(continent) =>
-					CONTINENT_COUNTRY_MAP[
-						continent as keyof typeof CONTINENT_COUNTRY_MAP
-					] || []
-			);
-
-			// Combine and deduplicate using Set
-			return [...new Set([...countriesFromContinents, ...safeCountries])];
+		// Location and tag filters change which documents match, so they
+		// re-run the search instead of filtering loaded results in the browser
+		rerunSearch: async () => {
+			const { hasSearched, query, performSearch } = get();
+			if (hasSearched && query.trim()) await performSearch(query);
 		},
 
 		// Get count of nodes for a specific continent
@@ -503,10 +485,8 @@ export const useAppStore = create<AppState>()(
 
 		// Get list of all continents in current data
 		getAvailableContinents: () => {
-			// Use searchResults instead of filteredResults to show all available continents
-			// regardless of current filters
-			const { searchResults } = get();
-			const continents = searchResults
+			const { facetResults } = get();
+			const continents = facetResults
 				.map((node) => node.continent || '')
 				.filter((continent) => continent && continent.trim() !== '');
 			return [...new Set(continents)] as string[];
@@ -514,10 +494,8 @@ export const useAppStore = create<AppState>()(
 
 		// Get countries for a specific continent in current data
 		getCountriesByContinent: (continent: string) => {
-			// Use searchResults instead of filteredResults to show all available countries
-			// regardless of current filters
-			const { searchResults } = get();
-			const countries = searchResults
+			const { facetResults } = get();
+			const countries = facetResults
 				.filter((node) => node.continent === continent)
 				.map((node) => node.country || '')
 				.filter((country) => country && country.trim() !== '');
@@ -536,17 +514,17 @@ export const useAppStore = create<AppState>()(
 						: [...safeTags, tag],
 				};
 			});
-			get().applyFilters();
+			void get().rerunSearch();
 		},
 
 		clearTagFilters: () => {
 			set({ selectedTags: [] });
-			get().applyFilters();
+			void get().rerunSearch();
 		},
 
 		getAvailableTags: () => {
-			const { searchResults } = get();
-			const safeSearchResults = Array.isArray(searchResults) ? searchResults : [];
+			const { facetResults } = get();
+			const safeSearchResults = Array.isArray(facetResults) ? facetResults : [];
 			const tags = new Set<string>();
 			safeSearchResults.forEach((node) => {
 				if (Array.isArray(node.tags)) {

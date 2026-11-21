@@ -25,6 +25,8 @@ describe('Search Functionality', () => {
       searchStatus: '',
       searchResults: [],
       filteredResults: [],
+      facetResults: [],
+      facetQuery: '',
       links: [],
       filteredLinks: [],
       selectedContinents: [],
@@ -173,208 +175,100 @@ describe('Search Functionality', () => {
     });
   });
 
-  describe('Test 3: Filter by Continent', () => {
-    beforeEach(() => {
-      // Set up mock search results with different continents
-      const mockResults: Node[] = [
-        {
-          id: 'doc1',
-          score: 0.95,
-          label: 'European Document',
-          country: 'France',
-          continent: 'Europe',
-          category: '',
-          type: '',
-          text: '',
-          summary: '',
-          content: '',
-          sourceType: '',
-          tags: [],
-          url: '',
-          fields: {},
-          size: 10,
-          color: '#000000',
-        },
-        {
-          id: 'doc2',
-          score: 0.87,
-          label: 'Asian Document',
-          country: 'Japan',
-          continent: 'Asia',
-          category: '',
-          type: '',
-          text: '',
-          summary: '',
-          content: '',
-          sourceType: '',
-          tags: [],
-          url: '',
-          fields: {},
-          size: 10,
-          color: '#000000',
-        },
-        {
-          id: 'doc3',
-          score: 0.82,
-          label: 'North American Document',
-          country: 'USA',
-          continent: 'North America',
-          category: '',
-          type: '',
-          text: '',
-          summary: '',
-          content: '',
-          sourceType: '',
-          tags: [],
-          url: '',
-          fields: {},
-          size: 10,
-          color: '#000000',
-        },
-      ];
-
-      useAppStore.setState({
-        searchResults: mockResults,
-        filteredResults: mockResults,
-        hasSearched: true,
-      });
+  describe('Test 3: Filters run in Pinecone, not the browser', () => {
+    const hit = (id: string, continent: string, score: number) => ({
+      _id: id,
+      _score: score,
+      fields: { label: id, content: id, continent, country: '', tags: [] },
     });
-
-    it('should filter results by single continent', () => {
-      const store = useAppStore.getState();
-      
-      // Select Europe
-      store.toggleContinent('Europe');
-      
-      const state = useAppStore.getState();
-      expect(state.selectedContinents).toContain('Europe');
-      expect(state.filteredResults).toHaveLength(1);
-      expect(state.filteredResults[0].continent).toBe('Europe');
-    });
-
-    it('should filter results by multiple continents', () => {
-      const store = useAppStore.getState();
-      
-      // Select Europe and Asia
-      store.toggleContinent('Europe');
-      store.toggleContinent('Asia');
-      
-      const state = useAppStore.getState();
-      expect(state.selectedContinents).toHaveLength(2);
-      expect(state.filteredResults).toHaveLength(2);
-      
-      const continents = state.filteredResults.map(r => r.continent);
-      expect(continents).toContain('Europe');
-      expect(continents).toContain('Asia');
-      expect(continents).not.toContain('North America');
-    });
-
-    it('should toggle continent selection on/off', () => {
-      const store = useAppStore.getState();
-      
-      // Select Europe
-      store.toggleContinent('Europe');
-      expect(useAppStore.getState().selectedContinents).toContain('Europe');
-      expect(useAppStore.getState().filteredResults).toHaveLength(1);
-      
-      // Deselect Europe
-      store.toggleContinent('Europe');
-      expect(useAppStore.getState().selectedContinents).not.toContain('Europe');
-      expect(useAppStore.getState().filteredResults).toHaveLength(3); // All results
-    });
-
-    it('should clear all location filters', () => {
-      const store = useAppStore.getState();
-      
-      // Select multiple continents
-      store.toggleContinent('Europe');
-      store.toggleContinent('Asia');
-      expect(useAppStore.getState().selectedContinents).toHaveLength(2);
-      
-      // Clear filters
-      store.clearLocationFilters();
-      expect(useAppStore.getState().selectedContinents).toHaveLength(0);
-      expect(useAppStore.getState().filteredResults).toHaveLength(3); // All results
-    });
-  });
-
-  describe('Integration: Search + K Value + Continent Filter', () => {
-    it('should work together: search, change K, then filter by continent', async () => {
-      // Mock API response with diverse results
-      const mockResponse = {
-        rawResponse: {
-          result: {
-            hits: [
-              {
-                _id: 'doc1',
-                _score: 0.95,
-                fields: {
-                  label: 'European AI Act',
-                  content: 'EU AI regulation',
-                  country: 'Belgium',
-                  continent: 'Europe',
-                  tags: ['ai', 'regulation'],
-                },
-              },
-              {
-                _id: 'doc2',
-                _score: 0.87,
-                fields: {
-                  label: 'US Privacy Law',
-                  content: 'US privacy regulation',
-                  country: 'USA',
-                  continent: 'North America',
-                  tags: ['privacy'],
-                },
-              },
-              {
-                _id: 'doc3',
-                _score: 0.82,
-                fields: {
-                  label: 'Asian Data Protection',
-                  content: 'Asian data laws',
-                  country: 'Singapore',
-                  continent: 'Asia',
-                  tags: ['data'],
-                },
-              },
-            ],
-          },
-        },
-      };
-
+    const respond = (...hits: ReturnType<typeof hit>[]) =>
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockResponse,
+        json: async () => ({ rawResponse: { result: { hits } } }),
       });
+    const lastFilters = () => {
+      const calls = (global.fetch as jest.Mock).mock.calls;
+      return JSON.parse(calls[calls.length - 1][1].body).filters;
+    };
+    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-      const store = useAppStore.getState();
-      
-      // Step 1: Change K value
-      store.setTopK(30);
-      expect(useAppStore.getState().topK).toBe(30);
-      
-      // Step 2: Perform search
-      await store.performSearch('AI regulation', 30);
-      let state = useAppStore.getState();
-      expect(state.searchResults).toHaveLength(3);
-      expect(state.filteredResults).toHaveLength(3);
-      
-      // Step 3: Filter by continent
-      store.toggleContinent('Europe');
-      state = useAppStore.getState();
-      expect(state.filteredResults).toHaveLength(1);
-      expect(state.filteredResults[0].label).toBe('European AI Act');
-      
-      // Step 4: Add another continent
-      store.toggleContinent('Asia');
-      state = useAppStore.getState();
-      expect(state.filteredResults).toHaveLength(2);
-      
-      const labels = state.filteredResults.map(r => r.label);
-      expect(labels).toContain('European AI Act');
-      expect(labels).toContain('Asian Data Protection');
-      expect(labels).not.toContain('US Privacy Law');
+    beforeEach(async () => {
+      respond(hit('eu', 'Europe', 0.9), hit('asia', 'Asia', 0.5), hit('us', 'North America', 0.3));
+      await useAppStore.getState().performSearch('AI regulation');
+    });
+
+    it('re-runs the search with the continent sent to Pinecone', async () => {
+      respond(hit('eu', 'Europe', 0.9));
+      useAppStore.getState().toggleContinent('Europe');
+      await flush();
+
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(lastFilters().continents).toEqual(['Europe']);
+      expect(useAppStore.getState().filteredResults.map((n) => n.id)).toEqual(['eu']);
+    });
+
+    it('does not drop results in the browser for location', async () => {
+      // Pinecone matched on continent; the browser must not second-guess it
+      respond(hit('eu', 'Europe', 0.9), hit('eu2', 'Europe', 0.8));
+      useAppStore.getState().toggleContinent('Europe');
+      await flush();
+
+      expect(useAppStore.getState().filteredResults).toHaveLength(2);
+    });
+
+    it('brings documents back when a filter is removed', async () => {
+      respond(hit('eu', 'Europe', 0.9));
+      useAppStore.getState().toggleContinent('Europe');
+      await flush();
+
+      respond(hit('eu', 'Europe', 0.9), hit('asia', 'Asia', 0.5), hit('us', 'North America', 0.3));
+      useAppStore.getState().clearLocationFilters();
+      await flush();
+
+      expect(lastFilters().continents).toEqual([]);
+      expect(useAppStore.getState().filteredResults).toHaveLength(3);
+    });
+
+    it('re-runs the search when a tag filter changes', async () => {
+      respond(hit('eu', 'Europe', 0.9));
+      useAppStore.getState().toggleTag('privacy');
+      await flush();
+
+      expect(lastFilters().tags).toEqual(['privacy']);
+    });
+
+    it('does not search when nothing has been searched yet', () => {
+      useAppStore.setState({ hasSearched: false, query: '' });
+      (global.fetch as jest.Mock).mockClear();
+      useAppStore.getState().toggleContinent('Europe');
+
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(useAppStore.getState().selectedContinents).toEqual(['Europe']);
+    });
+
+    it('keeps listing other continents after filtering, so more can be added', async () => {
+      respond(hit('eu', 'Europe', 0.9));
+      useAppStore.getState().toggleContinent('Europe');
+      await flush();
+
+      expect(useAppStore.getState().getAvailableContinents()).toEqual(['Europe', 'Asia', 'North America']);
+    });
+
+    it('lists options from the new results when the query changes', async () => {
+      useAppStore.setState({ selectedContinents: ['Europe'] });
+      respond(hit('eu', 'Europe', 0.9));
+      await useAppStore.getState().performSearch('watermarking');
+
+      expect(useAppStore.getState().getAvailableContinents()).toEqual(['Europe']);
+    });
+
+    it('filters similarity in the browser only, without a new search', () => {
+      useAppStore.getState().toggleSimilarityRange('81-100');
+
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(lastFilters().similarityRanges).toBeUndefined();
+      expect(useAppStore.getState().filteredResults.map((n) => n.id)).toEqual(['eu']);
+      expect(useAppStore.getState().searchResults).toHaveLength(3);
     });
   });
 });

@@ -10,27 +10,15 @@ export interface FilterMetadata {
 	continents?: string[];
 	countries?: string[];
 	tags?: string[];
-	similarityRanges?: string[];
-}
-
-/**
- * Convert similarity range strings to numeric bounds
- * Example: "81-100" -> { min: 0.81, max: 1.0 }
- */
-function parseSimilarityRange(range: string): { min: number; max: number } | null {
-	const match = range.match(/^(\d+)-(\d+)$/);
-	if (!match) return null;
-	
-	const min = parseInt(match[1]) / 100;
-	const max = parseInt(match[2]) / 100;
-	
-	return { min, max };
 }
 
 /**
  * Build Pinecone metadata filter expression from user filter selections
  * 
- * @param filters User filter selections (continents, countries, tags, similarity ranges)
+ * Similarity ranges are not included: score is computed per search, not stored
+ * as metadata, so they are applied in the browser as a display filter.
+ *
+ * @param filters User filter selections (continents, countries, tags)
  * @returns Pinecone filter expression object or undefined if no filters
  */
 export function buildPineconeFilter(filters: FilterMetadata): Record<string, any> | undefined {
@@ -67,33 +55,6 @@ export function buildPineconeFilter(filters: FilterMetadata): Record<string, any
 		conditions.push({
 			tags: { $in: filters.tags }
 		});
-	}
-
-	// Similarity/score filters - convert ranges to numeric bounds
-	if (filters.similarityRanges && filters.similarityRanges.length > 0) {
-		const scoreConditions: any[] = [];
-		
-		for (const range of filters.similarityRanges) {
-			const bounds = parseSimilarityRange(range);
-			if (bounds) {
-				// Create a condition for this range: score >= min AND score <= max
-				scoreConditions.push({
-					$and: [
-						{ score: { $gte: bounds.min } },
-						{ score: { $lte: bounds.max } }
-					]
-				});
-			}
-		}
-		
-		// Combine multiple score ranges with $or
-		if (scoreConditions.length > 0) {
-			if (scoreConditions.length === 1) {
-				conditions.push(scoreConditions[0]);
-			} else {
-				conditions.push({ $or: scoreConditions });
-			}
-		}
 	}
 
 	// If no conditions, return undefined (no filtering)
