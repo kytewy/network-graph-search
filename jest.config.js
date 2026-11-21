@@ -16,6 +16,9 @@ const customJestConfig = {
     '**/__tests__/**/*.test.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
+  // Keep Jest's module scan out of the Python virtualenv and build output
+  // (avoids "Haste module naming collision" warnings from venv packages)
+  modulePathIgnorePatterns: ['<rootDir>/venv/', '<rootDir>/.venv/', '<rootDir>/.next/'],
   testPathIgnorePatterns: [
     '/node_modules/',
     '/.next/',
