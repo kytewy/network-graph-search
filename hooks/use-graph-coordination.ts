@@ -23,7 +23,6 @@ import type { Node } from '@/lib/stores/app-state';
  * ```tsx
  * const {
  *   graphRef,
- *   nodePositionsRef,
  *   handleSendToContext,
  *   handleCloseLassoMenu
  * } = useGraphCoordination({
@@ -40,8 +39,6 @@ interface UseGraphCoordinationOptions {
 interface UseGraphCoordinationReturn {
 	/** Ref for the Reagraph canvas */
 	graphRef: React.RefObject<GraphCanvasRef>;
-	/** Ref for storing node positions */
-	nodePositionsRef: React.MutableRefObject<Map<string, { x: number; y: number; z: number }>>;
 	/** Send selected nodes to context with toast notification */
 	handleSendToContext: (nodes: Node[]) => void;
 	/** Close lasso menu and clean up all selection state */
@@ -75,9 +72,6 @@ export function useGraphCoordination(
 
 	// Refs for graph canvas and node positions
 	const graphRef = useRef<GraphCanvasRef | null>(null);
-	const nodePositionsRef = useRef<Map<string, { x: number; y: number; z: number }>>(
-		new Map()
-	);
 
 	/**
 	 * Send selected nodes to context
@@ -147,7 +141,6 @@ export function useGraphCoordination(
 
 	return {
 		graphRef,
-		nodePositionsRef,
 		handleSendToContext,
 		handleCloseLassoMenu,
 		handleLassoEnd,

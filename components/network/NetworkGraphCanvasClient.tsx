@@ -32,7 +32,6 @@ export function NetworkGraphCanvasClient() {
 		clusterMode,
 		selections,
 		graphRef,
-		nodePositionsRef,
 		handleCustomNodeClick,
 		handleLasso,
 		handleLassoEnd,
@@ -115,12 +114,11 @@ export function NetworkGraphCanvasClient() {
 						ref={graphRef}
 						nodes={safeGraphNodes}
 						edges={safeGraphEdges}
-						layoutType={layoutType as any}
+						layoutType={layoutType}
 						layoutOverrides={{
 							clusterStrength: activeClusterAttribute ? GRAPH_LAYOUT_CONFIG.clusterStrength : 0,
 							linkDistance: GRAPH_LAYOUT_CONFIG.linkDistance,
 							nodeStrength: GRAPH_LAYOUT_CONFIG.nodeStrength,
-							gravity: GRAPH_LAYOUT_CONFIG.gravity,
 						}}
 						// Temporarily disable selections to isolate the error
 						// selections={safeSelections}
@@ -128,20 +126,15 @@ export function NetworkGraphCanvasClient() {
 						onCanvasClick={(event?: MouseEvent) => event && onCanvasClick(event)}
 						// Lasso selection for multi-node selection (hold Shift + drag)
 						lassoType="node"
-						onLasso={(selection: any) =>
-							handleLasso(selection?.nodes || selection || [])
-						}
-						onLassoEnd={(selection: any, event?: MouseEvent) =>
-							handleLassoEnd(selection?.nodes || selection || [], event)
-						}
-						// Use direct node size property
-						nodeSize={(node) => (node.size as number) || NODE_SIZE.default}
+						onLasso={(ids: string[]) => handleLasso(ids)}
+						onLassoEnd={(ids: string[]) => handleLassoEnd(ids)}
+						// Node size comes from each node's own `size` (set in use-graph-data),
+						// which reagraph's default sizing uses
 						// Use 'cluster' for API assignments, or clusterMode for manual clustering
 						clusterAttribute={activeClusterAttribute}
 						// Enable node dragging
 						draggable={true}
 						labelType={showLabels ? PERFORMANCE_CONFIG.labelType : 'none'}
-						edgeStyle={PERFORMANCE_CONFIG.edgeStyle}
 						animated={PERFORMANCE_CONFIG.animated}
 						cameraMode={PERFORMANCE_CONFIG.cameraMode}
 						contextMenu={({
@@ -176,28 +169,6 @@ export function NetworkGraphCanvasClient() {
 									/>
 								</div>
 							);
-						}}
-						getNodePosition={(
-							id: string,
-							context?: {
-								drags?: Record<
-									string,
-									{ position: { x: number; y: number; z: number } }
-								>;
-							}
-						) => {
-							// Respect active drags first (Reagraph Playbook Rule #3)
-							if (context?.drags?.[id]?.position) {
-								return context.drags[id].position;
-							}
-							// Otherwise use stored position
-							return nodePositionsRef.current.get(id) || null;
-						}}
-						onNodeDragEnd={(
-							node: any,
-							position: { x: number; y: number; z: number }
-						) => {
-							nodePositionsRef.current.set(node.id, position);
 						}}
 					/>
 				) : (
