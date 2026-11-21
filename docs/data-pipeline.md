@@ -74,6 +74,6 @@ All records follow a standardized schema:
 
 ---
 
-**Questions?** See the main [Architecture documentation](./architecture.md)
+**Questions?** See the main [Architecture documentation](./sys-architecture.md)
 
 **Last updated:** October 2025
