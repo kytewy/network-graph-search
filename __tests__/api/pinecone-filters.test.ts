@@ -17,6 +17,15 @@ describe('buildPineconeFilter', () => {
 		});
 	});
 
+	it('filters by publisher, combined with the other filters', () => {
+		expect(buildPineconeFilter({ publishers: ['Law firm', 'Government'] })).toEqual({
+			publisher: { $in: ['Law firm', 'Government'] },
+		});
+		expect(buildPineconeFilter({ continents: ['Europe'], publishers: ['Regulator'] })).toEqual({
+			$and: [{ continent: { $in: ['Europe'] } }, { publisher: { $in: ['Regulator'] } }],
+		});
+	});
+
 	it('never filters on score, which is not stored metadata', () => {
 		const filters = { similarityRanges: ['81-100'] } as Record<string, unknown>;
 		expect(buildPineconeFilter(filters)).toBeUndefined();

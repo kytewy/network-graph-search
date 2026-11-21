@@ -440,8 +440,8 @@ export default function ChatInterface({
 														`Countries: ${filterState.selectedCountries.join(
 															', '
 														)}`,
-													filterState.selectedSourceTypes?.length > 0 &&
-														`Source Types: ${filterState.selectedSourceTypes.join(
+													filterState.selectedPublishers?.length > 0 &&
+														`Publishers: ${filterState.selectedPublishers.join(
 															', '
 														)}`,
 													filterState.searchTerm &&

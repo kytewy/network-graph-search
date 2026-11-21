@@ -10,6 +10,7 @@ export interface FilterMetadata {
 	continents?: string[];
 	countries?: string[];
 	tags?: string[];
+	publishers?: string[];
 }
 
 /**
@@ -18,7 +19,7 @@ export interface FilterMetadata {
  * Similarity ranges are not included: score is computed per search, not stored
  * as metadata, so they are applied in the browser as a display filter.
  *
- * @param filters User filter selections (continents, countries, tags)
+ * @param filters User filter selections (continents, countries, tags, publishers)
  * @returns Pinecone filter expression object or undefined if no filters
  */
 export function buildPineconeFilter(filters: FilterMetadata): Record<string, any> | undefined {
@@ -55,6 +56,11 @@ export function buildPineconeFilter(filters: FilterMetadata): Record<string, any
 		conditions.push({
 			tags: { $in: filters.tags }
 		});
+	}
+
+	// Publisher filter - who published the document
+	if (filters.publishers && filters.publishers.length > 0) {
+		conditions.push({ publisher: { $in: filters.publishers } });
 	}
 
 	// If no conditions, return undefined (no filtering)

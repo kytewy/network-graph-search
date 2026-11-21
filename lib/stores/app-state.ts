@@ -1,5 +1,6 @@
 import { debugLog } from '@/lib/utils/debug';
 import { createLatestRequest, isAbortError } from '@/lib/utils/latest-request';
+import { PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { create } from 'zustand';
 import type { Node, Link } from '@/lib/config/types';
 
@@ -88,6 +89,7 @@ interface AppState {
 	
 	// Tag filtering state
 	selectedTags: string[]; // e.g., ['important', 'regulations']
+	selectedPublishers: string[]; // e.g., ['Law firm', 'Government']
 
 	// Location filtering actions
 	toggleContinent: (continent: string) => void; // Smart toggle: selects continent, deselects its individual countries
@@ -106,6 +108,10 @@ interface AppState {
 	clearTagFilters: () => void; // Clear all tag filters
 	getAvailableTags: () => string[]; // Get all unique tags from current results
 	getNodeCountByTag: (tag: string) => number; // Get count of nodes for a specific tag
+	togglePublisher: (publisher: string) => void; // Re-runs the search in Pinecone
+	clearPublisherFilters: () => void;
+	getAvailablePublishers: () => string[]; // Publishers in the results, taxonomy order
+	getNodeCountByPublisher: (publisher: string) => number;
 }
 
 // Create the store with DevTools middleware
@@ -137,6 +143,7 @@ export const useAppStore = create<AppState>()(
 		
 		// Tag filtering state
 		selectedTags: [],
+		selectedPublishers: [],
 
 		// Additional state for AI clustering
 		aiClusters: [], // List of AI cluster assignments (e.g., ['cluster_0', 'cluster_1'])
@@ -357,6 +364,7 @@ export const useAppStore = create<AppState>()(
 				continents: state.selectedContinents || [],
 				countries: state.selectedCountries || [],
 				tags: state.selectedTags || [],
+				publishers: state.selectedPublishers || [],
 			};
 
 			debugLog('[Store] Sending filters to API:', filters);
@@ -384,7 +392,11 @@ export const useAppStore = create<AppState>()(
 
 				state.setSearchResults(nodes);
 				state.setLinks(links);
-				const unfiltered = !filters.continents.length && !filters.countries.length && !filters.tags.length;
+				const unfiltered =
+					!filters.continents.length &&
+					!filters.countries.length &&
+					!filters.tags.length &&
+					!filters.publishers.length;
 				if (unfiltered || query !== get().facetQuery) {
 					set({ facetResults: nodes, facetQuery: query });
 				}
@@ -553,5 +565,29 @@ export const useAppStore = create<AppState>()(
 				Array.isArray(node.tags) && node.tags.includes(tag)
 			).length;
 		},
+
+		// Publisher filter: like location and tags, it changes which documents
+		// match, so it re-runs the search in Pinecone
+		togglePublisher: (publisher) => {
+			set((state) => ({
+				selectedPublishers: state.selectedPublishers.includes(publisher)
+					? state.selectedPublishers.filter((p) => p !== publisher)
+					: [...state.selectedPublishers, publisher],
+			}));
+			void get().rerunSearch();
+		},
+
+		clearPublisherFilters: () => {
+			set({ selectedPublishers: [] });
+			void get().rerunSearch();
+		},
+
+		getAvailablePublishers: () => {
+			const present = new Set(get().facetResults.map((node) => node.publisher));
+			return PUBLISHERS.map((p) => p.value).filter((value) => present.has(value));
+		},
+
+		getNodeCountByPublisher: (publisher) =>
+			get().filteredResults.filter((node) => node.publisher === publisher).length,
 	}))
 );

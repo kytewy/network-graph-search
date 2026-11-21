@@ -319,4 +319,63 @@ describe('Search Functionality', () => {
       expect(useAppStore.getState().searchResults).toHaveLength(3);
     });
   });
+
+  describe('Publisher filter', () => {
+    const hit = (id: string, publisher: string) => ({
+      _id: id,
+      _score: 0.8,
+      fields: { label: id, content: id, publisher, documentType: 'Law', tags: [] },
+    });
+    const respond = (...hits: ReturnType<typeof hit>[]) =>
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ rawResponse: { result: { hits } } }),
+      });
+    const lastFilters = () => {
+      const calls = (global.fetch as jest.Mock).mock.calls;
+      return JSON.parse(calls[calls.length - 1][1].body).filters;
+    };
+    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+    beforeEach(async () => {
+      useAppStore.setState({ selectedPublishers: [] } as any);
+      respond(hit('law', 'Government'), hit('lf', 'Law firm'), hit('ngo', 'NGO'), hit('lf2', 'Law firm'));
+      await useAppStore.getState().performSearch('Article 50');
+    });
+
+    it('lists publishers on screen in the taxonomy order, with counts', () => {
+      const state = useAppStore.getState();
+      expect(state.getAvailablePublishers()).toEqual(['Government', 'Law firm', 'NGO']);
+      expect(state.getNodeCountByPublisher('Law firm')).toBe(2);
+    });
+
+    it('re-runs the search with the publisher sent to Pinecone', async () => {
+      respond(hit('lf', 'Law firm'), hit('lf2', 'Law firm'));
+      useAppStore.getState().togglePublisher('Law firm');
+      await flush();
+
+      expect(lastFilters().publishers).toEqual(['Law firm']);
+      expect(useAppStore.getState().filteredResults.map((n) => n.id)).toEqual(['lf', 'lf2']);
+    });
+
+    it('keeps the other publishers listed so more can be ticked', async () => {
+      respond(hit('lf', 'Law firm'));
+      useAppStore.getState().togglePublisher('Law firm');
+      await flush();
+
+      expect(useAppStore.getState().getAvailablePublishers()).toEqual(['Government', 'Law firm', 'NGO']);
+    });
+
+    it('clearing brings everything back', async () => {
+      respond(hit('lf', 'Law firm'));
+      useAppStore.getState().togglePublisher('Law firm');
+      await flush();
+      respond(hit('law', 'Government'), hit('lf', 'Law firm'));
+      useAppStore.getState().clearPublisherFilters();
+      await flush();
+
+      expect(useAppStore.getState().selectedPublishers).toEqual([]);
+      expect(lastFilters().publishers).toEqual([]);
+    });
+  });
 });

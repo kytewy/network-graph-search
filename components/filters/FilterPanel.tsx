@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Filter, Target, Globe, Tag } from 'lucide-react';
+import { Filter, Target, Globe, Tag, Building2 } from 'lucide-react';
 import { useAppStore } from '@/lib/stores/app-state';
 import { SimilarityHistogram } from '@/components/filters/SimilarityHistogram';
 import { GeographicFilters } from './GeographicFilters';
-import { SourceTypeFilters } from './SourceTypeFilters';
+import { PublisherFilters } from './PublisherFilters';
 import { TagFilters } from './TagFilters';
 
 /**
@@ -17,7 +17,7 @@ import { TagFilters } from './TagFilters';
  * - Similarity filtering (histogram)
  * - Geographic filtering (continents/countries)
  * - Tag filtering
- * - Source type filtering (TODO)
+ * - Publisher filtering (who published the document)
  *
  * Manages state and delegates rendering to sub-components
  */
@@ -59,8 +59,14 @@ const FilterPanel = () => {
 	const selectedSimilarityRanges = useAppStore((state) => state.selectedSimilarityRanges);
 	const clearSimilarityRanges = useAppStore((state) => state.clearSimilarityRanges);
 
+	// Publisher filtering state and actions
+	const selectedPublishers = useAppStore((state) => state.selectedPublishers);
+	const togglePublisher = useAppStore((state) => state.togglePublisher);
+	const clearPublisherFilters = useAppStore((state) => state.clearPublisherFilters);
+	const getAvailablePublishers = useAppStore((state) => state.getAvailablePublishers);
+	const getNodeCountByPublisher = useAppStore((state) => state.getNodeCountByPublisher);
+
 	// Local UI state
-	const [selectedSourceTypes, setSelectedSourceTypes] = useState<string[]>([]);
 	const [expandedContinents, setExpandedContinents] = useState<string[]>([]);
 	const [countrySearchTerm, setCountrySearchTerm] = useState<string>('');
 
@@ -77,15 +83,6 @@ const FilterPanel = () => {
 	}
 
 	// Handlers
-	const toggleSourceType = (sourceType: string) => {
-		setSelectedSourceTypes((prev) => {
-			const safePrev = Array.isArray(prev) ? prev : [];
-			return safePrev.includes(sourceType)
-				? safePrev.filter((type) => type !== sourceType)
-				: [...safePrev, sourceType];
-		});
-	};
-
 	const toggleExpandedContinent = (continent: string) => {
 		setExpandedContinents((prev) => {
 			const safePrev = Array.isArray(prev) ? prev : [];
@@ -99,17 +96,20 @@ const FilterPanel = () => {
 		clearLocationFilters();
 		clearTagFilters();
 		clearSimilarityRanges();
-		setSelectedSourceTypes([]);
+		clearPublisherFilters();
 	};
 
 	// Derived data
 	const availableContinents = getAvailableContinents();
 	const availableTags = getAvailableTags();
-	const sourceTypes = [
-		...new Set(filteredResults.map((node) => node.publisher || '').filter(Boolean)),
-	];
+	const availablePublishers = getAvailablePublishers();
 
-	const totalFiltersActive = selectedContinents.length + selectedCountries.length + selectedTags.length + selectedSimilarityRanges.length;
+	const totalFiltersActive =
+		selectedContinents.length +
+		selectedCountries.length +
+		selectedTags.length +
+		selectedPublishers.length +
+		selectedSimilarityRanges.length;
 
 	return (
 		<div className="space-y-4">
@@ -172,6 +172,29 @@ const FilterPanel = () => {
 					</div>
 				</CardContent>
 			</Card>
+
+			{/* Publisher Card */}
+			{availablePublishers.length > 0 && (
+				<Card>
+					<CardContent className="p-4 space-y-2">
+						<div className="flex items-start gap-3">
+							<Building2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+							<div className="flex-1 min-w-0">
+								<h4 className="font-semibold text-base mb-1">Publisher</h4>
+								<p className="text-sm text-muted-foreground mb-2">
+									Who published the document. Ticking one searches again for only those.
+								</p>
+								<PublisherFilters
+									availablePublishers={availablePublishers}
+									selectedPublishers={selectedPublishers}
+									togglePublisher={togglePublisher}
+									getNodeCountByPublisher={getNodeCountByPublisher}
+								/>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+			)}
 
 			{/* Tags Card */}
 			{availableTags.length > 0 && (
