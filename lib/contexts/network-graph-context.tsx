@@ -19,6 +19,7 @@ import {
 import { useLassoSelection } from '@/hooks/use-lasso-selection';
 import { useGraphVisualizationSettings } from '@/hooks/use-graph-visualization-settings';
 import { useGraphLayout } from '@/hooks/use-graph-layout';
+import type { ReagraphLayoutType } from '@/lib/utils/layout-mappers';
 import { useGraphSelectionReagraph } from '@/hooks/use-graph-selection-reagraph';
 import { useGraphCoordination } from '@/hooks/use-graph-coordination';
 import {
@@ -38,7 +39,7 @@ interface NetworkGraphContextType {
 	filteredLinks: Link[];
 
 	// Graph state
-	layoutType: string;
+	layoutType: ReagraphLayoutType;
 	showLabels: boolean;
 	colorMode: ColorMode;
 	nodeSizeMode: NodeSizeMode;
@@ -66,9 +67,6 @@ interface NetworkGraphContextType {
 
 	// Refs
 	graphRef: React.RefObject<GraphCanvasRef>;
-	nodePositionsRef: React.MutableRefObject<
-		Map<string, { x: number; y: number; z: number }>
-	>;
 
 	// Actions
 	handleLayoutChange: (layout: string) => void;
@@ -176,7 +174,6 @@ export function NetworkGraphProvider({
 	// Hook 3: Coordination - provides refs and handlers in one call
 	const { 
 		graphRef, 
-		nodePositionsRef, 
 		handleSendToContext, 
 		handleCloseLassoMenu: closeLassoMenu 
 	} = useGraphCoordination({
@@ -219,7 +216,6 @@ export function NetworkGraphProvider({
 
 			// Refs
 			graphRef,
-			nodePositionsRef,
 
 			// Actions
 			handleLayoutChange,
