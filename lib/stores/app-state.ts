@@ -377,7 +377,8 @@ export const useAppStore = create<AppState>()(
 				const data = await response.json();
 
 				if (!response.ok) {
-					throw new Error(data.message || 'Search failed');
+					// API routes return { error }; older responses used { message }
+					throw new Error(data.error || data.message || 'Search failed');
 				}
 
 				const { nodes, links } = state.processApiResponse(data);
