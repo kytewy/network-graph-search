@@ -23,6 +23,7 @@ import {
 } from '@/lib/utils/api-guard';
 
 jest.mock('@/lib/utils/openai-client', () => ({
+	llmError: jest.requireActual('@/lib/utils/openai-client').llmError,
 	openai: {
 		chat: {
 			completions: {

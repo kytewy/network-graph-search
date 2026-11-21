@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getJSONCompletion } from '@/lib/utils/openai-client';
+import { getJSONCompletion, llmError } from '@/lib/utils/openai-client';
 import { buildClusterNamingPrompt, PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
-import { LIMITS, badRequest, rateLimit, serverError } from '@/lib/utils/api-guard';
+import { LIMITS, badRequest, rateLimit } from '@/lib/utils/api-guard';
 
 export async function POST(request: NextRequest) {
 	const limited = rateLimit(request, 'llm');
@@ -35,11 +35,14 @@ export async function POST(request: NextRequest) {
 		// Call GPT-4o-mini
 		const result = await getJSONCompletion(prompt);
 
+		const text = (value: unknown, fallback: string) =>
+			typeof value === 'string' && value.trim() ? value : fallback;
+
 		return NextResponse.json({
-			clusterName: result.clusterName || `Cluster ${clusterIndex}`,
-			description: result.description || 'No description available',
+			clusterName: text(result.clusterName, `Cluster ${clusterIndex}`),
+			description: text(result.description, 'No description available'),
 		});
 	} catch (error) {
-		return serverError('analyze-cluster', error, 'Failed to analyze cluster');
+		return llmError('analyze-cluster', error, 'Failed to analyze cluster');
 	}
 }

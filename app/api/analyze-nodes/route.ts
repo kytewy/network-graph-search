@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai } from '@/lib/utils/openai-client';
+import { llmError, openai } from '@/lib/utils/openai-client';
 import { buildAnalyzeNodesPrompt, PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
-import { LIMITS, badRequest, rateLimit, serverError } from '@/lib/utils/api-guard';
+import { LIMITS, badRequest, rateLimit } from '@/lib/utils/api-guard';
 
 export async function POST(request: NextRequest) {
 	const limited = rateLimit(request, 'llm');
@@ -50,6 +50,6 @@ export async function POST(request: NextRequest) {
 			summary,
 		});
 	} catch (error) {
-		return serverError('analyze-nodes', error, 'Failed to analyze nodes');
+		return llmError('analyze-nodes', error, 'Failed to analyze nodes');
 	}
 }
