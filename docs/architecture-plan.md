@@ -2,13 +2,18 @@
 
 > Written 20 November 2026, against `main` at `0c5d02c`. Companion to [codebase-assessment.md](./codebase-assessment.md).
 
-Evolve the app in place, in five phases over about 14 weeks part-time, ending in a pilot-ready regulatory radar by late February 2027. No rewrite, no separate API service and no vector-database migration are needed. The order is set by dependencies:
+Evolve the app in place, in five phases over about 14 weeks part-time, ending in a pilot-ready regulatory radar by late February 2027. A sixth phase adds a CLI and an MCP server for agents in early March, after the first pilots. No rewrite, no separate API service and no vector-database migration are needed. The order is set by dependencies:
 
 1. **Fix correctness first.**
 2. **Separate the three kinds of state.** Server data, URL state and UI state each get one home.
 3. **Add Postgres.** It becomes the system of record.
 4. **Improve retrieval against a measured baseline.**
 5. **Build the radar features on top.**
+6. **Open the same API to the CLI and agents.**
+
+## User journey
+
+A compliance lead logs in, sees a dashboard of new alerts, opens one, and sees which of their use cases it affects (with the cited clause), how regulators, law firms and the press are reading it, and can export a cited report. Each use case is **Affected** (a rule in force applies and there's a gap), **Upcoming** (a rule applies from a future date) or **Satisfied** (the rule applies and linked evidence shows it's met). The dashboard, a CLI and AI agents through an MCP server all use one API, so anything a person can see, an agent can ask for.
 
 ## Where we are
 
@@ -34,7 +39,9 @@ Browser (client-only graph page)
 ├── UI state (Zustand slices) panel layout, selection, drafts — small, persisted where useful
 └── GraphView                 Reagraph behind one interface, so the renderer can be swapped
 
-Next.js route handlers  (one HTTP surface; zod-validated contracts in lib/contracts)
+Clients: web dashboard · CLI (`radar`) · MCP server for agents  — all call the same API
+
+Next.js route handlers  (one HTTP surface; zod-validated contracts in lib/contracts; API keys + audit log)
 ├── /api/search               Pinecone searchRecords + rerank → toApiNode()
 ├── /api/clusters             k-means on stored embeddings (TypeScript, no Python)
 ├── /api/analyze/*            LLM calls with timeouts, spend cap, LangSmith tracing
@@ -152,6 +159,9 @@ Light work only: label the golden set and 30 impact cells with a lawyer or compl
 | Workspaces and chats saved and reloaded | `app/api/workspaces/`, `app/api/chats/`, query hooks |
 | Upstash rate limiting replaces the in-memory limiter; daily spend counter refuses LLM routes at the cap | `lib/utils/api-guard.ts` |
 | Login for private workspaces (Supabase Auth if on Supabase, otherwise Auth.js) | `app/(auth)/`, middleware |
+| Organizations and members; every row scoped to an organization | `db/schema.ts` |
+| API keys per organization (hashed, read-only by default, revocable) checked by the same guard as sessions | `lib/auth/api-keys.ts`, `lib/utils/api-guard.ts` |
+| Audit log: who or what (user, API key, agent) called which endpoint, when | `db/schema.ts`, `lib/audit.ts` |
 | Ingestion rewritten as an idempotent script: source files → Postgres → Pinecone, keyed by `content_hash`; data moved out of `data_canada.py` and the upload script into `scripts/data/` | `scripts/ingest.ts` (or `.py`) |
 
 **Success criteria**
@@ -162,6 +172,8 @@ Light work only: label the golden set and 30 impact cells with a lawyer or compl
 - [ ] Every LLM call has a row in `llm_calls` with tokens and cost.
 - [ ] Hitting the daily spend cap returns 429 on LLM routes while search keeps working.
 - [ ] A second user cannot see the first user's private workspace.
+- [ ] A read-only API key can call search but is refused on any write; a revoked key is refused immediately.
+- [ ] Every API call, from a session or a key, has an audit-log row.
 
 ## Phase 3 — Retrieval quality and scale (Jan 18–31)
 
@@ -192,7 +204,11 @@ Light work only: label the golden set and 30 impact cells with a lawyer or compl
 | LangGraph.js ingestion graph: fetch official sources (EUR-Lex, AI Office) with conditional GETs → hash each paragraph → write `changes` → re-embed and re-score only what changed. A Postgres checkpointer (`@langchain/langgraph-checkpoint-postgres`) lets a failed run resume; a daily cron job (Render Cron Job) calls `/api/radar/run` | `lib/radar/graphs/ingest.ts`, `app/api/radar/run/route.ts` |
 | Exa Monitors v2 webhook: each new item starts a LangGraph run that extracts source, stance and citations into `interpretations`, logged to `llm_calls` | `app/api/webhooks/exa/route.ts` |
 | Summary tree as a LangGraph graph: small model at leaves, larger model at the top, recomputed only along changed branches | `lib/radar/graphs/summary-tree.ts` |
+| `alerts` table: a change matched against an organization's use cases, with severity and read state | `db/schema.ts`, `lib/radar/graphs/alerts.ts` |
+| Use-case status (Affected, Upcoming, Satisfied) derived from impact cells, effective dates and linked `evidence` (control, policy or document) | `db/schema.ts`, `lib/radar/status.ts` |
+| Dashboard: counts, alert feed, alert detail with affected use cases | `app/dashboard/`, `components/radar/` |
 | Views: impact table, interpretation map with divergence, timeline slider over `changes`, ingredient label | `components/radar/` |
+| Reports: cited summary for chosen use cases or alerts, exported as PDF or Markdown | `lib/radar/report.ts`, `app/api/reports/` |
 
 **Success criteria**
 
@@ -202,6 +218,9 @@ Light work only: label the golden set and 30 impact cells with a lawyer or compl
 - [ ] The timeline replays at least two dated changes for one regulation.
 - [ ] Each answer's ingredient label shows source mix, freshness and gaps.
 - [ ] Monthly cost per design partner is visible from `llm_calls` and under a set budget.
+- [ ] A new change creates an alert only for organizations with an affected use case.
+- [ ] A use case shows Satisfied only when evidence is linked; removing the evidence moves it back.
+- [ ] A report for one use case exports as PDF with every claim citing a clause or source.
 
 ## Pilots and YC (Feb 22–28)
 
@@ -210,6 +229,24 @@ Light work only: label the golden set and 30 impact cells with a lawyer or compl
 - [ ] 3–5 design partners onboarded; at least 3 active weekly.
 - [ ] At least 1 paying customer or signed letter of intent.
 - [ ] YC Spring 2027 application submitted with these usage numbers (confirm the deadline on YC's site).
+
+## Phase 5 — CLI and agents (Mar 1–14)
+
+Both are thin clients over the existing API; no new business logic.
+
+| Change | Files |
+|---|---|
+| Publish the API contracts as an OpenAPI document generated from the zod schemas | `lib/contracts/openapi.ts`, `app/api/openapi/route.ts` |
+| CLI `radar` (Node, API-key auth): `alerts`, `usecase status`, `interpretations`, `report` | `cli/` |
+| MCP server exposing the same read operations as tools for agents | `mcp/` |
+| Rate limits and audit-log entries apply to CLI and agent calls exactly as to the dashboard | `lib/utils/api-guard.ts` |
+
+**Success criteria**
+
+- [ ] `radar alerts --new` and `radar usecase status` return the same data as the dashboard for the same organization.
+- [ ] An agent answers "what changed this week that affects our chatbot?" through the MCP server, citing sources.
+- [ ] A read-only key cannot change anything through the CLI or MCP server.
+- [ ] Every CLI and agent call appears in the audit log.
 
 ## Working week with Claude
 
