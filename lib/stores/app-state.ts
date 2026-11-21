@@ -1,6 +1,7 @@
 import { debugLog } from '@/lib/utils/debug';
 import { createLatestRequest, isAbortError } from '@/lib/utils/latest-request';
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
+import { filterNodes } from '@/lib/filters/filter-nodes';
 import { create } from 'zustand';
 import type { Node, Link } from '@/lib/config/types';
 
@@ -28,10 +29,6 @@ interface AppState {
 	// Results state
 	searchResults: Node[];
 	filteredResults: Node[];
-	// Results the filter options are listed from: the latest search for this
-	// query without location or tag filters, so filtering doesn't hide options
-	facetResults: Node[];
-	facetQuery: string;
 	links: Link[];
 	filteredLinks: Link[];
 
@@ -95,7 +92,6 @@ interface AppState {
 	toggleContinent: (continent: string) => void; // Smart toggle: selects continent, deselects its individual countries
 	toggleCountry: (country: string) => void; // Smart toggle: selects country, deselects its continent
 	clearLocationFilters: () => void; // Reset all location filters
-	rerunSearch: () => Promise<void>; // Re-run the last search so Pinecone applies changed filters
 
 	// Helper functions for counts and data access
 	getNodeCountByContinent: (continent: string) => number; // Get count of nodes for a specific continent
@@ -126,8 +122,6 @@ export const useAppStore = create<AppState>()(
 		searchStatus: '', // Moved from ui-store (Phase 1)
 		searchResults: [],
 		filteredResults: [],
-		facetResults: [],
-		facetQuery: '',
 		links: [],
 		filteredLinks: [],
 		colorMode: 'continent',
@@ -203,58 +197,14 @@ export const useAppStore = create<AppState>()(
 		// Enhanced filtering that combines location and similarity filters
 		applyFilters: () => {
 			set((state) => {
-				const {
-					searchResults,
-					selectedSimilarityRanges,
-					selectedContinents,
-					selectedCountries,
-					selectedTags,
-				} = state;
-
-				debugLog('🔍 [applyFilters] Starting with state:', {
-					searchResultsCount: Array.isArray(searchResults) ? searchResults.length : 'Not array',
-					selectedSimilarityRanges: selectedSimilarityRanges,
-					selectedContinents: selectedContinents,
-					selectedCountries: selectedCountries,
-					selectedTags: selectedTags,
-					allArrayChecks: {
-						searchResults: Array.isArray(searchResults),
-						selectedSimilarityRanges: Array.isArray(selectedSimilarityRanges),
-						selectedContinents: Array.isArray(selectedContinents),
-						selectedCountries: Array.isArray(selectedCountries),
-						selectedTags: Array.isArray(selectedTags)
-					}
+				// Panel filters only narrow the loaded results; they never search again
+				const filtered = filterNodes(state.searchResults ?? [], {
+					continents: state.selectedContinents ?? [],
+					countries: state.selectedCountries ?? [],
+					tags: state.selectedTags ?? [],
+					publishers: state.selectedPublishers ?? [],
+					similarityRanges: state.selectedSimilarityRanges ?? [],
 				});
-
-				const safeSearchResults = Array.isArray(searchResults) ? searchResults : [];
-				const safeSelectedSimilarityRanges = Array.isArray(selectedSimilarityRanges) ? selectedSimilarityRanges : [];
-
-				let filtered = safeSearchResults;
-				
-				// Location and tag filters run in Pinecone (see rerunSearch); the browser
-				// only applies similarity ranges, which depend on this search's scores.
-				// Similarity range filter (display only)
-				if (safeSelectedSimilarityRanges.length > 0) {
-					filtered = filtered.filter((node) => {
-						const similarity = Math.round((node.score || 0) * 100);
-						return safeSelectedSimilarityRanges.some((range) => {
-							switch (range) {
-								case '<20':
-									return similarity >= 0 && similarity <= 19;
-								case '21-40':
-									return similarity >= 20 && similarity <= 40;
-								case '41-60':
-									return similarity >= 41 && similarity <= 60;
-								case '61-80':
-									return similarity >= 61 && similarity <= 80;
-								case '81-100':
-									return similarity >= 81 && similarity <= 100;
-								default:
-									return false;
-							}
-						});
-					});
-				}
 
 				// Only show links between visible nodes
 				const nodeIds = new Set(filtered.map((node) => node.id));
@@ -359,23 +309,14 @@ export const useAppStore = create<AppState>()(
 			state.setError(null);
 			state.setQuery(query);
 
-			// Filters Pinecone applies; similarity ranges stay in the browser
-			const filters = {
-				continents: state.selectedContinents || [],
-				countries: state.selectedCountries || [],
-				tags: state.selectedTags || [],
-				publishers: state.selectedPublishers || [],
-			};
-
-			debugLog('[Store] Sending filters to API:', filters);
-
 			const signal = searchRequests.next();
 
 			try {
 				const response = await fetch('/api/reranked-vector-search', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ query, topK, filters }),
+					// No filters: the filter panel narrows the results in the browser
+					body: JSON.stringify({ query, topK }),
 					signal,
 				});
 
@@ -392,14 +333,6 @@ export const useAppStore = create<AppState>()(
 
 				state.setSearchResults(nodes);
 				state.setLinks(links);
-				const unfiltered =
-					!filters.continents.length &&
-					!filters.countries.length &&
-					!filters.tags.length &&
-					!filters.publishers.length;
-				if (unfiltered || query !== get().facetQuery) {
-					set({ facetResults: nodes, facetQuery: query });
-				}
 				state.setHasSearched(true);
 			} catch (err: any) {
 				if (signal.aborted || isAbortError(err)) return;
@@ -416,7 +349,7 @@ export const useAppStore = create<AppState>()(
 
 		clearLocationFilters: () => {
 			set({ selectedContinents: [], selectedCountries: [] });
-			void get().rerunSearch();
+			get().applyFilters();
 		},
 
 		// Smart continent toggling
@@ -454,7 +387,7 @@ export const useAppStore = create<AppState>()(
 					};
 				}
 			});
-			void get().rerunSearch();
+			get().applyFilters();
 		},
 
 		// Smart country toggling
@@ -484,33 +417,26 @@ export const useAppStore = create<AppState>()(
 					};
 				}
 			});
-			void get().rerunSearch();
-		},
-
-		// Location and tag filters change which documents match, so they
-		// re-run the search instead of filtering loaded results in the browser
-		rerunSearch: async () => {
-			const { hasSearched, query, performSearch } = get();
-			if (hasSearched && query.trim()) await performSearch(query);
+			get().applyFilters();
 		},
 
 		// Get count of nodes for a specific continent
 		getNodeCountByContinent: (continent: string) => {
-			const { filteredResults } = get();
-			return filteredResults.filter((node) => node.continent === continent)
+			const { searchResults } = get();
+			return searchResults.filter((node) => node.continent === continent)
 				.length;
 		},
 
 		// Get count of nodes for a specific country
 		getNodeCountByCountry: (country: string) => {
-			const { filteredResults } = get();
-			return filteredResults.filter((node) => node.country === country).length;
+			const { searchResults } = get();
+			return searchResults.filter((node) => node.country === country).length;
 		},
 
 		// Get list of all continents in current data
 		getAvailableContinents: () => {
-			const { facetResults } = get();
-			const continents = facetResults
+			const { searchResults } = get();
+			const continents = searchResults
 				.map((node) => node.continent || '')
 				.filter((continent) => continent && continent.trim() !== '');
 			return [...new Set(continents)] as string[];
@@ -518,8 +444,8 @@ export const useAppStore = create<AppState>()(
 
 		// Get countries for a specific continent in current data
 		getCountriesByContinent: (continent: string) => {
-			const { facetResults } = get();
-			const countries = facetResults
+			const { searchResults } = get();
+			const countries = searchResults
 				.filter((node) => node.continent === continent)
 				.map((node) => node.country || '')
 				.filter((country) => country && country.trim() !== '');
@@ -538,17 +464,17 @@ export const useAppStore = create<AppState>()(
 						: [...safeTags, tag],
 				};
 			});
-			void get().rerunSearch();
+			get().applyFilters();
 		},
 
 		clearTagFilters: () => {
 			set({ selectedTags: [] });
-			void get().rerunSearch();
+			get().applyFilters();
 		},
 
 		getAvailableTags: () => {
-			const { facetResults } = get();
-			const safeSearchResults = Array.isArray(facetResults) ? facetResults : [];
+			const { searchResults } = get();
+			const safeSearchResults = Array.isArray(searchResults) ? searchResults : [];
 			const tags = new Set<string>();
 			safeSearchResults.forEach((node) => {
 				if (Array.isArray(node.tags)) {
@@ -559,8 +485,8 @@ export const useAppStore = create<AppState>()(
 		},
 
 		getNodeCountByTag: (tag: string) => {
-			const { filteredResults } = get();
-			const safeFilteredResults = Array.isArray(filteredResults) ? filteredResults : [];
+			const { searchResults } = get();
+			const safeFilteredResults = Array.isArray(searchResults) ? searchResults : [];
 			return safeFilteredResults.filter((node) => 
 				Array.isArray(node.tags) && node.tags.includes(tag)
 			).length;
@@ -574,20 +500,20 @@ export const useAppStore = create<AppState>()(
 					? state.selectedPublishers.filter((p) => p !== publisher)
 					: [...state.selectedPublishers, publisher],
 			}));
-			void get().rerunSearch();
+			get().applyFilters();
 		},
 
 		clearPublisherFilters: () => {
 			set({ selectedPublishers: [] });
-			void get().rerunSearch();
+			get().applyFilters();
 		},
 
 		getAvailablePublishers: () => {
-			const present = new Set(get().facetResults.map((node) => node.publisher));
+			const present = new Set(get().searchResults.map((node) => node.publisher));
 			return PUBLISHERS.map((p) => p.value).filter((value) => present.has(value));
 		},
 
 		getNodeCountByPublisher: (publisher) =>
-			get().filteredResults.filter((node) => node.publisher === publisher).length,
+			get().searchResults.filter((node) => node.publisher === publisher).length,
 	}))
 );

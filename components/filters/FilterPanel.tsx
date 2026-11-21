@@ -182,7 +182,7 @@ const FilterPanel = () => {
 							<div className="flex-1 min-w-0">
 								<h4 className="font-semibold text-base mb-1">Publisher</h4>
 								<p className="text-sm text-muted-foreground mb-2">
-									Who published the document. Ticking one searches again for only those.
+									Who published the document. Narrows the results on screen.
 								</p>
 								<PublisherFilters
 									availablePublishers={availablePublishers}

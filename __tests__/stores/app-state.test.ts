@@ -25,8 +25,7 @@ describe('Search Functionality', () => {
       searchStatus: '',
       searchResults: [],
       filteredResults: [],
-      facetResults: [],
-      facetQuery: '',
+      selectedPublishers: [],
       links: [],
       filteredLinks: [],
       selectedContinents: [],
@@ -223,159 +222,85 @@ describe('Search Functionality', () => {
     });
   });
 
-  describe('Test 3: Filters run in Pinecone, not the browser', () => {
-    const hit = (id: string, continent: string, score: number) => ({
+  describe('Test 3: Filters narrow the loaded results, without searching again', () => {
+    const hit = (id: string, continent: string, publisher: string, score = 0.8) => ({
       _id: id,
       _score: score,
-      fields: { label: id, content: id, continent, country: '', tags: [] },
+      fields: { label: id, content: id, continent, country: '', publisher, documentType: 'Law', tags: [] },
     });
-    const respond = (...hits: ReturnType<typeof hit>[]) =>
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ rawResponse: { result: { hits } } }),
-      });
-    const lastFilters = () => {
-      const calls = (global.fetch as jest.Mock).mock.calls;
-      return JSON.parse(calls[calls.length - 1][1].body).filters;
-    };
-    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+    const ids = () => useAppStore.getState().filteredResults.map((n) => n.id);
 
     beforeEach(async () => {
-      respond(hit('eu', 'Europe', 0.9), hit('asia', 'Asia', 0.5), hit('us', 'North America', 0.3));
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          rawResponse: {
+            result: {
+              hits: [
+                hit('eu', 'Europe', 'Government', 0.9),
+                hit('asia', 'Asia', 'Law firm', 0.5),
+                hit('us', 'North America', 'Law firm', 0.3),
+              ],
+            },
+          },
+        }),
+      });
       await useAppStore.getState().performSearch('AI regulation');
-    });
-
-    it('re-runs the search with the continent sent to Pinecone', async () => {
-      respond(hit('eu', 'Europe', 0.9));
-      useAppStore.getState().toggleContinent('Europe');
-      await flush();
-
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(lastFilters().continents).toEqual(['Europe']);
-      expect(useAppStore.getState().filteredResults.map((n) => n.id)).toEqual(['eu']);
-    });
-
-    it('does not drop results in the browser for location', async () => {
-      // Pinecone matched on continent; the browser must not second-guess it
-      respond(hit('eu', 'Europe', 0.9), hit('eu2', 'Europe', 0.8));
-      useAppStore.getState().toggleContinent('Europe');
-      await flush();
-
-      expect(useAppStore.getState().filteredResults).toHaveLength(2);
-    });
-
-    it('brings documents back when a filter is removed', async () => {
-      respond(hit('eu', 'Europe', 0.9));
-      useAppStore.getState().toggleContinent('Europe');
-      await flush();
-
-      respond(hit('eu', 'Europe', 0.9), hit('asia', 'Asia', 0.5), hit('us', 'North America', 0.3));
-      useAppStore.getState().clearLocationFilters();
-      await flush();
-
-      expect(lastFilters().continents).toEqual([]);
-      expect(useAppStore.getState().filteredResults).toHaveLength(3);
-    });
-
-    it('re-runs the search when a tag filter changes', async () => {
-      respond(hit('eu', 'Europe', 0.9));
-      useAppStore.getState().toggleTag('privacy');
-      await flush();
-
-      expect(lastFilters().tags).toEqual(['privacy']);
-    });
-
-    it('does not search when nothing has been searched yet', () => {
-      useAppStore.setState({ hasSearched: false, query: '' });
       (global.fetch as jest.Mock).mockClear();
-      useAppStore.getState().toggleContinent('Europe');
+    });
 
+    it('searches without sending filters to Pinecone', async () => {
+      useAppStore.setState({ selectedPublishers: ['Law firm'] } as any);
+      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({ rawResponse: { result: { hits: [] } } }) });
+      await useAppStore.getState().performSearch('again');
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.filters).toBeUndefined();
+    });
+
+    it('ticking a filter narrows what is shown and does not search', () => {
+      useAppStore.getState().toggleContinent('Europe');
       expect(global.fetch).not.toHaveBeenCalled();
-      expect(useAppStore.getState().selectedContinents).toEqual(['Europe']);
+      expect(ids()).toEqual(['eu']);
     });
 
-    it('keeps listing other continents after filtering, so more can be added', async () => {
-      respond(hit('eu', 'Europe', 0.9));
-      useAppStore.getState().toggleContinent('Europe');
-      await flush();
-
-      expect(useAppStore.getState().getAvailableContinents()).toEqual(['Europe', 'Asia', 'North America']);
+    it('unticking brings the documents straight back', () => {
+      useAppStore.getState().togglePublisher('Law firm');
+      expect(ids()).toEqual(['asia', 'us']);
+      useAppStore.getState().togglePublisher('Law firm');
+      expect(ids()).toEqual(['eu', 'asia', 'us']);
+      expect(global.fetch).not.toHaveBeenCalled();
     });
 
-    it('lists options from the new results when the query changes', async () => {
-      useAppStore.setState({ selectedContinents: ['Europe'] });
-      respond(hit('eu', 'Europe', 0.9));
-      await useAppStore.getState().performSearch('watermarking');
-
-      expect(useAppStore.getState().getAvailableContinents()).toEqual(['Europe']);
+    it('keeps the full option lists and counts while filtering', () => {
+      useAppStore.getState().togglePublisher('Government');
+      const state = useAppStore.getState();
+      expect(state.getAvailablePublishers()).toEqual(['Government', 'Law firm']);
+      expect(state.getNodeCountByPublisher('Law firm')).toBe(2);
+      expect(state.getAvailableContinents()).toEqual(['Europe', 'Asia', 'North America']);
     });
 
-    it('filters similarity in the browser only, without a new search', () => {
-      useAppStore.getState().toggleSimilarityRange('81-100');
-
-      expect(global.fetch).toHaveBeenCalledTimes(1);
-      expect(lastFilters().similarityRanges).toBeUndefined();
-      expect(useAppStore.getState().filteredResults.map((n) => n.id)).toEqual(['eu']);
-      expect(useAppStore.getState().searchResults).toHaveLength(3);
-    });
-  });
-
-  describe('Publisher filter', () => {
-    const hit = (id: string, publisher: string) => ({
-      _id: id,
-      _score: 0.8,
-      fields: { label: id, content: id, publisher, documentType: 'Law', tags: [] },
-    });
-    const respond = (...hits: ReturnType<typeof hit>[]) =>
+    it('a new search keeps the ticked filters and applies them to the new results', async () => {
+      useAppStore.getState().toggleContinent('Asia');
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ rawResponse: { result: { hits } } }),
+        json: async () => ({ rawResponse: { result: { hits: [hit('a2', 'Asia', 'NGO'), hit('e2', 'Europe', 'NGO')] } } }),
       });
-    const lastFilters = () => {
-      const calls = (global.fetch as jest.Mock).mock.calls;
-      return JSON.parse(calls[calls.length - 1][1].body).filters;
-    };
-    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
-
-    beforeEach(async () => {
-      useAppStore.setState({ selectedPublishers: [] } as any);
-      respond(hit('law', 'Government'), hit('lf', 'Law firm'), hit('ngo', 'NGO'), hit('lf2', 'Law firm'));
-      await useAppStore.getState().performSearch('Article 50');
+      await useAppStore.getState().performSearch('watermarking');
+      expect(ids()).toEqual(['a2']);
     });
 
-    it('lists publishers on screen in the taxonomy order, with counts', () => {
-      const state = useAppStore.getState();
-      expect(state.getAvailablePublishers()).toEqual(['Government', 'Law firm', 'NGO']);
-      expect(state.getNodeCountByPublisher('Law firm')).toBe(2);
+    it('clearing all filters shows everything', () => {
+      useAppStore.getState().toggleContinent('Europe');
+      useAppStore.getState().toggleTag('x');
+      useAppStore.getState().clearLocationFilters();
+      useAppStore.getState().clearTagFilters();
+      expect(ids()).toEqual(['eu', 'asia', 'us']);
     });
 
-    it('re-runs the search with the publisher sent to Pinecone', async () => {
-      respond(hit('lf', 'Law firm'), hit('lf2', 'Law firm'));
-      useAppStore.getState().togglePublisher('Law firm');
-      await flush();
-
-      expect(lastFilters().publishers).toEqual(['Law firm']);
-      expect(useAppStore.getState().filteredResults.map((n) => n.id)).toEqual(['lf', 'lf2']);
-    });
-
-    it('keeps the other publishers listed so more can be ticked', async () => {
-      respond(hit('lf', 'Law firm'));
-      useAppStore.getState().togglePublisher('Law firm');
-      await flush();
-
-      expect(useAppStore.getState().getAvailablePublishers()).toEqual(['Government', 'Law firm', 'NGO']);
-    });
-
-    it('clearing brings everything back', async () => {
-      respond(hit('lf', 'Law firm'));
-      useAppStore.getState().togglePublisher('Law firm');
-      await flush();
-      respond(hit('law', 'Government'), hit('lf', 'Law firm'));
-      useAppStore.getState().clearPublisherFilters();
-      await flush();
-
-      expect(useAppStore.getState().selectedPublishers).toEqual([]);
-      expect(lastFilters().publishers).toEqual([]);
+    it('filters similarity in the browser too', () => {
+      useAppStore.getState().toggleSimilarityRange('81-100');
+      expect(ids()).toEqual(['eu']);
+      expect(useAppStore.getState().searchResults).toHaveLength(3);
     });
   });
 });
