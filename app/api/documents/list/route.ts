@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
 		const documents = queryResponse.matches.map((match) => ({
 			id: match.id,
 			label: match.metadata?.label || 'Unknown',
-			type: match.metadata?.type || 'Unknown',
+			publisher: match.metadata?.publisher || 'Unknown',
+			documentType: match.metadata?.documentType || 'Unknown',
 			tags: match.metadata?.tags || [],
 		}));
 

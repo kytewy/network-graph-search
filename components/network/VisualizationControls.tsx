@@ -75,7 +75,8 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 	const colorByOptions = [
 		{ id: 'continent', name: 'Continent' },
 		{ id: 'country', name: 'Country' },
-		{ id: 'sourceType', name: 'Source Type' },
+		{ id: 'publisher', name: 'Publisher' },
+		{ id: 'documentType', name: 'Document type' },
 		{ id: 'similarityRange', name: 'Similarity Range' },
 	];
 
@@ -89,10 +90,10 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 	// Cluster by options
 	const clusterByOptions = [
 		{ id: 'none', name: 'None' },
-		{ id: 'type', name: 'Type' },
+		{ id: 'documentType', name: 'Document type' },
 		{ id: 'continent', name: 'Continent' },
 		{ id: 'country', name: 'Country' },
-		{ id: 'sourceType', name: 'Source Type' },
+		{ id: 'publisher', name: 'Publisher' },
 		...(hasAiClusters ? [{ id: 'ai_clusters', name: 'AI Clusters' }] : []),
 	];
 

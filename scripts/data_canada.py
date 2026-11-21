@@ -401,49 +401,49 @@ canadian_records = [
     {
         "_id": 'OSFI_1',
         "chunk_text": f"{osfi_article['title']}. {osfi_article.get('summary', '')}. {osfi_article['content']}",
-        "category": "regulation",
         "label": osfi_article['title'],
         "summary": osfi_article['summary'],
         "content": osfi_article['content'],
         "continent": 'North America',
         "country": 'Canada',
-        "sourceType": 'Government',
+        "publisher": 'Regulator',
+        "documentType": 'Guidance',
         "url": "https://www.osfi-bsif.gc.ca/en/guidance/guidance-library/guideline-e-23-model-risk-management-2027"
     },
     {
         "_id": 'DAIS_1',
         "chunk_text": f"{dais_article['title']}. {dais_article.get('summary', '')}. {dais_article['content']}",
-        "category": "analysis",
         "label": dais_article['title'],
         "summary": dais_article['summary'],
         "content": dais_article['content'],
         "continent": 'North America',
         "country": 'Canada',
-        "sourceType": 'Academic',
+        "publisher": 'Academic',
+        "documentType": 'Interpretation',
         "url": "https://dais.ca/reports/submission-on-the-proposed-artificial-intelligence-and-data-act/"
     },
     {
         "_id": 'MAEI_1',
         "chunk_text": f"{montreal_ethics_article['title']}. {montreal_ethics_article.get('summary', '')}. {montreal_ethics_article['content']}",
-        "category": "analysis",
         "label": montreal_ethics_article['title'],
         "summary": montreal_ethics_article['summary'],
         "content": montreal_ethics_article['content'],
         "continent": 'North America',
         "country": 'Canada',
-        "sourceType": 'Academic',
+        "publisher": 'Academic',
+        "documentType": 'Interpretation',
         "url": "https://montrealethics.ai/the-death-of-canadas-artificial-intelligence-and-data-act-what-happened-and-whats-next-for-ai-regulation-in-canada/"
     },
     {
         "_id": 'KPMG_1',
         "chunk_text": f"{kpmg_article['title']}. {kpmg_article.get('summary', '')}. {kpmg_article['content']}",
-        "category": "guide",
         "label": kpmg_article['title'],
         "summary": kpmg_article['summary'],
         "content": kpmg_article['content'],
         "continent": 'North America',
         "country": 'Canada',
-        "sourceType": 'Consulting',
+        "publisher": 'Consultancy',
+        "documentType": 'Interpretation',
         "url": "https://kpmg.com/ca/en/home/insights/2025/08/are-you-ready-for-guideline-e23.html"
     }
 ]
@@ -602,7 +602,7 @@ def test_search(query_text: str = "Canadian AI governance regulation") -> None:
         # Print the results
         print("Search Results:")
         for hit in results['result']['hits']:
-            print(f"  ID: {hit['_id']:<10} | Score: {hit['_score']:.3f} | Category: {hit['fields']['category']:<10}")
+            print(f"  ID: {hit['_id']:<10} | Score: {hit['_score']:.3f} | Publisher: {hit['fields'].get('publisher', ''):<12}")
             print(f"       Text: {hit['fields']['chunk_text'][:100]}...")
             print()
             

@@ -6,7 +6,7 @@ export interface ClusterInputNode {
 	label: string;
 	content: string;
 	summary: string;
-	type: string;
+	documentType: string;
 }
 
 /**
@@ -20,6 +20,6 @@ export function toClusterInput(nodes: Array<Record<string, unknown>>): ClusterIn
 		label: truncate(node?.label, 500),
 		content: truncate(node?.content || node?.text, LIMITS.MAX_CONTENT_CHARS),
 		summary: truncate(node?.summary, LIMITS.MAX_CONTENT_CHARS),
-		type: truncate(node?.type, 100),
+		documentType: truncate(node?.documentType, 100),
 	}));
 }

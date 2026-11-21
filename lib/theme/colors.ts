@@ -18,14 +18,6 @@ export const nodeColors = {
 
 // Color mappings for different attributes
 export const colorMappings = {
-  sourceType: {
-    Government: nodeColors.primary,
-    'Tech Company': nodeColors.secondary,
-    'News Article': nodeColors.tertiary,
-    'Law Firm': nodeColors.quaternary,
-    NGO: nodeColors.accent,
-    default: nodeColors.neutral
-  },
   country: {
     USA: nodeColors.quaternary,
     Germany: '#000000', // Black
@@ -54,7 +46,7 @@ export const colorMappings = {
 
 /**
  * Get color by mode and attribute
- * @param mode The color mode (sourceType, continent, etc.)
+ * @param mode The color mode (continent, country, etc.)
  * @param attribute The specific attribute value
  * @returns The color for the given attribute or default color
  */
@@ -90,10 +82,8 @@ export function getNodeColorByMode(node: any, mode: string): string {
   
   // Map the attribute based on mode
   const attributeMap: Record<string, string> = {
-    sourceType: 'sourceType',
     continent: 'continent',
-    country: 'country',
-    documentType: 'type'
+    country: 'country'
   };
   
   const attributeName = attributeMap[mode];

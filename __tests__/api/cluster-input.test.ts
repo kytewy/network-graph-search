@@ -44,8 +44,8 @@ describe('toClusterInput', () => {
 
 	it('keeps only the fields the analyzer reads', () => {
 		const [node] = toClusterInput([
-			{ id: 'A1', label: 'L', content: 'C', summary: 'S', type: 'article', secret: 'x' },
+			{ id: 'A1', label: 'L', content: 'C', summary: 'S', documentType: 'Law', secret: 'x' },
 		]);
-		expect(Object.keys(node).sort()).toEqual(['content', 'id', 'label', 'summary', 'type']);
+		expect(Object.keys(node).sort()).toEqual(['content', 'documentType', 'id', 'label', 'summary']);
 	});
 });

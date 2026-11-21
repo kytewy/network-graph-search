@@ -29,14 +29,13 @@ export const RERANK = {
 
 const SEARCH_FIELDS = [
 	'chunk_text',
-	'category',
 	'label',
-	'type',
 	'summary',
 	'content',
 	'continent',
 	'country',
-	'sourceType',
+	'publisher',
+	'documentType',
 	'connected_to',
 	'url',
 	'embedding',
@@ -82,14 +81,13 @@ export interface PineconeSearchResult {
 	score: number;
 	fields: {
 		chunk_text?: string;
-		category?: string;
 		label?: string;
-		type?: string;
 		summary?: string;
 		content?: string;
 		continent?: string;
 		country?: string;
-		sourceType?: string;
+		publisher?: string;
+		documentType?: string;
 		[key: string]: any;
 	};
 }

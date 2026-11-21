@@ -32,13 +32,13 @@ import type { ColorMode, NodeSizeMode } from './use-graph-data';
  * 
  * // Change color mode
  * <select onChange={(e) => setColorMode(e.target.value)}>
- *   <option value="sourceType">By Source Type</option>
+ *   <option value="publisher">By Publisher</option>
  *   <option value="continent">By Continent</option>
  * </select>
  * ```
  */
 
-export type ClusterMode = 'none' | 'type' | 'continent' | 'country' | 'sourceType' | 'ai_clusters';
+export type ClusterMode = 'none' | 'documentType' | 'continent' | 'country' | 'publisher' | 'ai_clusters';
 
 interface UseGraphVisualizationSettingsReturn {
 	// Visual state

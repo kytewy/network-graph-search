@@ -8,6 +8,7 @@ import {
 	getColorByMode,
 	getSimilarityColor,
 } from '@/lib/theme/colors';
+import { DOCUMENT_TYPES, PUBLISHERS, legendEntries } from '@/lib/config/document-taxonomy';
 
 export function ColorLegend() {
 	const [isClient, setIsClient] = useState(false);
@@ -15,6 +16,7 @@ export function ColorLegend() {
 	// Get state from app store - MUST be called before conditional returns
 	const colorMode = useAppStore((state) => state.colorMode);
 	const nodeSizeMode = useAppStore((state) => state.nodeSizeMode);
+	const filteredResults = useAppStore((state) => state.filteredResults);
 
 	useEffect(() => {
 		setIsClient(true);
@@ -26,14 +28,8 @@ export function ColorLegend() {
 
 	const getColorLegendData = () => {
 		switch (colorMode) {
-			case 'sourceType':
-				return [
-					{ label: 'article', color: '#4f46e5' },
-					{ label: 'document', color: '#10b981' },
-					{ label: 'webpage', color: '#f59e0b' },
-					{ label: 'pdf', color: '#ef4444' },
-					{ label: 'other', color: '#a855f7' },
-				];
+			case 'publisher':
+				return legendEntries(PUBLISHERS, filteredResults.map((node) => node.publisher));
 
 			case 'continent':
 				return [
@@ -55,13 +51,7 @@ export function ColorLegend() {
 				];
 
 			case 'documentType':
-				return [
-					{ label: 'article', color: '#4f46e5' },
-					{ label: 'document', color: '#10b981' },
-					{ label: 'webpage', color: '#f59e0b' },
-					{ label: 'pdf', color: '#ef4444' },
-					{ label: 'other', color: '#a855f7' },
-				];
+				return legendEntries(DOCUMENT_TYPES, filteredResults.map((node) => node.documentType));
 
 			case 'similarityRange':
 				return [
@@ -83,14 +73,14 @@ export function ColorLegend() {
 			<div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-3 shadow-lg">
 				<div className="text-sm font-medium text-gray-700 mb-2">
 					Color by:{' '}
-					{colorMode === 'sourceType'
-						? 'Source Type'
+					{colorMode === 'publisher'
+						? 'Publisher'
 						: colorMode === 'continent'
 						? 'Continent'
 						: colorMode === 'similarityRange'
 						? 'Similarity Range'
 						: colorMode === 'documentType'
-						? 'Document Type'
+						? 'Document type'
 						: 'Country'}
 				</div>
 				<div className="space-y-1">

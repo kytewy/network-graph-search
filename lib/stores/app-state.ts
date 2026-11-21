@@ -36,13 +36,13 @@ interface AppState {
 
 	// Visualization state
 	colorMode:
-		| 'sourceType'
+		| 'publisher'
 		| 'continent'
 		| 'similarityRange'
 		| 'documentType'
 		| 'country';
 	nodeSizeMode: 'none' | 'contentLength' | 'summaryLength' | 'similarity';
-	clusterMode: 'none' | 'type' | 'continent' | 'country' | 'sourceType' | 'ai_clusters';
+	clusterMode: 'none' | 'documentType' | 'continent' | 'country' | 'publisher' | 'ai_clusters';
 	showLabels: boolean;
 	rightPanelExpanded: boolean;
 
@@ -60,7 +60,7 @@ interface AppState {
 	setLinks: (links: Link[]) => void;
 	setColorMode: (
 		mode:
-			| 'sourceType'
+			| 'publisher'
 			| 'continent'
 			| 'similarityRange'
 			| 'documentType'
@@ -70,7 +70,7 @@ interface AppState {
 		mode: 'none' | 'contentLength' | 'summaryLength' | 'similarity'
 	) => void;
 	setClusterMode: (
-		mode: 'none' | 'type' | 'continent' | 'country' | 'sourceType' | 'ai_clusters'
+		mode: 'none' | 'documentType' | 'continent' | 'country' | 'publisher' | 'ai_clusters'
 	) => void;
 	setShowLabels: (show: boolean) => void;
 	setRightPanelExpanded: (expanded: boolean) => void;
@@ -287,12 +287,11 @@ export const useAppStore = create<AppState>()(
 						id: hit._id,
 						score: hit._score,
 						label: hit.fields?.label || hit._id,
-						category: hit.fields?.category || '',
-						type: hit.fields?.type || '',
+						publisher: hit.fields?.publisher || '',
+						documentType: hit.fields?.documentType || '',
 						text: hit.fields?.chunk_text || hit.fields?.content || '',
 						summary: hit.fields?.summary || '',
 						content: hit.fields?.content || '',
-						sourceType: hit.fields?.sourceType || '',
 						// Add normalized direct properties
 						country,
 						continent,

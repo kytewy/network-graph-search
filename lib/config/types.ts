@@ -19,8 +19,8 @@ export interface Node {
   // Core properties (from app-state)
   id: string;
   label: string;
-  type: string;
-  category: string;
+  publisher: string; // Who published it (see lib/config/document-taxonomy.json)
+  documentType: string; // What kind of document: Law, Guidance, Interpretation
   summary: string; // Brief description for tooltip
   content: string; // Full article content for modal
   text?: string; // Alternate text content (chunk_text)
@@ -43,7 +43,6 @@ export interface Node {
   vy?: number;
   
   // Classification properties
-  sourceType?: string;
   continent?: string;
   country?: string;
   
@@ -84,9 +83,8 @@ export interface SearchResult {
   content?: string;
   text?: string;
   summary?: string;
-  category?: string;
-  type?: string;
-  sourceType?: string;
+  publisher?: string;
+  documentType?: string;
   continent?: string;
   country?: string;
   url?: string;
@@ -104,9 +102,8 @@ export interface NormalizedSearchResult {
   content: string;
   score: number;
   similarity: number;
-  category: string;
-  type: string;
-  sourceType?: string;
+  publisher: string;
+  documentType: string;
   continent?: string;
   country?: string;
   url?: string;
@@ -138,7 +135,7 @@ export type ReagraphLayoutType =
  * Different ways to color nodes in the graph
  */
 export type ColorMode = 
-  | 'sourceType' 
+  | 'publisher' 
   | 'continent' 
   | 'similarityRange' 
   | 'documentType' 

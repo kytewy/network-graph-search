@@ -26,9 +26,6 @@ export function normalizeSearchResult(result: SearchResult): NormalizedSearchRes
   // Handle different label/title field names (priority order)
   const label = result.label || result.title || result.name || result.id || 'Untitled';
   
-  // Handle different category field names
-  const category = result.category || result.sourceType || result.type || 'Unknown';
-  
   // Calculate similarity percentage (0-100)
   const similarity = Math.round(normalizedScore * 100);
   
@@ -38,9 +35,8 @@ export function normalizeSearchResult(result: SearchResult): NormalizedSearchRes
     content: String(content).trim(),
     score: normalizedScore,
     similarity,
-    category: String(category).trim(),
-    type: result.type || 'document',
-    sourceType: result.sourceType,
+    publisher: result.publisher || '',
+    documentType: result.documentType || '',
     continent: result.continent,
     country: result.country,
     url: result.url,
@@ -169,8 +165,8 @@ function createFallbackResult(result: any, index: number): NormalizedSearchResul
     content: 'This result could not be processed properly.',
     score: 0,
     similarity: 0,
-    category: 'Error',
-    type: 'error',
+    publisher: '',
+    documentType: '',
     tags: [],
   };
 }

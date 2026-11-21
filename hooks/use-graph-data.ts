@@ -8,7 +8,7 @@ import { NodeSizeCalculator } from '@/lib/utils/node-sizing';
 import { NO_CLUSTERS, type ClusterAssignments } from '@/lib/clustering/assignments';
 
 export type ColorMode =
-	| 'sourceType'
+	| 'publisher'
 	| 'continent'
 	| 'similarityRange'
 	| 'documentType'
@@ -90,7 +90,6 @@ export function useGraphData(
 				fill: getNodeColor(node),
 				size: getNodeSize(node), // Actually use the size calculation
 				score: node.score || 0.5,
-				category: node.category || '',
 				// Original node data for menus and interactions. Reagraph groups by
 				// data[clusterAttribute], so the AI cluster goes here too (a copy,
 				// never written onto the search result)
@@ -98,10 +97,10 @@ export function useGraphData(
 				
 				// Attach all possible cluster properties to the node
 				// Reagraph will use the one specified by clusterAttribute
-				type: nodeData.type,
+				documentType: nodeData.documentType,
 				continent: nodeData.continent,
 				country: nodeData.country,
-				sourceType: nodeData.sourceType,
+				publisher: nodeData.publisher,
 				ai_clusters: aiClusters[node.id], // AI cluster from the assignments map (e.g., "cluster_0")
 				
 				// Include fields needed by UI components

@@ -50,14 +50,22 @@ All records follow a standardized schema:
     "summary": "...",               # Brief description
     "content": "...",               # Full text
     "url": "https://...",           # Source link
-    "category": "article",          # Document type
-    "type": "article",              # Classification
+    "publisher": "Government",      # Who published it
+    "documentType": "Law",          # What kind: Law, Guidance, Interpretation
     "continent": "Europe",          # Geographic origin
     "country": "European Union",    # Country
-    "sourceType": "Government",     # Authority type
-    "connected_to": ["R1", "R5"]    # Cross-references (optional)
+    "connected_to": ["R1", "R5"]    # Cross-references (optional); draws graph edges
 }
 ```
+
+`publisher` and `documentType` must be values from
+`lib/config/document-taxonomy.json`, which the app also reads for colours and
+labels. The upload script rejects anything else. To add a publisher or type,
+add it there (with a colour) first.
+
+An interpretation of a law is just another document:
+`documentType: "Interpretation"`, `publisher` set to whoever wrote it, and
+`connected_to` listing the law it explains (e.g. `["A50"]`).
 
 ## 📦 Key Scripts
 
@@ -69,6 +77,7 @@ All records follow a standardized schema:
 ## 📝 Implementation Notes
 
 - **Idempotent uploads**: Safe to re-run without duplicates
+- **Full reset**: `--reset` deletes everything in the namespace first (including tags added in the app). Use it after changing fields, so old fields don't linger
 - **Rate limiting**: 2-second delays between batches
 - **Content truncation**: Handles Pinecone's 40KB metadata limit automatically
 

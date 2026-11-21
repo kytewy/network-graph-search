@@ -6,12 +6,13 @@
  */
 
 import type { Node } from '@/lib/stores/app-state';
+import { documentTypeColor, publisherColor } from '@/lib/config/document-taxonomy';
 
 /**
  * Available color modes for node visualization
  */
 export type ColorMode = 
-  | 'sourceType' 
+  | 'publisher' 
   | 'continent' 
   | 'similarityRange' 
   | 'documentType' 
@@ -59,9 +60,10 @@ export class NodeColorCalculator {
    */
   static getColor(node: Node, mode: ColorMode): string {
     switch (mode) {
-      case 'sourceType':
+      case 'publisher':
+        return publisherColor(node.publisher);
       case 'documentType':
-        return this.getSourceTypeColor(node);
+        return documentTypeColor(node.documentType);
       case 'continent':
         return this.getContinentColor(node);
       case 'country':
@@ -71,20 +73,6 @@ export class NodeColorCalculator {
       default:
         return this.getDefaultColor(node);
     }
-  }
-
-  /**
-   * Get color based on source/document type
-   */
-  private static getSourceTypeColor(node: Node): string {
-    const typeColorMap: Record<string, string> = {
-      article: COLORS.indigo,
-      document: COLORS.emerald,
-      webpage: COLORS.amber,
-      pdf: COLORS.red,
-    };
-    
-    return typeColorMap[node.type] || COLORS.purple;
   }
 
   /**
@@ -136,10 +124,10 @@ export class NodeColorCalculator {
   }
 
   /**
-   * Default color based on category
+   * Default color based on document type
    */
   private static getDefaultColor(node: Node): string {
-    return node.category === 'article' ? COLORS.indigo : COLORS.emerald;
+    return documentTypeColor(node.documentType);
   }
 
   /**
@@ -152,9 +140,10 @@ export class NodeColorCalculator {
    */
   static getColorDescription(node: Node, mode: ColorMode): string {
     switch (mode) {
-      case 'sourceType':
+      case 'publisher':
+        return `Publisher: ${node.publisher || 'unknown'}`;
       case 'documentType':
-        return `Type: ${node.type || 'unknown'}`;
+        return `Document type: ${node.documentType || 'unknown'}`;
       case 'continent':
         return `Continent: ${node.continent || 'unknown'}`;
       case 'country':

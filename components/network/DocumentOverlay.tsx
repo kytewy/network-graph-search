@@ -21,7 +21,7 @@ interface ReadingItem {
 	author?: string;
 	description: string;  // Maps to Node.summary
 	content: string;      // Maps to Node.content
-	category?: string;    // Maps to Node.sourceType
+	category?: string;    // Maps to Node.publisher
 	readTime?: string;
 	status: 'read' | 'unread' | 'reading';
 	url?: string;         // Maps to Node.url
@@ -44,7 +44,7 @@ export function nodeToReadingItem(node: Node): ReadingItem {
 		title: node.label,
 		description: node.summary || '',
 		content: node.content || '',
-		category: node.sourceType,
+		category: node.publisher,
 		url: node.url,
 		status: 'unread' as const,
 	};

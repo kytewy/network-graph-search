@@ -106,7 +106,7 @@ const FilterPanel = () => {
 	const availableContinents = getAvailableContinents();
 	const availableTags = getAvailableTags();
 	const sourceTypes = [
-		...new Set(filteredResults.map((node) => node.type || '').filter(Boolean)),
+		...new Set(filteredResults.map((node) => node.publisher || '').filter(Boolean)),
 	];
 
 	const totalFiltersActive = selectedContinents.length + selectedCountries.length + selectedTags.length + selectedSimilarityRanges.length;

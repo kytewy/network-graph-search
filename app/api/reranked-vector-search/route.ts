@@ -44,13 +44,12 @@ export async function POST(request: NextRequest) {
 			label: string;
 			score: number;
 			similarity: number;
-			category: string;
-			type: string;
+			publisher: string;
+			documentType: string;
 			summary: string;
 			content: string;
 			continent: string;
 			country: string;
-			sourceType: string;
 			size: number;
 			url?: string;
 			tags?: string[];
@@ -95,13 +94,12 @@ export async function POST(request: NextRequest) {
 					label: data.label || nodeId,
 					score: score,
 					similarity: score, // For compatibility with existing code
-					category: data.category || '',
-					type: data.type || '',
+					publisher: data.publisher || '',
+					documentType: data.documentType || '',
 					summary: data.summary || '',
 					content: data.content?.substring(0, 200) || '',
 					continent: data.continent || '',
 					country: data.country || '',
-					sourceType: data.sourceType || '',
 					size: score * 10, // Scale score for node size
 					url: data.url || undefined,
 					tags: data.tags || [],

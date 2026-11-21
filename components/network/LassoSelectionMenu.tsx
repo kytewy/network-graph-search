@@ -148,7 +148,7 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 											{node.label}
 										</td>
 										<td className="py-2 px-3 text-muted-foreground">
-											{node.type}
+											{node.documentType}
 										</td>
 										<td className="py-2 px-3 text-right text-muted-foreground">
 											{(node.content?.length || 0).toLocaleString()} chars

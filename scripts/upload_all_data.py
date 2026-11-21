@@ -4,7 +4,11 @@ Unified Data Upload Script
 Uploads all data sources to Pinecone in a single command.
 
 Usage:
-    python scripts/upload_all_data.py
+    python scripts/upload_all_data.py           # add or update records
+    python scripts/upload_all_data.py --reset   # delete everything in the namespace first
+
+--reset is permanent: it also deletes tags added in the app, which are stored
+only in Pinecone.
 
 This script consolidates:
 - EU AI Act Articles (from eu_ai_act.json)
@@ -24,6 +28,21 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+TAXONOMY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib', 'config', 'document-taxonomy.json')
+
+
+def load_taxonomy() -> Dict[str, List[str]]:
+    """Allowed publisher and document type values, shared with the app."""
+    with open(TAXONOMY_PATH, 'r', encoding='utf-8') as file:
+        taxonomy = json.load(file)
+    return {
+        'publishers': [p['value'] for p in taxonomy['publishers']],
+        'documentTypes': [d['value'] for d in taxonomy['documentTypes']],
+    }
+
+
+TAXONOMY = load_taxonomy()
+
 def load_json_file(file_path: str) -> Any:
     """Load JSON data from a file."""
     try:
@@ -40,6 +59,12 @@ def validate_record(record: Dict[str, Any]) -> Dict[str, Any]:
     """Validate that a record has required fields and truncate large content."""
     if not record.get('_id') or not record.get('chunk_text'):
         raise ValueError(f"Record {record.get('_id', 'unknown')} must have _id and chunk_text fields")
+
+    # Fail fast on a typo, instead of storing a value the app can't colour or filter
+    if record.get('publisher') not in TAXONOMY['publishers']:
+        raise ValueError(f"Record {record['_id']}: unknown publisher {record.get('publisher')!r}. Allowed: {TAXONOMY['publishers']}")
+    if record.get('documentType') not in TAXONOMY['documentTypes']:
+        raise ValueError(f"Record {record['_id']}: unknown documentType {record.get('documentType')!r}. Allowed: {TAXONOMY['documentTypes']}")
     
     # Pinecone metadata limit is 40KB (40,960 bytes) for ALL metadata combined
     # This includes JSON serialization overhead, field names, and all fields
@@ -133,14 +158,13 @@ def load_eu_articles(script_dir: str) -> List[Dict[str, Any]]:
         record = {
             "_id": str(article['id']),
             "chunk_text": f"{article['title']}. {article.get('summary', '')}. {article['content']}",
-            "category": "article",
             "label": article['title'],
-            "type": "article",
             "summary": article.get('summary', article['title']),
             "content": article['content'],
             "continent": article.get('continent', 'Europe'),
             "country": 'European Union',
-            "sourceType": article.get('sourceType', 'Government'),
+            "publisher": "Government",
+            "documentType": "Law",
             "connected_to": article.get('connected_to', []),
             "url": article.get('url')
         }
@@ -166,14 +190,13 @@ def load_eu_recitals(script_dir: str) -> List[Dict[str, Any]]:
         record = {
             "_id": str(recital['id']),
             "chunk_text": f"{recital['title']}. {recital['content']}",
-            "category": "recital",
             "label": recital['title'],
-            "type": "recital",
             "summary": recital.get('title', ''),
             "content": recital['content'],
             "continent": recital.get('continent', 'Europe'),
             "country": 'European Union',
-            "sourceType": recital.get('sourceType', 'Government'),
+            "publisher": "Government",
+            "documentType": "Law",
             "url": recital.get('url')
         }
         records.append(validate_record(record))
@@ -226,14 +249,13 @@ From AI models unpredictably drifting off course to employees inadvertently leak
     record1 = {
         "_id": 'IAPP_1',
         "chunk_text": "Model drift, data leaks and deepfakes: Rethinking AI governance in the age of autonomous risk. " + article_content_1,
-        "category": "guide",
         "label": "Model drift, data leaks and deepfakes: Rethinking AI governance in the age of autonomous risk",
-        "type": "article",
         "summary": "Model drift, data leaks and deepfakes: Rethinking AI governance in the age of autonomous risk",
         "content": article_content_1,
         "continent": 'North America',
         "country": 'USA',
-        "sourceType": 'NGO',
+        "publisher": 'NGO',
+        "documentType": 'Interpretation',
         "url": "https://iapp.org/news/a/model-drift-data-leaks-and-deepfakes-rethinking-ai-governance-in-the-age-of-autonomous-risk"
     }
     
@@ -248,20 +270,33 @@ As with seemingly every aspect of AI, legislative activity related to potential 
     record2 = {
         "_id": 'IAPP_2',
         "chunk_text": "US State AI Governance Legislation Tracker. " + article_content_2,
-        "category": "tracker",
         "label": "US State AI Governance Legislation Tracker",
-        "type": "article",
         "summary": "A comprehensive tracker monitoring unprecedented speed of US state AI legislation development, focusing on cross-sectoral laws directly impacting private sector organizations.",
         "content": article_content_2,
         "continent": 'North America',
         "country": 'USA',
-        "sourceType": 'NGO',
+        "publisher": 'NGO',
+        "documentType": 'Interpretation',
         "url": "https://iapp.org/resources/article/us-state-ai-governance-legislation-tracker/"
     }
     
     records = [validate_record(record1), validate_record(record2)]
     print(f"   ✅ Loaded {len(records)} IAPP records")
     return records
+
+def reset_namespace(index, namespace: str) -> None:
+    """Delete every record in the namespace, so removed fields and records don't linger."""
+    print(f"\n🧹 Deleting all records in namespace '{namespace}'...")
+    try:
+        index.delete(delete_all=True, namespace=namespace)
+        print("   ✅ Namespace cleared")
+    except Exception as e:
+        # A namespace that doesn't exist yet has nothing to delete
+        if 'not found' in str(e).lower() or '404' in str(e):
+            print("   Namespace is already empty")
+        else:
+            raise
+
 
 def upload_records_batch(index, namespace: str, records: List[Dict[str, Any]], source_name: str) -> None:
     """Upload records to Pinecone in batches."""
@@ -330,6 +365,11 @@ def main():
         canadian_data = load_canadian_data()
         iapp_data = load_iapp_data()
         
+        if '--reset' in sys.argv:
+            reset_namespace(index, config['namespace'])
+            # Deletes take a moment to apply before new upserts land cleanly
+            time.sleep(5)
+
         # Upload all data sources
         print("\n" + "=" * 70)
         print("📤 UPLOADING TO PINECONE")

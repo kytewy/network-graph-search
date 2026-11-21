@@ -82,12 +82,12 @@ export default function ChatInterface({
 					? contextNodes.map((node) => ({
 							id: node.id,
 							name: node.label,
-							type: node.type || 'document',
+							documentType: node.documentType,
 							text: node.fields?.full_text || node.summary || node.content || 'No content available',
 							content: node.fields?.full_text || node.content,
 							summary: node.summary,
 							country: node.country,
-							sourceType: (node as any).sourceType,
+							publisher: node.publisher,
 					  }))
 					: []; // No fallback to sample nodes - use actual context
 

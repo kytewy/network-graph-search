@@ -1,0 +1,19 @@
+{
+	"_comment": "Single source for who published a document and what kind it is. Read by the app (lib/config/document-taxonomy.ts) and the upload script (scripts/upload_all_data.py). Stored values are the labels.",
+	"publishers": [
+		{ "value": "Government", "color": "#2563eb", "description": "Lawmakers and governments" },
+		{ "value": "Regulator", "color": "#0891b2", "description": "Agencies that supervise and enforce" },
+		{ "value": "Law firm", "color": "#dc2626", "description": "Legal practices" },
+		{ "value": "Consultancy", "color": "#ea580c", "description": "Big Four and advisory firms" },
+		{ "value": "Academic", "color": "#7c3aed", "description": "Universities and research institutes" },
+		{ "value": "NGO", "color": "#16a34a", "description": "Non-profits and professional associations" },
+		{ "value": "News outlet", "color": "#ca8a04", "description": "Journalism and trade press" },
+		{ "value": "Tech company", "color": "#db2777", "description": "Companies building or deploying AI" },
+		{ "value": "Other", "color": "#6b7280", "description": "Anyone else" }
+	],
+	"documentTypes": [
+		{ "value": "Law", "color": "#1e3a8a", "description": "The legal text itself, including recitals" },
+		{ "value": "Guidance", "color": "#0d9488", "description": "Official guidance on how the law applies" },
+		{ "value": "Interpretation", "color": "#f59e0b", "description": "Someone's reading of what the law means" }
+	]
+}

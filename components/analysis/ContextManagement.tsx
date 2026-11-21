@@ -29,10 +29,10 @@ interface Node {
 	label: string;
 	summary?: string;
 	content?: string;
-	type?: string;
+	documentType?: string;
 	continent?: string;
 	country?: string;
-	sourceType?: string;
+	publisher?: string;
 	size?: number;
 	color?: string;
 	similarity?: number;
@@ -130,9 +130,9 @@ export default function ContextManagement({
 		// Rough token estimation (1 token ≈ 4 characters)
 		const estimatedTokens = Math.ceil(totalChars / 4);
 
-		// Count nodes by type
+		// Count nodes by document type
 		const nodesByType = contextNodes.reduce((acc, node) => {
-			const type = node.type || 'unknown';
+			const type = node.documentType || 'unknown';
 			acc[type] = (acc[type] || 0) + 1;
 			return acc;
 		}, {} as Record<string, number>);
@@ -500,9 +500,9 @@ export default function ContextManagement({
 												<td className="py-1 pr-2 truncate max-w-[120px]">
 													<div className="flex flex-col">
 														<span className="font-medium">{node.label}</span>
-														{node.type && (
+														{node.documentType && (
 															<span className="text-xs text-muted-foreground">
-																{node.type}
+																{node.publisher ? `${node.publisher} · ` : ''}{node.documentType}
 															</span>
 														)}
 													</div>

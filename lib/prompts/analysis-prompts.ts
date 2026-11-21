@@ -19,9 +19,9 @@ export interface AnalyzeNodesParams {
 		text?: string;
 		content?: string;
 		summary?: string;
-		type?: string;
+		documentType?: string;
 		country?: string;
-		sourceType?: string;
+		publisher?: string;
 	}>;
 	customPrompt?: string;
 	charLimitPerDoc?: number;
@@ -86,9 +86,9 @@ export function formatNodesForPrompt(
 		.map((node) => {
 			const text = node.text || node.content || node.summary || node.name || '';
 			const metadata = [
-				node.type && `Type: ${node.type}`,
+				node.publisher && `Publisher: ${node.publisher}`,
+				node.documentType && `Document type: ${node.documentType}`,
 				node.country && `Country: ${node.country}`,
-				node.sourceType && `Source: ${node.sourceType}`,
 			]
 				.filter(Boolean)
 				.join(' | ');

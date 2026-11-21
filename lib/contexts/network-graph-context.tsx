@@ -44,10 +44,10 @@ interface NetworkGraphContextType {
 	nodeSizeMode: NodeSizeMode;
 	clusterMode:
 		| 'none'
-		| 'type'
+		| 'documentType'
 		| 'continent'
 		| 'country'
-		| 'sourceType'
+		| 'publisher'
 		| 'ai_clusters';
 
 	// AI Cluster analysis state
@@ -78,10 +78,10 @@ interface NetworkGraphContextType {
 	setClusterMode: (
 		mode:
 			| 'none'
-			| 'type'
+			| 'documentType'
 			| 'continent'
 			| 'country'
-			| 'sourceType'
+			| 'publisher'
 			| 'ai_clusters'
 	) => void;
 	handleCustomNodeClick: (node: GraphNode) => void;
