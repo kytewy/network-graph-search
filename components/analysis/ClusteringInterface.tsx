@@ -178,7 +178,7 @@ export default function ClusteringInterface({
 			const nodeData = contextNodes.map((node) => ({
 				id: node.id,
 				label: node.label || node.id,
-				text: node.content || node.summary || node.label || '',
+				content: node.content || node.summary || node.label || '',
 			}));
 
 			// Call clustering API

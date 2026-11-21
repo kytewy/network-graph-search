@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import path from 'path';
-import { LIMITS, badRequest, rateLimit, serverError, truncate } from '@/lib/utils/api-guard';
+import { LIMITS, badRequest, rateLimit, serverError } from '@/lib/utils/api-guard';
+import { toClusterInput } from '@/lib/clustering/input';
 
 interface NodeInput {
 	id: string;
@@ -52,13 +53,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Keep only the fields the analyzer uses, with long text truncated
-		const safeNodes: NodeInput[] = nodes.map((node) => ({
-			id: truncate(node?.id, 200),
-			label: truncate(node?.label, 500),
-			content: truncate(node?.content, LIMITS.MAX_CONTENT_CHARS),
-			summary: truncate(node?.summary, LIMITS.MAX_CONTENT_CHARS),
-			type: truncate(node?.type, 100),
-		}));
+		const safeNodes = toClusterInput(nodes as unknown as Array<Record<string, unknown>>);
 
 		// Path to the clustering script (in backend/clustering/)
 		const scriptPath = path.join(process.cwd(), 'backend', 'clustering', 'cli.py');
