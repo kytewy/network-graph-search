@@ -68,10 +68,10 @@ export function useGraphCoordination(
 		setIsClient(true);
 	}, []);
 
-	// Get store actions with SSR safety
-	const addNodesToContext = useContextStore((state) => 
-		isClient ? state.addNodesToContext : () => {}
-	);
+	// Store actions are stable, so select them directly. A selector that
+	// returns a new function each render makes React loop (getSnapshot warning);
+	// handleSendToContext below already waits for the client.
+	const addNodesToContext = useContextStore((state) => state.addNodesToContext);
 
 	// Refs for graph canvas and node positions
 	const graphRef = useRef<GraphCanvasRef | null>(null);
