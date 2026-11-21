@@ -6,12 +6,75 @@ import { debugLog } from '@/lib/utils/debug';
 
 import { Pinecone } from '@pinecone-database/pinecone';
 
+// Not exported from the package root, so derive it from the client
+type SearchRecordsOptions = Parameters<ReturnType<Pinecone['index']>['searchRecords']>[0];
+
 // Environment variable handling
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
 const PINECONE_INDEX_NAME = process.env.PINECONE_INDEX_NAME || 'network-graph';
 const PINECONE_INDEX_HOST = process.env.PINECONE_INDEX_HOST || ''; // Add this to your env variables
 const PINECONE_NAMESPACE =
 	process.env.PINECONE_NAMESPACE || 'example-namespace';
+
+/**
+ * Reranking settings. The vector search over-fetches candidates, then a
+ * hosted reranker reorders them and keeps the top `topK`.
+ * Pinecone-hosted rerankers accept at most 100 documents per request.
+ */
+export const RERANK = {
+	model: process.env.PINECONE_RERANK_MODEL || 'bge-reranker-v2-m3',
+	minCandidates: 40,
+	maxCandidates: 100,
+} as const;
+
+const SEARCH_FIELDS = [
+	'chunk_text',
+	'category',
+	'label',
+	'type',
+	'summary',
+	'content',
+	'continent',
+	'country',
+	'sourceType',
+	'connected_to',
+	'url',
+	'embedding',
+	'tags',
+];
+
+/** Builds the searchRecords request, with a rerank block when reranking is on. */
+export function buildSearchRequest(
+	query: string,
+	topK: number,
+	useReranking: boolean,
+	filters?: Record<string, any>
+): SearchRecordsOptions {
+	const candidates = useReranking
+		? Math.min(RERANK.maxCandidates, Math.max(RERANK.minCandidates, topK * 2))
+		: topK;
+
+	const request: SearchRecordsOptions = {
+		query: { topK: candidates, inputs: { text: query } },
+		fields: SEARCH_FIELDS,
+	};
+
+	if (filters && Object.keys(filters).length > 0) {
+		request.query.filter = filters;
+	}
+
+	if (useReranking) {
+		request.rerank = {
+			model: RERANK.model,
+			topN: topK,
+			rankFields: ['chunk_text'],
+			// Long articles exceed the reranker's input limit; cut them instead of failing
+			parameters: { truncate: 'END' },
+		};
+	}
+
+	return request;
+}
 
 // Types for Pinecone responses
 export interface PineconeSearchResult {
@@ -62,36 +125,9 @@ export async function searchPinecone(
 		// Get the namespace
 		const namespace = index.namespace(PINECONE_NAMESPACE);
 
-		// Build the search query with optional filters
-		const searchQuery: any = {
-			query: {
-				topK,
-				inputs: { text: query },
-			},
-			fields: [
-				'chunk_text',
-				'category',
-				'label',
-				'type',
-				'summary',
-				'content',
-				'continent',
-				'country',
-				'sourceType',
-				'connected_to',
-				'url',
-				'embedding',
-				'tags',
-			],
-		};
+		const searchQuery = buildSearchRequest(query, topK, useReranking, filters);
+		debugLog('[Vector Search] Request:', JSON.stringify(searchQuery));
 
-		// Add metadata filters if provided
-		if (filters && Object.keys(filters).length > 0) {
-			searchQuery.query.filter = filters;
-			debugLog('[Vector Search] Applying Pinecone filters:', JSON.stringify(filters, null, 2));
-		}
-
-		// Search using the exact pattern from the documentation
 		const response = await namespace.searchRecords(searchQuery);
 
 		return { results: response };
