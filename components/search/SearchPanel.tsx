@@ -106,7 +106,8 @@ export function SearchPanel() {
 					<TabsContent
 						value="results"
 						className="flex-1 overflow-y-auto data-[state=inactive]:hidden">
-						<div className="p-6 pt-4">
+						{/* Same 24px spacing as the header above the divider */}
+						<div className="p-6">
 							{searchCount > 0 ? (
 								<SearchResults />
 							) : (
@@ -127,7 +128,7 @@ export function SearchPanel() {
 					<TabsContent
 						value="filters"
 						className="flex-1 overflow-y-auto data-[state=inactive]:hidden">
-						<div className="p-6 pt-4">
+						<div className="p-6">
 							{searchCount > 0 ? (
 								<FilterPanel />
 							) : (
