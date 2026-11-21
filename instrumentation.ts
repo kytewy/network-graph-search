@@ -11,8 +11,10 @@ export async function register() {
 		const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
 		if (!token) return;
 
-		const { createPostHogLogger, setLogger } = await import('./lib/observability/logger');
+		const { createPostHogLogger, log, setLogger } = await import('./lib/observability/logger');
 		setLogger(createPostHogLogger({ token, host: process.env.NEXT_PUBLIC_POSTHOG_HOST || undefined }));
+		// One log per start, so a working setup shows up in PostHog right away
+		log.info('Server started', { nodeEnv: process.env.NODE_ENV });
 	}
 }
 
