@@ -9,6 +9,7 @@ import { NodeContextMenu } from './NodeContextMenu';
 import { GRAPH_LAYOUT_CONFIG, PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/config/graph-config';
 import { Z_INDEX } from '@/lib/config/graph-config';
 import { logArrayOperation } from '@/lib/utils/error-tracker';
+import { useNetworkStore } from '@/lib/stores/network-store';
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
 const GraphCanvas = dynamic(
@@ -44,6 +45,10 @@ export function NetworkGraphCanvasClient() {
 		handleSendToContext,
 		filteredResults,
 	} = useNetworkGraph();
+
+	// Nodes hovered in the side panels (search results, context, cluster cards).
+	// Read straight from the store so hovering doesn't rebuild the graph data.
+	const highlightedNodes = useNetworkStore((state) => state.highlightedNodes);
 
 	// Determine which cluster attribute to use
 	// Simply use the clusterMode as the attribute name since all properties are attached to nodes
@@ -122,6 +127,8 @@ export function NetworkGraphCanvasClient() {
 						}}
 						// Temporarily disable selections to isolate the error
 						// selections={safeSelections}
+						// Recolours hovered nodes without moving the layout
+						actives={highlightedNodes}
 						onNodeClick={handleCustomNodeClick}
 						onCanvasClick={(event?: MouseEvent) => event && onCanvasClick(event)}
 						// Lasso selection for multi-node selection (hold Shift + drag)

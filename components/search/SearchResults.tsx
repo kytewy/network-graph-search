@@ -10,6 +10,7 @@ import { BookOpen, ArrowUpDown } from 'lucide-react';
 import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
 import { useContextStore } from '@/lib/stores/context-store';
 import type { Node } from '@/lib/config/types';
+import { useHighlightOnHover } from '@/hooks/use-highlight-on-hover';
 
 /**
  * Get score color based on similarity ranges (aligned with node-colors.ts)
@@ -55,6 +56,8 @@ export function SearchResults() {
 	const toggleSort = () => {
 		setSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'));
 	};
+
+	const highlight = useHighlightOnHover();
 
 	// Open document in reading mode
 	const openReadingMode = (node: Node) => {
@@ -146,6 +149,7 @@ export function SearchResults() {
 					return (
 						<div
 							key={result.id}
+							{...highlight(result.id)}
 							className="border rounded-lg p-3 transition-all duration-200 hover:border-primary/50 hover:shadow-sm">
 							{/* Result Header */}
 							<div className="flex items-start justify-between gap-3">

@@ -25,6 +25,7 @@ import ChatInterface from '@/components/analysis/ChatInterface';
 import ClusteringInterface from '@/components/analysis/ClusteringInterface';
 import { contextTokens, nodeTokens } from '@/lib/utils/llm-tokens';
 import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
+import { useHighlightOnHover } from '@/hooks/use-highlight-on-hover';
 
 interface Node {
 	id: string;
@@ -72,6 +73,7 @@ export default function ContextManagement({
 	const [isClient, setIsClient] = useState(false);
 
 	// Get all store state - MUST be called before conditional returns
+	const highlight = useHighlightOnHover(); // Hover a row to highlight its node on the graph
 	const showActiveNodes = useUIStore((state) => state.showActiveNodes);
 	const setShowActiveNodes = useUIStore((state) => state.setShowActiveNodes);
 
@@ -466,6 +468,7 @@ export default function ContextManagement({
 										{paginatedNodes.map((node) => (
 											<tr
 												key={node.id}
+												{...highlight(node.id)}
 												className={`hover:bg-muted/30 ${
 													selectedNodeIds.has(node.id) ? 'bg-muted/20' : ''
 												} cursor-pointer`}

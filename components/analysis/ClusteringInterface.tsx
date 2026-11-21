@@ -20,6 +20,10 @@ import { useContextStore } from '@/lib/stores/context-store';
 import { buildClusterAnalysisPrompt } from '@/lib/prompts/analysis-prompts';
 import { createLatestRequest, isAbortError } from '@/lib/utils/latest-request';
 import { reportError } from '@/lib/observability/capture-client';
+import { useHighlightOnHover } from '@/hooks/use-highlight-on-hover';
+import { resolveClusterNodes } from '@/lib/clustering/resolve-cluster-nodes';
+import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
+import type { Node } from '@/lib/config/types';
 
 interface ClusteringInterfaceProps {
 	contextNodes: any[];
@@ -96,6 +100,16 @@ export default function ClusteringInterface({
 	const removeNodeFromContext = useContextStore(
 		(state) => state.removeNodeFromContext
 	);
+
+	// Cluster card members: hover highlights the node, click opens read mode
+	const highlight = useHighlightOnHover();
+	const [readingNode, setReadingNode] = useState<Node | null>(null);
+	const isInContext = (nodeId: string) => contextNodes.some((n) => n.id === nodeId);
+	const toggleReadingNodeContext = () => {
+		if (!readingNode) return;
+		if (isInContext(readingNode.id)) removeNodeFromContext(readingNode.id);
+		else addNodesToContext([readingNode]);
+	};
 
 	// Auto-generate cluster suggestions when clustering completes
 	useEffect(() => {
@@ -657,13 +671,20 @@ export default function ClusteringInterface({
 											</button>
 											{isExpanded && (
 												<div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-													{cluster.node_ids.map((nodeId) => (
-														<span
-															key={nodeId}
-															className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-mono">
-															{nodeId}
-														</span>
-													))}
+													{resolveClusterNodes(cluster.node_ids, allNodes, contextNodes).map(
+														(member) => (
+															<button
+																key={member.id}
+																type="button"
+																{...highlight(member.id)}
+																disabled={!member.node}
+																onClick={() => member.node && setReadingNode(member.node)}
+																title={member.node ? `${member.label} (click to read)` : `${member.id} is filtered off the page`}
+																className="inline-block max-w-[16rem] truncate bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-default">
+																{member.label}
+															</button>
+														)
+													)}
 												</div>
 											)}
 											{!isExpanded && (
@@ -739,6 +760,14 @@ export default function ClusteringInterface({
 						})}
 					</div>
 				</div>
+			)}
+			{readingNode && (
+				<DocumentOverlay
+					document={nodeToReadingItem(readingNode)}
+					onClose={() => setReadingNode(null)}
+					isInContext={isInContext(readingNode.id)}
+					onToggleContext={toggleReadingNodeContext}
+				/>
 			)}
 		</div>
 	);
