@@ -45,6 +45,17 @@ describe('useGraphData with cluster assignments', () => {
 		expect(nodes[0]).not.toHaveProperty('ai_clusters');
 	});
 
+	it('puts the cluster in node.data, where Reagraph reads clusterAttribute', () => {
+		// Reagraph groups nodes by `node.data[clusterAttribute]`
+		const nodes = [node('a')];
+		const aiClusters = toAssignments({ a: 'cluster_0' });
+		const { result } = renderHook(() => useGraphData(nodes, [], { ...options, aiClusters }));
+
+		expect((result.current.graphNodes[0].data as any).ai_clusters).toBe('cluster_0');
+		expect((result.current.graphNodes[0].data as any).id).toBe('a');
+		expect(nodes[0]).not.toHaveProperty('ai_clusters');
+	});
+
 	it('keeps clusters when a re-search returns new node objects', () => {
 		const aiClusters = toAssignments({ a: 'cluster_0' });
 		const { result, rerender } = renderHook(

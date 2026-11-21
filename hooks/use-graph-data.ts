@@ -91,7 +91,10 @@ export function useGraphData(
 				size: getNodeSize(node), // Actually use the size calculation
 				score: node.score || 0.5,
 				category: node.category || '',
-				data: node as any, // Store original node data for context menu and interactions
+				// Original node data for menus and interactions. Reagraph groups by
+				// data[clusterAttribute], so the AI cluster goes here too (a copy,
+				// never written onto the search result)
+				data: { ...node, ai_clusters: aiClusters[node.id] } as any,
 				
 				// Attach all possible cluster properties to the node
 				// Reagraph will use the one specified by clusterAttribute
