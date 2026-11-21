@@ -73,8 +73,9 @@ export function SearchPanel() {
 					onValueChange={(value) => setActiveTab(value as any)}
 					className="flex h-full flex-col">
 					{/* Tab Headers */}
-					<div className="px-6 pt-4 pb-0 bg-sidebar shrink-0">
-						<TabsList className="grid w-full grid-cols-2 bg-transparent p-0 h-auto gap-0">
+					{/* Divider under the tabs; the active tab's underline sits on top of it */}
+					<div className="px-6 pt-4 pb-0 bg-sidebar shrink-0 border-b border-sidebar-border">
+						<TabsList className="grid w-full grid-cols-2 bg-transparent p-0 h-auto gap-0 -mb-px">
 							<TabsTrigger
 								value="results"
 								className="flex items-center gap-2 rounded-t-md border-b-2 border-transparent pb-3 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-accent/50">
