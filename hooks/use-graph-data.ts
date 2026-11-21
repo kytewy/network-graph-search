@@ -5,6 +5,7 @@ import type { GraphNode, GraphEdge } from 'reagraph';
 import type { Node, Link } from '@/lib/stores/app-state';
 import { NodeColorCalculator } from '@/lib/utils/node-colors';
 import { NodeSizeCalculator } from '@/lib/utils/node-sizing';
+import { NO_CLUSTERS, type ClusterAssignments } from '@/lib/clustering/assignments';
 
 export type ColorMode =
 	| 'sourceType'
@@ -23,6 +24,7 @@ interface UseGraphDataOptions {
 	colorMode: ColorMode;
 	nodeSizeMode: NodeSizeMode;
 	clusterMode?: string; // Cluster mode
+	aiClusters?: ClusterAssignments; // AI cluster per node id
 }
 
 interface UseGraphDataReturn {
@@ -61,7 +63,7 @@ interface UseGraphDataReturn {
 export function useGraphData(
 	nodes: Node[],
 	links: Link[],
-	{ colorMode, nodeSizeMode, clusterMode }: UseGraphDataOptions
+	{ colorMode, nodeSizeMode, clusterMode, aiClusters = NO_CLUSTERS }: UseGraphDataOptions
 ): UseGraphDataReturn {
 	const getNodeColor = useCallback(
 		(node: Node) => {
@@ -97,7 +99,7 @@ export function useGraphData(
 				continent: nodeData.continent,
 				country: nodeData.country,
 				sourceType: nodeData.sourceType,
-				ai_clusters: nodeData.ai_clusters, // AI cluster assignment (e.g., "cluster_0") - stored directly on node
+				ai_clusters: aiClusters[node.id], // AI cluster from the assignments map (e.g., "cluster_0")
 				
 				// Include fields needed by UI components
 				summary: nodeData.summary,
@@ -108,7 +110,7 @@ export function useGraphData(
 		});
 
 		return transformed;
-	}, [nodes, getNodeColor, getNodeSize]);
+	}, [nodes, getNodeColor, getNodeSize, aiClusters]);
 
 	// Transform links to Reagraph edges
 	const graphEdges = useMemo(() => {

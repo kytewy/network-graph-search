@@ -6,7 +6,6 @@ import React, {
 	useMemo,
 	useState,
 	useCallback,
-	useEffect,
 } from 'react';
 import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
 import { useAppStore, type Node, type Link } from '@/lib/stores/app-state';
@@ -22,6 +21,12 @@ import { useGraphVisualizationSettings } from '@/hooks/use-graph-visualization-s
 import { useGraphLayout } from '@/hooks/use-graph-layout';
 import { useGraphSelectionReagraph } from '@/hooks/use-graph-selection-reagraph';
 import { useGraphCoordination } from '@/hooks/use-graph-coordination';
+import {
+	NO_CLUSTERS,
+	hasClustersFor,
+	toAssignments,
+	type ClusterAssignments,
+} from '@/lib/clustering/assignments';
 
 // Define the context interface
 interface NetworkGraphContextType {
@@ -109,8 +114,12 @@ export function NetworkGraphProvider({
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	const filteredLinks = useAppStore((state) => state.filteredLinks);
 
-	// AI Cluster analysis state (separate from manual clustering)
-	const [hasAiClusters, setHasAiClusters] = useState<boolean>(false);
+	// AI cluster assignments, kept apart from the nodes (never written onto them)
+	const [aiClusters, setAiClusters] = useState<ClusterAssignments>(NO_CLUSTERS);
+	const hasAiClusters = useMemo(
+		() => hasClustersFor(filteredResults, aiClusters),
+		[filteredResults, aiClusters]
+	);
 
 	// Hook: Visualization settings (replaces direct store access)
 	const {
@@ -124,23 +133,13 @@ export function NetworkGraphProvider({
 		setClusterMode,
 	} = useGraphVisualizationSettings();
 
-	// AI Cluster functions - Now mutates nodes directly
 	const applyAiClusters = useCallback(
 		(assignments: Record<string, string>) => {
-			// Get current filteredResults to avoid dependency issues
-			const currentResults = useAppStore.getState().filteredResults;
-			
-			// Mutate the filteredResults nodes directly
-			currentResults.forEach((node) => {
-				if (assignments[node.id]) {
-					node.ai_clusters = assignments[node.id];
-				}
-			});
-
-			setHasAiClusters(Object.keys(assignments).length > 0);
+			const next = toAssignments(assignments);
+			setAiClusters(next);
 
 			// Automatically switch to AI clusters mode when user runs clustering
-			if (Object.keys(assignments).length > 0) {
+			if (Object.keys(next).length > 0) {
 				setClusterMode('ai_clusters');
 			}
 		},
@@ -148,33 +147,9 @@ export function NetworkGraphProvider({
 	);
 
 	const clearAiClusters = useCallback(() => {
-		// Get current filteredResults to avoid dependency issues
-		const currentResults = useAppStore.getState().filteredResults;
-		
-		// Remove ai_clusters from all nodes
-		currentResults.forEach((node) => {
-			delete node.ai_clusters;
-		});
-
-		setHasAiClusters(false);
-		// Switch back to no clustering
+		setAiClusters(NO_CLUSTERS);
 		setClusterMode('none');
 	}, [setClusterMode]);
-
-	// Detect if nodes already have ai_clusters assigned (e.g., from search results)
-	useEffect(() => {
-		const nodesWithClusters = filteredResults.filter(
-			(node) => node.ai_clusters
-		);
-		const hasPreAssignedClusters = nodesWithClusters.length > 0;
-
-		if (hasPreAssignedClusters) {
-			setHasAiClusters(true);
-			// Don't auto-switch - let user manually select AI Clusters mode
-		} else {
-			setHasAiClusters(false);
-		}
-	}, [filteredResults]);
 
 	// Hook: Layout management with cluster validation
 	const { layoutType, handleLayoutChange } = useGraphLayout();
@@ -184,7 +159,7 @@ export function NetworkGraphProvider({
 	const { graphNodes, graphEdges, getNodeColor, getNodeSize } = useGraphData(
 		filteredResults,
 		filteredLinks,
-		{ colorMode, nodeSizeMode, clusterMode }
+		{ colorMode, nodeSizeMode, clusterMode, aiClusters }
 	);
 
 	// Hook 2: Lasso selection state management
