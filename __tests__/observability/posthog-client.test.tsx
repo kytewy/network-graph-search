@@ -4,12 +4,14 @@
  */
 
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 
-const posthog = { __loaded: false, captureException: jest.fn() };
-jest.mock('posthog-js', () => ({ __esModule: true, default: posthog }));
+const mockPosthog = { __loaded: false, captureException: jest.fn() };
+// Getter: jest hoists this mock above the const, so read it lazily
+jest.mock('posthog-js', () => ({ __esModule: true, get default() { return mockPosthog; } }));
+const posthog = mockPosthog;
 
-import { captureClientError } from '@/lib/observability/capture-client';
+import { captureClientError, reportError } from '@/lib/observability/capture-client';
 import GraphError from '@/app/graph/error';
 import GlobalError from '@/app/global-error';
 
@@ -46,8 +48,28 @@ describe('error pages report what they caught', () => {
 	it('global error page renders a way out and reports', () => {
 		posthog.__loaded = true;
 		const error = new Error('layout crashed');
-		render(<GlobalError error={error} />, { container: document.documentElement });
-		expect(screen.getByRole('button', { name: /reload/i })).toBeInTheDocument();
+		// It renders its own <html>, so query what was rendered, not document.body
+		const { getByRole } = render(<GlobalError error={error} />, { container: document.documentElement });
+		expect(getByRole('button', { name: /reload/i })).toBeInTheDocument();
 		expect(posthog.captureException).toHaveBeenCalledWith(error, { boundary: 'global' });
+	});
+});
+
+describe('reportError (errors the UI catches itself)', () => {
+	it('prints and reports with where it happened', () => {
+		posthog.__loaded = true;
+		const error = new Error('search failed');
+		reportError('search', error, { query: 'AI' });
+
+		expect(console.error).toHaveBeenCalledWith('[search]', error);
+		expect(posthog.captureException).toHaveBeenCalledWith(error, { context: 'search', query: 'AI' });
+	});
+
+	it('ignores cancelled requests', () => {
+		posthog.__loaded = true;
+		reportError('search', Object.assign(new Error('aborted'), { name: 'AbortError' }));
+
+		expect(console.error).not.toHaveBeenCalled();
+		expect(posthog.captureException).not.toHaveBeenCalled();
 	});
 });

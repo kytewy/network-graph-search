@@ -27,6 +27,7 @@ import {
 	toAssignments,
 	type ClusterAssignments,
 } from '@/lib/clustering/assignments';
+import { reportError } from '@/lib/observability/capture-client';
 
 // Define the context interface
 interface NetworkGraphContextType {
@@ -319,7 +320,7 @@ export class NetworkGraphErrorBoundary extends React.Component<
 	}
 
 	componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-		console.error('NetworkGraph error:', error, errorInfo);
+		reportError('graph-boundary', error, { componentStack: errorInfo.componentStack });
 	}
 
 	render() {

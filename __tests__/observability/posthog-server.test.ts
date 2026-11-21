@@ -24,7 +24,12 @@ import {
 	getPostHogServer,
 	resetPostHogServer,
 } from '@/lib/observability/posthog-server';
-import { serverError } from '@/lib/utils/api-guard';
+import { rateLimit, resetRateLimits, serverError } from '@/lib/utils/api-guard';
+import { llmError } from '@/lib/utils/openai-client';
+import { createPostHogLogger, setLogger } from '@/lib/observability/logger';
+import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
+import { APIConnectionTimeoutError } from 'openai';
+import { NextRequest } from 'next/server';
 import { onRequestError } from '@/instrumentation';
 
 const TOKEN = 'NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN';
@@ -91,5 +96,59 @@ describe('onRequestError', () => {
 		expect(captureException).toHaveBeenCalledWith(error, {
 			properties: expect.objectContaining({ path: '/api/search', method: 'POST', routeType: 'route' }),
 		});
+	});
+});
+
+describe('gaps found in the logging audit', () => {
+	let exporter: InMemoryLogRecordExporter;
+	const logged = () => exporter.getFinishedLogRecords().map((r) => [r.severityText, r.body, r.attributes]);
+
+	beforeEach(() => {
+		process.env[TOKEN] = 'phc_test';
+		exporter = new InMemoryLogRecordExporter();
+		setLogger(createPostHogLogger({ token: 'phc_test', exporter }));
+	});
+	afterEach(() => setLogger(null));
+
+	it('reports OpenAI timeouts, not just prints them', async () => {
+		const error = new APIConnectionTimeoutError();
+		const response = llmError('analyze-nodes', error);
+
+		expect(response.status).toBe(504);
+		expect(captureException).toHaveBeenCalledWith(error, {
+			properties: { context: 'analyze-nodes', timeout: true },
+		});
+		expect(logged()).toEqual([['WARN', 'OpenAI timed out', { context: 'analyze-nodes' }]]);
+	});
+
+	it('logs a warning when someone hits a rate limit', () => {
+		resetRateLimits();
+		const request = new NextRequest('http://localhost/api/x', { headers: { 'x-forwarded-for': '1.2.3.4' } });
+		let response = null;
+		for (let i = 0; i < 25 && !response; i++) response = rateLimit(request, 'llm');
+
+		expect(response?.status).toBe(429);
+		expect(logged()).toEqual([['WARN', 'Rate limit hit', { group: 'llm' }]]);
+	});
+
+	it('documents/list reports errors and hides their details', async () => {
+		jest.resetModules();
+		jest.doMock('@pinecone-database/pinecone', () => ({
+			Pinecone: class {
+				index() {
+					return { query: async () => { throw new Error('Vector dimension 1536 does not match 1024'); } };
+				}
+			},
+		}));
+		process.env.PINECONE_API_KEY = 'k';
+		process.env.PINECONE_INDEX_NAME = 'i';
+		const { GET } = await import('@/app/api/documents/list/route');
+		const response = await GET(new NextRequest('http://localhost/api/documents/list'));
+		const body = await response.json();
+
+		expect(response.status).toBe(500);
+		expect(JSON.stringify(body)).not.toMatch(/dimension/);
+		delete process.env.PINECONE_API_KEY;
+		delete process.env.PINECONE_INDEX_NAME;
 	});
 });

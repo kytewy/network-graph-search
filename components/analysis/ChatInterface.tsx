@@ -9,6 +9,7 @@ import { useContextStore } from '@/lib/stores/context-store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getQuickPrompt, CHAT_PLACEHOLDERS } from '@/lib/prompts/analysis-prompts';
+import { reportError } from '@/lib/observability/capture-client';
 
 interface ChatInterfaceProps {
 	safeSelectedNodes: string[];
@@ -110,7 +111,7 @@ export default function ChatInterface({
 					throw new Error(`API request failed: ${response.status}`);
 				}
 			} catch (error) {
-				console.error('[v0] Error getting LLM response:', error);
+				reportError('chat', error);
 				updateChatConversation(conversationIdToUpdate, {
 					response:
 						'Sorry, I encountered an error while analyzing the network data. Please try again.',

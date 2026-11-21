@@ -9,7 +9,7 @@ import { X, Tag, Plus, Check } from 'lucide-react';
 import { Z_INDEX } from '@/lib/config/graph-config';
 import { Node } from '@/lib/config/types';
 import { useAppStore } from '@/lib/stores/app-state';
-import { isAbortError } from '@/lib/utils/latest-request';
+import { reportError } from '@/lib/observability/capture-client';
 
 /**
  * Document display interface for reading mode
@@ -98,7 +98,7 @@ export default function DocumentOverlay({
 					if (!controller.signal.aborted) setTags(data.tags || []);
 				}
 			} catch (err) {
-				if (!isAbortError(err)) console.error('[Fetch Tags] Error:', err);
+				reportError('document-tags-load', err);
 			}
 		};
 
@@ -174,7 +174,7 @@ export default function DocumentOverlay({
 			setTagInput('');
 			setShowTagInput(false);
 		} catch (err) {
-			console.error('[Tagging] Error:', err);
+			reportError('document-tag-add', err);
 			setTagError(err instanceof Error ? err.message : 'Failed to add tag');
 		} finally {
 			setIsTagging(false);
@@ -211,7 +211,7 @@ export default function DocumentOverlay({
 			);
 			setSearchResults(updatedResults);
 		} catch (err) {
-			console.error('[Tag Removal] Error:', err);
+			reportError('document-tag-remove', err);
 			setTagError(err instanceof Error ? err.message : 'Failed to remove tag');
 		} finally {
 			setIsTagging(false);

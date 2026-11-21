@@ -1,6 +1,8 @@
 import OpenAI, { APIConnectionTimeoutError } from 'openai';
 import { NextResponse } from 'next/server';
 import { serverError } from '@/lib/utils/api-guard';
+import { captureServerError } from '@/lib/observability/posthog-server';
+import { log } from '@/lib/observability/logger';
 
 /**
  * Wait at most 20 s per attempt and retry twice (the SDK retries
@@ -67,6 +69,8 @@ export function parseJSONObject(text: string | null | undefined): Record<string,
 export function llmError(context: string, error: unknown, message = 'Internal server error') {
 	if (error instanceof APIConnectionTimeoutError) {
 		console.error(`[${context}] OpenAI timed out`);
+		captureServerError(error, { context, timeout: true });
+		log.warn('OpenAI timed out', { context });
 		return NextResponse.json(
 			{ error: 'The AI took too long to respond. Please try again.' },
 			{ status: 504 }

@@ -79,6 +79,8 @@ export function rateLimit(
 	bucket.count += 1;
 	if (bucket.count > limit) {
 		const retryAfter = Math.ceil((bucket.resetAt - now) / 1000);
+		// Only the first blocked request per window, so a flood doesn't flood the logs
+		if (bucket.count === limit + 1) log.warn('Rate limit hit', { group });
 		return NextResponse.json(
 			{ error: 'Too many requests. Please wait a moment and try again.' },
 			{ status: 429, headers: { 'Retry-After': String(retryAfter) } }

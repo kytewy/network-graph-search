@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pinecone } from '@pinecone-database/pinecone';
+import { serverError } from '@/lib/utils/api-guard';
 
 export async function GET(request: NextRequest) {
 	try {
@@ -40,10 +41,6 @@ export async function GET(request: NextRequest) {
 			documents,
 		});
 	} catch (error) {
-		console.error('Error listing documents:', error);
-		return NextResponse.json(
-			{ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-			{ status: 500 }
-		);
+		return serverError('documents-list', error, 'Failed to list documents');
 	}
 }
