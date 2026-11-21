@@ -73,7 +73,8 @@ export function SearchPanel() {
 					onValueChange={(value) => setActiveTab(value as any)}
 					className="flex h-full flex-col">
 					{/* Tab Headers */}
-					<div className="px-6 pt-4 pb-0 bg-sidebar shrink-0">
+					{/* Divider under the tabs, with the same 16px gap as the line above them */}
+					<div className="px-6 py-4 bg-sidebar shrink-0 border-b border-sidebar-border">
 						<TabsList className="grid w-full grid-cols-2 bg-transparent p-0 h-auto gap-0">
 							<TabsTrigger
 								value="results"
@@ -105,6 +106,7 @@ export function SearchPanel() {
 					<TabsContent
 						value="results"
 						className="flex-1 overflow-y-auto data-[state=inactive]:hidden">
+						{/* 16px below the divider, matching the gap under the search box */}
 						<div className="p-6 pt-4">
 							{searchCount > 0 ? (
 								<SearchResults />
