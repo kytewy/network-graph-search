@@ -103,6 +103,18 @@ describe('Search Functionality', () => {
       expect(state.isLoading).toBe(false);
     });
 
+    it('shows the error message the search route returns', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ error: 'Query must be under 500 characters' }),
+      });
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      await useAppStore.getState().performSearch('test query', 20);
+
+      expect(useAppStore.getState().error).toBe('Query must be under 500 characters');
+    });
+
     it('should not search with empty query', async () => {
       const store = useAppStore.getState();
       
