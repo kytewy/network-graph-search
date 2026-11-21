@@ -10,6 +10,8 @@
  * if the app is scaled out.
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { captureServerError } from '@/lib/observability/posthog-server';
+import { log } from '@/lib/observability/logger';
 
 export const LIMITS = {
 	/** Max nodes sent to an LLM in one request */
@@ -104,6 +106,9 @@ export function serverError(
 	message = 'Internal server error'
 ) {
 	console.error(`[${context}]`, error);
+	// Routes catch their own errors, so Next.js never sees them: report here
+	captureServerError(error, { context });
+	log.error(message, { context, error: error instanceof Error ? error.message : String(error) });
 	return NextResponse.json({ error: message }, { status: 500 });
 }
 

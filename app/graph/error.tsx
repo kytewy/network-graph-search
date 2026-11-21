@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { captureClientError } from '@/lib/observability/capture-client';
 
 interface GraphErrorProps {
 	error: Error & { digest?: string };
@@ -16,6 +17,7 @@ interface GraphErrorProps {
 export default function GraphError({ error, reset }: GraphErrorProps) {
 	useEffect(() => {
 		console.error('[graph] Page crashed:', error);
+		captureClientError(error, { boundary: 'graph' });
 	}, [error]);
 
 	const needsReload = error?.name === 'ChunkLoadError';
