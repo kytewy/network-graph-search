@@ -11,6 +11,17 @@ import { Z_INDEX } from '@/lib/config/graph-config';
 import { logArrayOperation } from '@/lib/utils/error-tracker';
 import { useNetworkStore } from '@/lib/stores/network-store';
 import { useLayoutOverrides } from '@/hooks/use-layout-overrides';
+import { useToggleContextOnClick } from '@/hooks/use-toggle-context-on-click';
+import { useContextStore } from '@/lib/stores/context-store';
+import {
+	clusterContextLevels,
+	clusterDisplayName,
+	namesFromSuggestions,
+} from '@/lib/clustering/cluster-display';
+import { useCallback, useMemo } from 'react';
+import type { ClusterRendererProps } from 'reagraph';
+import { ClusterRing } from './ClusterRing';
+import { GRAPH_THEME } from './graph-theme';
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
 const GraphCanvas = dynamic(
@@ -34,7 +45,6 @@ export function NetworkGraphCanvasClient() {
 		clusterMode,
 		selections,
 		graphRef,
-		handleCustomNodeClick,
 		handleLasso,
 		handleLassoEnd,
 		onCanvasClick,
@@ -56,6 +66,40 @@ export function NetworkGraphCanvasClient() {
 	const activeClusterAttribute =
 		clusterMode !== 'none' ? clusterMode : undefined;
 	const layoutOverrides = useLayoutOverrides(Boolean(activeClusterAttribute));
+
+	// Clicking a node adds it to (or takes it out of) the context
+	const toggleContext = useToggleContextOnClick();
+	const contextNodes = useContextStore((s) => s.contextNodes);
+	const contextIds = useMemo(() => contextNodes.map((n) => n.id), [contextNodes]);
+
+	// Purple: the hovered node, or (when nothing is hovered) the nodes in context
+	const actives = highlightedNodes.length > 0 ? highlightedNodes : contextIds;
+
+	// Each cluster ring's colour and name. Drawn separately from the nodes so a
+	// new name or a context click never re-runs the layout.
+	const clusterResults = useContextStore((s) => s.clusterResults);
+	const clusterSuggestions = useContextStore((s) => s.clusterSuggestions);
+	const clusterNames = useMemo(
+		() => namesFromSuggestions(clusterResults?.clusters ?? [], clusterSuggestions),
+		[clusterResults, clusterSuggestions]
+	);
+	const clusterLevels = useMemo(
+		() => clusterContextLevels(graphNodes, activeClusterAttribute, new Set(contextIds)),
+		[graphNodes, activeClusterAttribute, contextIds]
+	);
+	const renderCluster = useCallback(
+		(props: ClusterRendererProps) => {
+			const id = props.label?.text ?? '';
+			return (
+				<ClusterRing
+					{...props}
+					name={clusterDisplayName(id, clusterNames)}
+					level={clusterLevels[id] ?? 'none'}
+				/>
+			);
+		},
+		[clusterNames, clusterLevels]
+	);
 
 	// Log the selections prop being passed to GraphCanvas
 	debugLog('🔍 [NetworkGraphCanvasClient] About to render GraphCanvas with:', {
@@ -112,7 +156,7 @@ export function NetworkGraphCanvasClient() {
 						borderRadius: '4px',
 						fontSize: '12px',
 					}}>
-					<span>Hold Shift and Drag to Lasso Select</span>
+					<span>Click a node to add or remove it from context · Shift + drag to lasso</span>
 				</div>
 
 				{safeGraphNodes.length > 0 ? (
@@ -126,9 +170,11 @@ export function NetworkGraphCanvasClient() {
 						layoutOverrides={layoutOverrides}
 						// Temporarily disable selections to isolate the error
 						// selections={safeSelections}
-						// Recolours hovered nodes without moving the layout
-						actives={highlightedNodes}
-						onNodeClick={handleCustomNodeClick}
+						// Recolours nodes purple without moving the layout
+						actives={actives}
+						theme={GRAPH_THEME}
+						onRenderCluster={renderCluster}
+						onNodeClick={toggleContext}
 						onCanvasClick={(event?: MouseEvent) => event && onCanvasClick(event)}
 						// Lasso selection for multi-node selection (hold Shift + drag)
 						lassoType="node"
