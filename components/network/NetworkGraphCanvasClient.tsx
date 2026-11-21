@@ -19,8 +19,9 @@ import {
 	namesFromSuggestions,
 } from '@/lib/clustering/cluster-display';
 import { useCallback, useMemo } from 'react';
-import type { ClusterRendererProps } from 'reagraph';
+import type { ClusterRendererProps, NodeRendererProps } from 'reagraph';
 import { ClusterRing } from './ClusterRing';
+import { NodeWithRing } from './NodeWithRing';
 import { GRAPH_THEME } from './graph-theme';
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
@@ -71,9 +72,16 @@ export function NetworkGraphCanvasClient() {
 	const toggleContext = useToggleContextOnClick();
 	const contextNodes = useContextStore((s) => s.contextNodes);
 	const contextIds = useMemo(() => contextNodes.map((n) => n.id), [contextNodes]);
+	const contextIdSet = useMemo(() => new Set(contextIds), [contextIds]);
 
-	// Purple: the hovered node, or (when nothing is hovered) the nodes in context
-	const actives = highlightedNodes.length > 0 ? highlightedNodes : contextIds;
+	// Each node's ring is black when it's in context, grey otherwise; its ball
+	// keeps its own colour and turns purple only while hovered
+	const renderNode = useCallback(
+		(props: NodeRendererProps) => (
+			<NodeWithRing {...props} inContext={contextIdSet.has(props.id)} />
+		),
+		[contextIdSet]
+	);
 
 	// Each cluster ring's colour and name. Drawn separately from the nodes so a
 	// new name or a context click never re-runs the layout.
@@ -84,8 +92,8 @@ export function NetworkGraphCanvasClient() {
 		[clusterResults, clusterSuggestions]
 	);
 	const clusterLevels = useMemo(
-		() => clusterContextLevels(graphNodes, activeClusterAttribute, new Set(contextIds)),
-		[graphNodes, activeClusterAttribute, contextIds]
+		() => clusterContextLevels(graphNodes, activeClusterAttribute, contextIdSet),
+		[graphNodes, activeClusterAttribute, contextIdSet]
 	);
 	const renderCluster = useCallback(
 		(props: ClusterRendererProps) => {
@@ -170,8 +178,9 @@ export function NetworkGraphCanvasClient() {
 						layoutOverrides={layoutOverrides}
 						// Temporarily disable selections to isolate the error
 						// selections={safeSelections}
-						// Recolours nodes purple without moving the layout
-						actives={actives}
+						// Recolours hovered nodes purple without moving the layout
+						actives={highlightedNodes}
+						renderNode={renderNode}
 						theme={GRAPH_THEME}
 						onRenderCluster={renderCluster}
 						onNodeClick={toggleContext}

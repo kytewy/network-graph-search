@@ -1,6 +1,6 @@
 import type { ContextLevel } from '@/lib/clustering/cluster-display';
 
-/** Hovered nodes, and the nodes in your context, are drawn in this purple. */
+/** Hovered nodes are drawn in this purple. */
 export const HIGHLIGHT_COLOR = '#7c3aed';
 
 /** Cluster rings, soft purples that deepen as more of the cluster is in context. */
@@ -12,3 +12,13 @@ export const CLUSTER_RING_COLORS: Readonly<Record<ContextLevel, string>> = {
 
 /** How long a cluster's new name takes to fade in. */
 export const CLUSTER_NAME_FADE_MS = 500;
+
+/** The ring around every node: thin grey, or thicker black once it's in context. */
+export const NODE_RING = {
+	notInContext: { color: '#d1d5db', strokeWidth: 2 },
+	inContext: { color: '#111827', strokeWidth: 4 },
+} as const;
+
+export function nodeRingStyle(inContext: boolean) {
+	return inContext ? NODE_RING.inContext : NODE_RING.notInContext;
+}
