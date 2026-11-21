@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
 		// Call GPT-4o-mini
 		const response = await openai.chat.completions.create({
-			model: 'gpt-4o-mini',
+			model: PROMPT_CONFIG.MODEL,
 			messages: [{ role: 'user', content: prompt }],
 			temperature: PROMPT_CONFIG.TEMPERATURE_ANALYSIS,
 			max_tokens: PROMPT_CONFIG.MAX_TOKENS_ANALYSIS,

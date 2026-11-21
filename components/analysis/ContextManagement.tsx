@@ -23,6 +23,8 @@ import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import DocumentOverlay from '@/components/network/DocumentOverlay';
 import ChatInterface from '@/components/analysis/ChatInterface';
 import ClusteringInterface from '@/components/analysis/ClusteringInterface';
+import { contextTokens, nodeTokens } from '@/lib/utils/llm-tokens';
+import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 
 interface Node {
 	id: string;
@@ -58,14 +60,12 @@ interface ContextStats {
 
 interface ContextManagementProps {
 	rightPanelExpanded: boolean;
-	maxTokenLimit?: number; // Maximum token limit for context window
 	networkState?: any;
 	filterState?: any;
 }
 
 export default function ContextManagement({
 	rightPanelExpanded,
-	maxTokenLimit = 20000, // Default token limit
 	networkState = {},
 	filterState = {},
 }: ContextManagementProps) {
@@ -127,8 +127,8 @@ export default function ContextManagement({
 			0
 		);
 
-		// Rough token estimation (1 token ≈ 4 characters)
-		const estimatedTokens = Math.ceil(totalChars / 4);
+		// Tokens of the prompt the AI actually receives (excerpts + instructions)
+		const estimatedTokens = contextTokens(contextNodes);
 
 		// Count nodes by document type
 		const nodesByType = contextNodes.reduce((acc, node) => {
@@ -155,7 +155,7 @@ export default function ContextManagement({
 			typeDistribution: [], // Will be implemented later if needed
 			countryDistribution: [], // Will be implemented later if needed
 		};
-	}, [contextNodes, maxTokenLimit]);
+	}, [contextNodes]);
 
 	// Filter and sort nodes based on search query and sort options
 	const filteredNodes = useMemo(() => {
@@ -173,10 +173,8 @@ export default function ContextManagement({
 			})
 			.sort((a, b) => {
 				if (sortByTokens) {
-					// Sort by content length (proxy for tokens)
-					const aLength = a.content?.length || 0;
-					const bLength = b.content?.length || 0;
-					return bLength - aLength; // Descending order
+					// Most tokens sent first
+					return nodeTokens(b) - nodeTokens(a);
 				}
 				// Default sort by label
 				return (a.label || a.id).localeCompare(b.label || b.id);
@@ -239,12 +237,6 @@ export default function ContextManagement({
 		setIsNodeInContext(false);
 	};
 
-	// Utility function to estimate tokens from character count (rough approximation)
-	const estimateTokens = (text: string = '') => {
-		// Approximate tokens as characters / 4 (rough estimate)
-		return Math.ceil(text.length / 4);
-	};
-
 	// Handle bulk selection
 	const toggleNodeSelection = (nodeId: string) => {
 		setSelectedNodeIds((prev) => {
@@ -297,6 +289,9 @@ export default function ContextManagement({
 	};
 
 	// Create a simple summary object for the selected nodes
+	const MAX_NODES = PROMPT_CONFIG.MAX_NODES_PER_REQUEST;
+	const overLimit = contextNodes.length > MAX_NODES;
+
 	const selectedNodesSummary = {
 		nodes: contextNodes,
 		allSelectedNodes: contextNodes,
@@ -309,33 +304,28 @@ export default function ContextManagement({
 				Context Management
 			</h4>
 
-			{/* Token/Character Limit Progress */}
+			{/* What the AI will receive: nodes out of the request limit, and tokens */}
 			<div className="bg-muted/20 rounded p-3">
 				<div className="flex items-center justify-between mb-1">
 					<div className="text-sm font-medium text-sidebar-foreground/70">
-						Token Usage
+						Sent to the AI
 					</div>
 					<div className="text-xs text-sidebar-foreground/50">
-						{calculateContextStats.totalTokens?.toLocaleString() || '0'} /{' '}
-						{maxTokenLimit.toLocaleString()}
+						{contextNodes.length} of {MAX_NODES} nodes
 					</div>
 				</div>
 
-				{/* Simple progress bar */}
 				<div className="w-full bg-muted/30 h-2 rounded-full overflow-hidden">
 					<div
-						className={`h-full ${
-							(calculateContextStats.totalTokens || 0) > maxTokenLimit
-								? 'bg-destructive/70'
-								: 'bg-primary/70'
-						}`}
-						style={{
-							width: `${Math.min(
-								100,
-								((calculateContextStats.totalTokens || 0) / maxTokenLimit) * 100
-							)}%`,
-						}}
+						className={`h-full ${overLimit ? 'bg-destructive/70' : 'bg-primary/70'}`}
+						style={{ width: `${Math.min(100, (contextNodes.length / MAX_NODES) * 100)}%` }}
 					/>
+				</div>
+
+				<div className="mt-1 text-xs text-sidebar-foreground/50">
+					{overLimit
+						? `The AI takes up to ${MAX_NODES} nodes. Remove ${contextNodes.length - MAX_NODES} to analyse.`
+						: `~${calculateContextStats.totalTokens.toLocaleString()} of ${PROMPT_CONFIG.CONTEXT_WINDOW_TOKENS.toLocaleString()} tokens (first ${PROMPT_CONFIG.CHAR_LIMIT_GENERAL_ANALYSIS} characters of each)`}
 				</div>
 			</div>
 
@@ -508,7 +498,7 @@ export default function ContextManagement({
 													</div>
 												</td>
 												<td className="py-1 pr-2 text-right text-muted-foreground/60">
-													{estimateTokens(node.content).toLocaleString()}
+													{nodeTokens(node).toLocaleString()}
 												</td>
 												<td
 													className="py-1"

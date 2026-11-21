@@ -12,10 +12,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { captureServerError } from '@/lib/observability/posthog-server';
 import { log } from '@/lib/observability/logger';
+import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 
 export const LIMITS = {
 	/** Max nodes sent to an LLM in one request */
-	MAX_NODES_LLM: 50,
+	MAX_NODES_LLM: PROMPT_CONFIG.MAX_NODES_PER_REQUEST,
 	/** Max nodes accepted for clustering */
 	MAX_NODES_CLUSTER: 500,
 	/** Content per node is truncated to this many characters */

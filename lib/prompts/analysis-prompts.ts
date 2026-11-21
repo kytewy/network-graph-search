@@ -60,6 +60,12 @@ export interface ClusterAnalysisParams {
 // ============================================================================
 
 export const PROMPT_CONFIG = {
+	// Model and its real limits (gpt-4o-mini: 128k-token context window)
+	MODEL: 'gpt-4o-mini',
+	CONTEXT_WINDOW_TOKENS: 128_000,
+	// Most nodes one analysis request accepts (enforced by the API route)
+	MAX_NODES_PER_REQUEST: 50,
+
 	// Character limits per document
 	CHAR_LIMIT_GENERAL_ANALYSIS: 800,
 	CHAR_LIMIT_CLUSTER_NAMING: 500,

@@ -10,6 +10,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getQuickPrompt, CHAT_PLACEHOLDERS } from '@/lib/prompts/analysis-prompts';
 import { reportError } from '@/lib/observability/capture-client';
+import { toAnalysisNode } from '@/lib/utils/llm-tokens';
 
 interface ChatInterfaceProps {
 	safeSelectedNodes: string[];
@@ -79,16 +80,7 @@ export default function ChatInterface({
 			try {
 				// Prepare node data for analysis using context store nodes
 				const nodeData = contextNodes.length > 0 
-					? contextNodes.map((node) => ({
-							id: node.id,
-							name: node.label,
-							documentType: node.documentType,
-							text: node.fields?.full_text || node.summary || node.content || 'No content available',
-							content: node.fields?.full_text || node.content,
-							summary: node.summary,
-							country: node.country,
-							publisher: node.publisher,
-					  }))
+					? contextNodes.map(toAnalysisNode) // Same shape the token counter measures
 					: []; // No fallback to sample nodes - use actual context
 
 				// Call the real LLM API
