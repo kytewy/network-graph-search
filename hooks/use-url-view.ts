@@ -3,6 +3,9 @@
 import { useEffect, useRef } from 'react';
 import { useQueryStates } from 'nuqs';
 import { cleanView, viewUrlParams, type UrlView } from '@/lib/url/view-params';
+import { FILTERS } from '@/lib/config/filters';
+
+type FilterUrlKey = (typeof FILTERS)[number]['urlKey'];
 import { useAppStore } from '@/lib/stores/app-state';
 import { useNetworkStore } from '@/lib/stores/network-store';
 
@@ -11,12 +14,9 @@ const sameList = (a: readonly string[], b: readonly string[]) => a.length === b.
 /** The current filters and settings, as the address shows them. */
 function viewFromStores(): UrlView {
 	const app = useAppStore.getState();
+	const store = app as unknown as Record<string, string[]>;
 	return {
-		continent: app.selectedContinents,
-		country: app.selectedCountries,
-		publisher: app.selectedPublishers,
-		tag: app.selectedTags,
-		similarity: app.selectedSimilarityRanges,
+		...(Object.fromEntries(FILTERS.map((f) => [f.urlKey, store[f.storeKey]])) as Pick<UrlView, FilterUrlKey>),
 		color: app.colorMode,
 		size: app.nodeSizeMode,
 		cluster: app.clusterMode,
@@ -27,14 +27,9 @@ function viewFromStores(): UrlView {
 /** Puts the address's filters and settings into the stores (only what differs). */
 function applyView(view: UrlView) {
 	const app = useAppStore.getState();
-	const filters = {
-		selectedContinents: view.continent,
-		selectedCountries: view.country,
-		selectedPublishers: view.publisher,
-		selectedTags: view.tag,
-		selectedSimilarityRanges: view.similarity,
-	};
-	const changed = (Object.keys(filters) as (keyof typeof filters)[]).some((key) => !sameList(app[key], filters[key]));
+	const store = app as unknown as Record<string, string[]>;
+	const filters = Object.fromEntries(FILTERS.map((f) => [f.storeKey, view[f.urlKey]]));
+	const changed = FILTERS.some((f) => !sameList(store[f.storeKey] ?? [], view[f.urlKey]));
 	if (changed) {
 		useAppStore.setState(filters);
 		useAppStore.getState().applyFilters();

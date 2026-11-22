@@ -4,6 +4,7 @@ import { cancelSearch, searchOnce } from '@/lib/api/search-client';
 import { isAbortError } from '@/lib/utils/latest-request';
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { filterNodes } from '@/lib/filters/filter-nodes';
+import { selectionsFromStore } from '@/lib/config/filters';
 import { create } from 'zustand';
 import type { Node, Link } from '@/lib/config/types';
 import type { ClusterMode, ColorMode, NodeSizeMode } from '@/lib/config/view-modes';
@@ -184,13 +185,8 @@ export const useAppStore = create<AppState>()(
 		applyFilters: () => {
 			set((state) => {
 				// Panel filters only narrow the loaded results; they never search again
-				const filtered = filterNodes(state.searchResults ?? [], {
-					continents: state.selectedContinents ?? [],
-					countries: state.selectedCountries ?? [],
-					tags: state.selectedTags ?? [],
-					publishers: state.selectedPublishers ?? [],
-					similarityRanges: state.selectedSimilarityRanges ?? [],
-				});
+				// The ticked values of every filter in lib/config/filters.ts
+				const filtered = filterNodes(state.searchResults ?? [], selectionsFromStore(state));
 
 				// Only show links between visible nodes
 				const nodeIds = new Set(filtered.map((node) => node.id));
