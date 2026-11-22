@@ -1,7 +1,8 @@
 'use client';
 
 import { Ring, Sphere, type NodeRendererProps } from 'reagraph';
-import { nodeRingStyle } from '@/lib/config/graph-colors';
+import { nodeFill, nodeRingStyle } from '@/lib/config/graph-colors';
+import { GRAPH_THEME } from './graph-theme';
 
 /** Just outside the ball (the ring's radius is innerRadius × size / 2). */
 const RING_INNER_RADIUS = 2.3;
@@ -11,11 +12,16 @@ const RING_INNER_RADIUS = 2.3;
  * document is in your context. The ball keeps its own colour (purple only
  * while hovered), so you can still see its publisher, country or type.
  */
-export function NodeWithRing({ inContext, ...props }: NodeRendererProps & { inContext: boolean }) {
+type Props = NodeRendererProps & { inContext: boolean; hovered: boolean };
+
+export function NodeWithRing({ inContext, hovered, ...props }: Props) {
 	const ring = nodeRingStyle(inContext);
+	// Our own hover state, not reagraph's: reagraph treats a quick click as a
+	// drag and leaves the node marked active (purple) after the mouse leaves.
+	const color = nodeFill(hovered, props.node.fill, String(GRAPH_THEME.node.fill));
 	return (
 		<>
-			<Sphere {...props} />
+			<Sphere {...props} color={color} />
 			<Ring
 				color={ring.color}
 				size={props.size}

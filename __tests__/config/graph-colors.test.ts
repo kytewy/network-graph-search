@@ -1,4 +1,4 @@
-import { HIGHLIGHT_COLOR, NODE_RING, nodeRingStyle } from '@/lib/config/graph-colors';
+import { HIGHLIGHT_COLOR, NODE_RING, nodeFill, nodeRingStyle } from '@/lib/config/graph-colors';
 
 describe('nodeRingStyle', () => {
 	it('is a thin grey ring for a document not in context', () => {
@@ -14,5 +14,16 @@ describe('nodeRingStyle', () => {
 	it('never uses the hover purple, so hover and "added" look different', () => {
 		expect(nodeRingStyle(true).color).not.toBe(HIGHLIGHT_COLOR);
 		expect(nodeRingStyle(false).color).not.toBe(HIGHLIGHT_COLOR);
+	});
+});
+
+describe('nodeFill', () => {
+	it('is purple only while hovered', () => {
+		expect(nodeFill(true, '#ff0000', '#999999')).toBe(HIGHLIGHT_COLOR);
+	});
+
+	it('otherwise keeps the node’s own colour, or the default when it has none', () => {
+		expect(nodeFill(false, '#ff0000', '#999999')).toBe('#ff0000');
+		expect(nodeFill(false, undefined, '#999999')).toBe('#999999');
 	});
 });

@@ -61,6 +61,17 @@ export function NetworkGraphCanvasClient() {
 	// Nodes hovered in the side panels (search results, context, cluster cards).
 	// Read straight from the store so hovering doesn't rebuild the graph data.
 	const highlightedNodes = useNetworkStore((state) => state.highlightedNodes);
+	const setHighlightedNodes = useNetworkStore((state) => state.setHighlightedNodes);
+	const highlightedSet = useMemo(() => new Set(highlightedNodes), [highlightedNodes]);
+	// Hovering a node on the graph highlights it the same way hovering a card does
+	const onNodePointerOver = useCallback((node: { id: string }) => setHighlightedNodes([node.id]), [setHighlightedNodes]);
+	const onNodePointerOut = useCallback(
+		(node: { id: string }) => {
+			const current = useNetworkStore.getState().highlightedNodes;
+			if (current.length === 1 && current[0] === node.id) setHighlightedNodes([]);
+		},
+		[setHighlightedNodes]
+	);
 
 	// Determine which cluster attribute to use
 	// Simply use the clusterMode as the attribute name since all properties are attached to nodes
@@ -78,9 +89,9 @@ export function NetworkGraphCanvasClient() {
 	// keeps its own colour and turns purple only while hovered
 	const renderNode = useCallback(
 		(props: NodeRendererProps) => (
-			<NodeWithRing {...props} inContext={contextIdSet.has(props.id)} />
+			<NodeWithRing {...props} inContext={contextIdSet.has(props.id)} hovered={highlightedSet.has(props.id)} />
 		),
-		[contextIdSet]
+		[contextIdSet, highlightedSet]
 	);
 
 	// Each cluster ring's colour and name. Drawn separately from the nodes so a
@@ -181,6 +192,8 @@ export function NetworkGraphCanvasClient() {
 						// Recolours hovered nodes purple without moving the layout
 						actives={highlightedNodes}
 						renderNode={renderNode}
+						onNodePointerOver={onNodePointerOver}
+						onNodePointerOut={onNodePointerOut}
 						theme={GRAPH_THEME}
 						onRenderCluster={renderCluster}
 						onNodeClick={toggleContext}

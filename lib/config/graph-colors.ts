@@ -22,3 +22,8 @@ export const NODE_RING = {
 export function nodeRingStyle(inContext: boolean) {
 	return inContext ? NODE_RING.inContext : NODE_RING.notInContext;
 }
+
+/** A node's ball: purple while hovered, otherwise its own colour. */
+export function nodeFill(hovered: boolean, ownColor: string | undefined, fallback: string): string {
+	return hovered ? HIGHLIGHT_COLOR : (ownColor ?? fallback);
+}
