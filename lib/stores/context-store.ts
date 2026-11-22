@@ -8,7 +8,7 @@ interface ClusterResult {
 	node_ids?: string[];
 }
 
-interface ClusterAnalysisResponse {
+export interface ClusterAnalysisResponse {
 	clusters: ClusterResult[];
 	cluster_assignments: Record<string, string>;
 	executive_summary?: string;

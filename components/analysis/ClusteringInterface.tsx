@@ -1,4 +1,6 @@
 'use client';
+import { cancelClustering, clusterDocuments, nameCluster } from '@/lib/api/analysis-client';
+import { changeTag } from '@/lib/api/tags-client';
 import { debugLog } from '@/lib/utils/debug';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -24,6 +26,7 @@ import { useHighlightOnHover } from '@/hooks/use-highlight-on-hover';
 import { resolveClusterNodes } from '@/lib/clustering/resolve-cluster-nodes';
 import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
 import type { Node } from '@/lib/config/types';
+import type { ClusterAnalysisResponse } from '@/lib/stores/context-store';
 
 interface ClusteringInterfaceProps {
 	contextNodes: any[];
@@ -39,11 +42,6 @@ interface ClusterResult {
 	node_ids?: string[]; // Optional to handle cases where it might be missing
 }
 
-interface ClusterAnalysisResponse {
-	cluster_assignments: Record<string, string>; // nodeId -> clusterId
-	clusters: ClusterResult[];
-	executive_summary: string;
-}
 
 export default function ClusteringInterface({
 	contextNodes,
@@ -144,32 +142,18 @@ export default function ClusteringInterface({
 					clusterNodeIds.includes(node.id)
 				);
 
-				const response = await fetch('/api/analyze-cluster', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						clusterNodes: clusterNodes.map((n) => ({
-							id: n.id,
-							label: n.label,
-							fields: {
-								full_text: n.content || n.summary || n.label,
-							},
-						})),
-						clusterIndex: index,
-					}),
-					signal,
-				});
-
-				if (!response.ok) {
-					reportError('cluster-suggestion', new Error(`analyze-cluster returned ${response.status}`), {
-						clusterIndex: index,
-						status: response.status,
-					});
+				const payload = clusterNodes.map((n) => ({
+					id: n.id,
+					label: n.label,
+					fields: { full_text: n.content || n.summary || n.label },
+				}));
+				try {
+					// Remembered for the same documents, so re-running is instant
+					return { id: index, data: await nameCluster(payload, index) };
+				} catch (err) {
+					if (!signal.aborted) reportError('cluster-suggestion', err, { clusterIndex: index });
 					return { id: index, data: null };
 				}
-
-				const data = await response.json();
-				return { id: index, data };
 			});
 
 			const results = await Promise.all(promises);
@@ -200,6 +184,7 @@ export default function ClusteringInterface({
 		// Running clustering again cancels the run still in flight
 		const signal = clusterRequests.current.next();
 		suggestionRequests.current.cancel();
+		cancelClustering();
 		setIsAnalyzing(true);
 		setError(null);
 
@@ -211,19 +196,8 @@ export default function ClusteringInterface({
 				content: node.content || node.summary || node.label || '',
 			}));
 
-			// Call clustering API
-			const response = await fetch('/api/cluster-analysis', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ nodes: nodeData }),
-				signal,
-			});
-
-			if (!response.ok) {
-				throw new Error(`API request failed: ${response.status}`);
-			}
-
-			const data: ClusterAnalysisResponse = await response.json();
+			// Remembered for the same documents, so re-running is instant
+			const data: ClusterAnalysisResponse = await clusterDocuments(nodeData);
 			if (signal.aborted) return;
 
 			// Log what we received from API
@@ -254,6 +228,7 @@ export default function ClusteringInterface({
 	const handleClearClusters = () => {
 		clusterRequests.current.cancel();
 		suggestionRequests.current.cancel();
+		cancelClustering();
 		setIsAnalyzing(false);
 		setLoadingSuggestions(false);
 		clearAiClusters();
@@ -413,26 +388,8 @@ export default function ClusteringInterface({
 		});
 
 		try {
-			const response = await fetch('/api/documents/tags', {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					documentIds: cluster.node_ids,
-					tag: tagInput.trim(),
-					action: 'add',
-				}),
-			});
-
-			if (!response.ok) {
-				const errorData = await response
-					.json()
-					.catch(() => ({ error: 'Unknown error' }));
-				throw new Error(
-					errorData.error || `Failed to add tag: ${response.status}`
-				);
-			}
-
-			const data = await response.json();
+			// Also updates the loaded results, so the list and tag filter show it
+			await changeTag(cluster.node_ids, tagInput.trim(), 'add');
 
 			// Show success message
 			setTagSuccess(cluster.cluster_id);

@@ -1,4 +1,7 @@
 'use client';
+import { useMutation } from '@tanstack/react-query';
+import { analyzeNodes } from '@/lib/api/analysis-client';
+import { RETRY, shouldRetry } from '@/lib/api/http';
 import { debugLog } from '@/lib/utils/debug';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -51,6 +54,9 @@ export default function ChatInterface({
 	const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
 	const [editedPrompt, setEditedPrompt] = useState<string>('');
 
+	// Sending, waiting and errors through TanStack Query (questions are never remembered)
+	const analyze = useMutation({ mutationFn: analyzeNodes, retry: shouldRetry, retryDelay: RETRY.DELAY_MS });
+
 	const handleSendMessage = useCallback(
 		async (message?: string, conversationIdToUpdate?: string) => {
 			const promptToSend = message || chatInput;
@@ -83,25 +89,13 @@ export default function ChatInterface({
 					? contextNodes.map(toAnalysisNode) // Same shape the token counter measures
 					: []; // No fallback to sample nodes - use actual context
 
-				// Call the real LLM API
-				const response = await fetch('/api/analyze-nodes', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						nodes: nodeData,
-						analysisType: 'summary',
-						customPrompt: promptToSend,
-					}),
+				// Every question goes to the AI; a network blip is retried once
+				const { summary } = await analyze.mutateAsync({
+					nodes: nodeData,
+					analysisType: 'summary',
+					customPrompt: promptToSend,
 				});
-
-				if (response.ok) {
-					const { summary } = await response.json();
-					updateChatConversation(conversationIdToUpdate, {
-						response: summary,
-					});
-				} else {
-					throw new Error(`API request failed: ${response.status}`);
-				}
+				updateChatConversation(conversationIdToUpdate, { response: summary });
 			} catch (error) {
 				reportError('chat', error);
 				updateChatConversation(conversationIdToUpdate, {
@@ -121,6 +115,7 @@ export default function ChatInterface({
 			contextNodes,
 			addChatConversation,
 			updateChatConversation,
+			analyze.mutateAsync,
 		]
 	);
 

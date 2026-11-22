@@ -1,5 +1,7 @@
 'use client';
 
+import { useDocumentTags } from '@/hooks/use-document-tags';
+import { changeTag } from '@/lib/api/tags-client';
 import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
@@ -8,7 +10,6 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { X, Tag, Plus, Check } from 'lucide-react';
 import { Z_INDEX } from '@/lib/config/graph-config';
 import { Node } from '@/lib/config/types';
-import { useAppStore } from '@/lib/stores/app-state';
 import { reportError } from '@/lib/observability/capture-client';
 
 /**
@@ -72,39 +73,18 @@ export default function DocumentOverlay({
 	// State to track if we're in the browser environment
 	const [mounted, setMounted] = useState(false);
 	
-	// Get store methods to update search results
-	const searchResults = useAppStore((state) => state.searchResults);
-	const setSearchResults = useAppStore((state) => state.setSearchResults);
-	
-	// Tag management state
-	const [tags, setTags] = useState<string[]>([]);
+	// Tag management state; tags load and refresh through the shared helper
+	const { data: loadedTags, error: tagsLoadError } = useDocumentTags(documentItem.id);
+	const tags = loadedTags ?? [];
 	const [showTagInput, setShowTagInput] = useState(false);
 	const [tagInput, setTagInput] = useState('');
 	const [isTagging, setIsTagging] = useState(false);
 	const [tagSuccess, setTagSuccess] = useState(false);
 	const [tagError, setTagError] = useState<string | null>(null);
 
-	// Fetch existing tags when document opens
 	useEffect(() => {
-		// Switching documents or closing the overlay cancels the old load
-		const controller = new AbortController();
-		const fetchTags = async () => {
-			try {
-				const response = await fetch(`/api/documents/tags?documentId=${documentItem.id}`, {
-					signal: controller.signal,
-				});
-				if (response.ok) {
-					const data = await response.json();
-					if (!controller.signal.aborted) setTags(data.tags || []);
-				}
-			} catch (err) {
-				reportError('document-tags-load', err);
-			}
-		};
-
-		fetchTags();
-		return () => controller.abort();
-	}, [documentItem.id]);
+		if (tagsLoadError) reportError('document-tags-load', tagsLoadError);
+	}, [tagsLoadError]);
 
 	// Set up and clean up when component mounts/unmounts
 	useEffect(() => {
@@ -142,32 +122,9 @@ export default function DocumentOverlay({
 		setTagError(null);
 
 		try {
-			const response = await fetch('/api/documents/tags', {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					documentIds: [documentItem.id],
-					tag: tagInput.trim(),
-					action: 'add',
-				}),
-			});
+			// Updates the results and refreshes this document's tags
+			await changeTag([documentItem.id], tagInput.trim(), 'add');
 
-			if (!response.ok) {
-				throw new Error(`Failed to add tag: ${response.status}`);
-			}
-
-			// Add tag to local state
-			const newTag = tagInput.trim();
-			setTags(prev => [...prev, newTag]);
-			
-			// Update search results to reflect the new tag
-			const updatedResults = searchResults.map(node =>
-				node.id === documentItem.id
-					? { ...node, tags: [...(node.tags || []), newTag] }
-					: node
-			);
-			setSearchResults(updatedResults);
-			
 			// Show success and reset
 			setTagSuccess(true);
 			setTimeout(() => setTagSuccess(false), 2000);
@@ -186,30 +143,7 @@ export default function DocumentOverlay({
 		setTagError(null);
 
 		try {
-			const response = await fetch('/api/documents/tags', {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					documentIds: [documentItem.id],
-					tag: tagToRemove,
-					action: 'remove',
-				}),
-			});
-
-			if (!response.ok) {
-				throw new Error(`Failed to remove tag: ${response.status}`);
-			}
-
-			// Remove tag from local state
-			setTags(prev => prev.filter(t => t !== tagToRemove));
-			
-			// Update search results to reflect the removed tag
-			const updatedResults = searchResults.map(node =>
-				node.id === documentItem.id
-					? { ...node, tags: (node.tags || []).filter(t => t !== tagToRemove) }
-					: node
-			);
-			setSearchResults(updatedResults);
+			await changeTag([documentItem.id], tagToRemove, 'remove');
 		} catch (err) {
 			reportError('document-tag-remove', err);
 			setTagError(err instanceof Error ? err.message : 'Failed to remove tag');
