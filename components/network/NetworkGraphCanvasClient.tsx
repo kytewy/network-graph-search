@@ -23,6 +23,7 @@ import type { ClusterRendererProps, NodeRendererProps } from 'reagraph';
 import { ClusterRing } from './ClusterRing';
 import { NodeWithRing } from './NodeWithRing';
 import { GRAPH_THEME } from './graph-theme';
+import { purpleNodeIds } from '@/lib/config/graph-colors';
 
 // Dynamically import GraphCanvas with SSR disabled to maintain Next.js compatibility
 const GraphCanvas = dynamic(
@@ -62,7 +63,12 @@ export function NetworkGraphCanvasClient() {
 	// Read straight from the store so hovering doesn't rebuild the graph data.
 	const highlightedNodes = useAppStore((state) => state.highlightedNodes);
 	const setHighlightedNodes = useAppStore((state) => state.setHighlightedNodes);
-	const highlightedSet = useMemo(() => new Set(highlightedNodes), [highlightedNodes]);
+	// Lassoed nodes stay purple too, until they're sent or the lasso menu closes
+	const highlightedSet = useMemo(
+		() => purpleNodeIds(highlightedNodes, lassoSelectedNodes ?? []),
+		[highlightedNodes, lassoSelectedNodes]
+	);
+	const actives = useMemo(() => [...highlightedSet], [highlightedSet]);
 	// Hovering a node on the graph highlights it the same way hovering a card does
 	const onNodePointerOver = useCallback((node: { id: string }) => setHighlightedNodes([node.id]), [setHighlightedNodes]);
 	const onNodePointerOut = useCallback(
@@ -189,8 +195,8 @@ export function NetworkGraphCanvasClient() {
 						layoutOverrides={layoutOverrides}
 						// Temporarily disable selections to isolate the error
 						// selections={safeSelections}
-						// Recolours hovered nodes purple without moving the layout
-						actives={highlightedNodes}
+						// Recolours hovered and lassoed nodes purple without moving the layout
+						actives={actives}
 						renderNode={renderNode}
 						onNodePointerOver={onNodePointerOver}
 						onNodePointerOut={onNodePointerOut}

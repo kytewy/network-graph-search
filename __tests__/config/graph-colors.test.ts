@@ -1,4 +1,4 @@
-import { HIGHLIGHT_COLOR, NODE_RING, nodeFill, nodeRingStyle } from '@/lib/config/graph-colors';
+import { HIGHLIGHT_COLOR, NODE_RING, nodeFill, nodeRingStyle, purpleNodeIds } from '@/lib/config/graph-colors';
 
 describe('nodeRingStyle', () => {
 	it('is a thin grey ring for a document not in context', () => {
@@ -25,5 +25,15 @@ describe('nodeFill', () => {
 	it('otherwise keeps the node’s own colour, or the default when it has none', () => {
 		expect(nodeFill(false, '#ff0000', '#999999')).toBe('#ff0000');
 		expect(nodeFill(false, undefined, '#999999')).toBe('#999999');
+	});
+});
+
+describe('purpleNodeIds', () => {
+	it('includes hovered nodes and the nodes caught in a lasso', () => {
+		expect([...purpleNodeIds(['a'], ['b', 'c'])].sort()).toEqual(['a', 'b', 'c']);
+	});
+
+	it('keeps lassoed nodes purple while nothing is hovered', () => {
+		expect([...purpleNodeIds([], ['b'])]).toEqual(['b']);
 	});
 });

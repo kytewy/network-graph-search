@@ -30,3 +30,11 @@ export function nodeRingStyle(inContext: boolean) {
 export function nodeFill(hovered: boolean, ownColor: string | undefined, fallback: string): string {
 	return hovered ? HIGHLIGHT_COLOR : (ownColor ?? fallback);
 }
+
+/**
+ * Nodes drawn purple: the one hovered (on the graph or in a side panel) and
+ * any caught in a lasso, until they're sent or the lasso menu closes.
+ */
+export function purpleNodeIds(hovered: readonly string[], lassoed: readonly string[]): Set<string> {
+	return new Set([...hovered, ...lassoed]);
+}
