@@ -3,7 +3,7 @@
 import { useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Node } from '@/lib/config/types';
-import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
+import { useAppStore } from '@/lib/stores/app-state';
 import { useClickOutside } from '@/hooks/use-click-outside';
 import { useMultiNodeContextOperations } from '@/hooks/use-node-context-operations';
 
@@ -12,14 +12,11 @@ interface LassoSelectionMenuProps {
 }
 
 export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
-	// Get lasso selection state and handlers from context
-	const {
-		lassoSelectedNodes,
-		showLassoMenu,
-		lassoMenuPosition: position,
-		closeLassoMenu: onClose,
-		filteredResults,
-	} = useNetworkGraph();
+	// Lasso state and the documents on the graph, from the store
+	const lassoSelectedNodes = useAppStore((state) => state.lassoNodes);
+	const showLassoMenu = useAppStore((state) => state.lassoMenuOpen);
+	const onClose = useAppStore((state) => state.closeLasso);
+	const filteredResults = useAppStore((state) => state.filteredResults);
 
 	// Get selected nodes from filtered results - memoized for performance
 	const selectedNodes = useMemo(
@@ -60,8 +57,9 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 				className || ''
 			}`}
 			style={{
-				top: position.y,
-				left: position.x,
+				// Centred near the top of the screen, where it's always visible
+				top: 100,
+				left: window.innerWidth / 2 - 200,
 				maxWidth: '400px',
 				maxHeight: '80vh',
 			}}>

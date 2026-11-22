@@ -13,6 +13,15 @@ export interface SelectionSlice {
 	/** Stores clustering's result and switches the graph to cluster by it */
 	applyAiClusters: (assignments: Record<string, string>) => void;
 	clearAiClusters: () => void;
+
+	/** Nodes caught in a lasso (shown purple), and whether its menu is open */
+	lassoNodes: string[];
+	lassoMenuOpen: boolean;
+	/** While dragging */
+	setLassoNodes: (ids: string[]) => void;
+	/** On release: open the menu if anything was caught, otherwise clear */
+	finishLasso: (ids: string[]) => void;
+	closeLasso: () => void;
 }
 
 type Needs = SelectionSlice & { setClusterMode: (mode: ClusterMode) => void };
@@ -34,4 +43,13 @@ export const createSelectionSlice: StateCreator<Needs, [['zustand/devtools', nev
 		set({ aiClusters: NO_CLUSTERS });
 		get().setClusterMode('none');
 	},
+
+	lassoNodes: [],
+	lassoMenuOpen: false,
+	setLassoNodes: (ids) => set({ lassoNodes: Array.isArray(ids) ? ids : [] }),
+	finishLasso: (ids) => {
+		const caught = Array.isArray(ids) ? ids : [];
+		set({ lassoNodes: caught, lassoMenuOpen: caught.length > 0 });
+	},
+	closeLasso: () => set({ lassoNodes: [], lassoMenuOpen: false }),
 });

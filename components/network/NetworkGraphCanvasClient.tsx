@@ -1,14 +1,13 @@
 'use client';
-import { debugLog } from '@/lib/utils/debug';
 
 import dynamic from 'next/dynamic';
 import { LassoSelectionMenu } from './LassoSelectionMenu';
 import { VisualizationControls } from '@/components/network/VisualizationControls';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
+import { useGraphView } from '@/hooks/use-graph-view';
 import { NodeContextMenu } from './NodeContextMenu';
 import { PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/config/graph-config';
 import { Z_INDEX } from '@/lib/config/graph-config';
-import { logArrayOperation } from '@/lib/utils/error-tracker';
 import { useAppStore } from '@/lib/stores/app-state';
 import { useLayoutOverrides } from '@/hooks/use-layout-overrides';
 import { useToggleContextOnClick } from '@/hooks/use-toggle-context-on-click';
@@ -36,28 +35,12 @@ const GraphCanvas = dynamic(
  * The actual implementation that uses Reagraph - only rendered on client side
  */
 export function NetworkGraphCanvasClient() {
-	// Get all the data and functions from the context
-	const {
-		graphNodes,
-		graphEdges,
-		layoutType,
-		showLabels,
-		colorMode,
-		nodeSizeMode,
-		clusterMode,
-		selections,
-		graphRef,
-		handleLasso,
-		handleLassoEnd,
-		onCanvasClick,
-		getNodeColor,
-		lassoSelectedNodes,
-		showLassoMenu,
-		lassoMenuPosition,
-		closeLassoMenu,
-		handleSendToContext,
-		filteredResults,
-	} = useNetworkGraph();
+	// What to draw, straight from the store; the context only holds the graph's ref
+	const { graphNodes, graphEdges, getNodeColor, layoutType, showLabels, colorMode, nodeSizeMode, clusterMode } = useGraphView();
+	const { graphRef } = useNetworkGraph();
+	const lassoSelectedNodes = useAppStore((state) => state.lassoNodes);
+	const setLassoNodes = useAppStore((state) => state.setLassoNodes);
+	const finishLasso = useAppStore((state) => state.finishLasso);
 
 	// Nodes hovered in the side panels (search results, context, cluster cards).
 	// Read straight from the store so hovering doesn't rebuild the graph data.
@@ -126,39 +109,9 @@ export function NetworkGraphCanvasClient() {
 		[clusterNames, clusterLevels]
 	);
 
-	// Log the selections prop being passed to GraphCanvas
-	debugLog('🔍 [NetworkGraphCanvasClient] About to render GraphCanvas with:', {
-		selectionsType: typeof selections,
-		selections: selections,
-		selectionsNodes: selections?.nodes,
-		selectionsEdges: selections?.edges,
-		selectionsNodesLength: Array.isArray(selections?.nodes) ? selections.nodes.length : 'Not array',
-		selectionsEdgesLength: Array.isArray(selections?.edges) ? selections.edges.length : 'Not array',
-		graphNodesLength: graphNodes.length,
-		graphEdgesLength: graphEdges.length
-	});
-
-	if (selections?.nodes) {
-		logArrayOperation('selections.nodes check', selections.nodes, 'NetworkGraphCanvasClient before GraphCanvas');
-	}
-	if (selections?.edges) {
-		logArrayOperation('selections.edges check', selections.edges, 'NetworkGraphCanvasClient before GraphCanvas');
-	}
-
-	// Create safe props for Reagraph to prevent internal array errors
-	const safeSelections = {
-		nodes: Array.isArray(selections?.nodes) ? selections.nodes : [],
-		edges: Array.isArray(selections?.edges) ? selections.edges : []
-	};
-
 	const safeGraphNodes = Array.isArray(graphNodes) ? graphNodes : [];
 	const safeGraphEdges = Array.isArray(graphEdges) ? graphEdges : [];
 
-	debugLog('🔍 [NetworkGraphCanvasClient] Safe props created:', {
-		safeSelections,
-		safeGraphNodesLength: safeGraphNodes.length,
-		safeGraphEdgesLength: safeGraphEdges.length
-	});
 
 	return (
 		<div className="flex flex-col h-full">
@@ -193,8 +146,6 @@ export function NetworkGraphCanvasClient() {
 						layoutType={layoutType}
 						// Same object between renders, or reagraph re-runs the layout
 						layoutOverrides={layoutOverrides}
-						// Temporarily disable selections to isolate the error
-						// selections={safeSelections}
 						// Recolours hovered and lassoed nodes purple without moving the layout
 						actives={actives}
 						renderNode={renderNode}
@@ -203,11 +154,10 @@ export function NetworkGraphCanvasClient() {
 						theme={GRAPH_THEME}
 						onRenderCluster={renderCluster}
 						onNodeClick={toggleContext}
-						onCanvasClick={(event?: MouseEvent) => event && onCanvasClick(event)}
 						// Lasso selection for multi-node selection (hold Shift + drag)
 						lassoType="node"
-						onLasso={(ids: string[]) => handleLasso(ids)}
-						onLassoEnd={(ids: string[]) => handleLassoEnd(ids)}
+						onLasso={setLassoNodes}
+						onLassoEnd={finishLasso}
 						// Node size comes from each node's own `size` (set in use-graph-data),
 						// which reagraph's default sizing uses
 						// Use 'cluster' for API assignments, or clusterMode for manual clustering

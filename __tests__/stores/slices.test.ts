@@ -50,3 +50,31 @@ describe('AI clusters in the store', () => {
 		expect(renderHook(() => useHasAiClusters()).result.current).toBe(true);
 	});
 });
+
+describe('lasso in the store', () => {
+	beforeEach(() => useAppStore.getState().closeLasso());
+
+	it('tracks the nodes caught while dragging, without opening the menu', () => {
+		useAppStore.getState().setLassoNodes(['a', 'b']);
+		expect(useAppStore.getState().lassoNodes).toEqual(['a', 'b']);
+		expect(useAppStore.getState().lassoMenuOpen).toBe(false);
+	});
+
+	it('opens the menu when a lasso ends with nodes in it', () => {
+		useAppStore.getState().finishLasso(['a']);
+		expect(useAppStore.getState().lassoMenuOpen).toBe(true);
+	});
+
+	it('an empty lasso clears instead', () => {
+		useAppStore.getState().setLassoNodes(['a']);
+		useAppStore.getState().finishLasso([]);
+		expect(useAppStore.getState().lassoNodes).toEqual([]);
+		expect(useAppStore.getState().lassoMenuOpen).toBe(false);
+	});
+
+	it('closing clears the lasso', () => {
+		useAppStore.getState().finishLasso(['a']);
+		useAppStore.getState().closeLasso();
+		expect(useAppStore.getState()).toMatchObject({ lassoNodes: [], lassoMenuOpen: false });
+	});
+});
