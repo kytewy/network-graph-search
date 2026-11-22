@@ -1,3 +1,5 @@
+import { renderHook } from '@testing-library/react';
+import { useHasAiClusters } from '@/hooks/use-ai-clusters';
 import { useAppStore } from '@/lib/stores/app-state';
 
 describe('app store slices', () => {
@@ -21,5 +23,30 @@ describe('app store slices', () => {
 		const results = useAppStore.getState().searchResults;
 		useAppStore.getState().setNodeSizeMode('similarity');
 		expect(useAppStore.getState().searchResults).toBe(results);
+	});
+});
+
+describe('AI clusters in the store', () => {
+	const doc = (id: string) => ({ id, label: id, score: 1, size: 1, publisher: '', documentType: '', summary: '', content: '' }) as any;
+
+	it('applying clusters stores them and switches the graph to cluster by them', () => {
+		useAppStore.getState().applyAiClusters({ a: 'cluster_0' });
+		expect(useAppStore.getState().aiClusters).toEqual({ a: 'cluster_0' });
+		expect(useAppStore.getState().clusterMode).toBe('ai_clusters');
+	});
+
+	it('clearing removes them and turns clustering off', () => {
+		useAppStore.getState().applyAiClusters({ a: 'cluster_0' });
+		useAppStore.getState().clearAiClusters();
+		expect(useAppStore.getState().aiClusters).toEqual({});
+		expect(useAppStore.getState().clusterMode).toBe('none');
+	});
+
+	it('reports clusters only when a node on screen has one', () => {
+		useAppStore.getState().applyAiClusters({ a: 'cluster_0' });
+		useAppStore.setState({ filteredResults: [doc('b')] });
+		expect(renderHook(() => useHasAiClusters()).result.current).toBe(false);
+		useAppStore.setState({ filteredResults: [doc('a')] });
+		expect(renderHook(() => useHasAiClusters()).result.current).toBe(true);
 	});
 });

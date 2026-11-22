@@ -115,8 +115,6 @@ export const useAppStore = create<AppState>()(
 		selectedTags: [],
 		selectedPublishers: [],
 
-		// Additional state for AI clustering
-		aiClusters: [], // List of AI cluster assignments (e.g., ['cluster_0', 'cluster_1'])
 		// Basic actions
 		setQuery: (query) => set({ query }),
 		setIsLoading: (isLoading) => set({ isLoading }),

@@ -6,7 +6,7 @@ import {
 	LayoutMapper,
 	type ReagraphLayoutType,
 } from '@/lib/utils/layout-mappers';
-import type { ClusterMode } from './use-graph-visualization-settings';
+import type { ClusterMode } from '@/lib/config/view-modes';
 
 /**
  * useGraphLayout Hook

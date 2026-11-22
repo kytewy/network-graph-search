@@ -1,4 +1,5 @@
 'use client';
+import { useAppStore } from '@/lib/stores/app-state';
 import { cancelClustering, clusterDocuments, nameCluster } from '@/lib/api/analysis-client';
 import { changeTag } from '@/lib/api/tags-client';
 import { debugLog } from '@/lib/utils/debug';
@@ -17,7 +18,6 @@ import {
 	Plus,
 	CheckCircle,
 } from 'lucide-react';
-import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { useContextStore } from '@/lib/stores/context-store';
 import { buildClusterAnalysisPrompt } from '@/lib/prompts/analysis-prompts';
 import { createLatestRequest, isAbortError } from '@/lib/utils/latest-request';
@@ -49,7 +49,8 @@ export default function ClusteringInterface({
 	onSwitchToChat,
 	allNodes = [],
 }: ClusteringInterfaceProps) {
-	const { applyAiClusters, clearAiClusters } = useNetworkGraph();
+	const applyAiClusters = useAppStore((state) => state.applyAiClusters);
+	const clearAiClusters = useAppStore((state) => state.clearAiClusters);
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 

@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { useContextStore } from '@/lib/stores/context-store';
 import { useAppStore } from '@/lib/stores/app-state';
-import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import DocumentOverlay from '@/components/network/DocumentOverlay';
 import ChatInterface from '@/components/analysis/ChatInterface';
 import ClusteringInterface from '@/components/analysis/ClusteringInterface';
@@ -77,7 +76,7 @@ export default function ContextManagement({
 	const setShowActiveNodes = useAppStore((state) => state.setShowActiveNodes);
 
 	// Get nodes from NetworkGraph context (same source as the graph itself!)
-	const { filteredResults } = useNetworkGraph();
+	const filteredResults = useAppStore((state) => state.filteredResults);
 
 	// Also get from app store for comparison
 	const searchResults = useAppStore((state) => state.searchResults);

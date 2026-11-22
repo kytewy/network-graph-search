@@ -1,36 +1,20 @@
 'use client';
 
-import React, {
-	createContext,
-	useContext,
-	useMemo,
-	useState,
-	useCallback,
-} from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import type { GraphCanvasRef, GraphNode, GraphEdge } from 'reagraph';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore, type Node, type Link } from '@/lib/stores/app-state';
-
-// Import our new hooks
-import {
-	useGraphData,
-	type ColorMode,
-	type NodeSizeMode,
-} from '@/hooks/use-graph-data';
+import type { ClusterMode, ColorMode, NodeSizeMode } from '@/lib/config/view-modes';
+import { useGraphData } from '@/hooks/use-graph-data';
 import { useLassoSelection } from '@/hooks/use-lasso-selection';
-import { useGraphVisualizationSettings } from '@/hooks/use-graph-visualization-settings';
 import { useGraphLayout } from '@/hooks/use-graph-layout';
 import type { ReagraphLayoutType } from '@/lib/utils/layout-mappers';
 import { useGraphSelectionReagraph } from '@/hooks/use-graph-selection-reagraph';
 import { useGraphCoordination } from '@/hooks/use-graph-coordination';
-import {
-	NO_CLUSTERS,
-	hasClustersFor,
-	toAssignments,
-	type ClusterAssignments,
-} from '@/lib/clustering/assignments';
 import { reportError } from '@/lib/observability/capture-client';
 
-// Define the context interface
+// What the graph canvas and the lasso menu still read from the context.
+// The rest of the app reads the store directly (P1-10a); P1-10b moves these too.
 interface NetworkGraphContextType {
 	// Graph data
 	graphNodes: GraphNode[];
@@ -38,27 +22,15 @@ interface NetworkGraphContextType {
 	filteredResults: Node[];
 	filteredLinks: Link[];
 
-	// Graph state
+	// Graph settings (read-only here; change them through the store)
 	layoutType: ReagraphLayoutType;
 	showLabels: boolean;
 	colorMode: ColorMode;
 	nodeSizeMode: NodeSizeMode;
-	clusterMode:
-		| 'none'
-		| 'documentType'
-		| 'continent'
-		| 'country'
-		| 'publisher'
-		| 'ai_clusters';
-
-	// AI Cluster analysis state
-	hasAiClusters: boolean;
-	applyAiClusters: (assignments: Record<string, string>) => void;
-	clearAiClusters: () => void;
+	clusterMode: ClusterMode;
 
 	// Selection state
 	selections: { nodes: GraphNode[]; edges: GraphEdge[] };
-	selectedNode: Node | null;
 
 	// Lasso selection state
 	lassoSelectedNodes: string[];
@@ -69,33 +41,12 @@ interface NetworkGraphContextType {
 	graphRef: React.RefObject<GraphCanvasRef>;
 
 	// Actions
-	handleLayoutChange: (layout: string) => void;
-	setShowLabels: (show: boolean) => void;
-	setColorMode: (mode: ColorMode) => void;
-	setNodeSizeMode: (mode: NodeSizeMode) => void;
-	setClusterMode: (
-		mode:
-			| 'none'
-			| 'documentType'
-			| 'continent'
-			| 'country'
-			| 'publisher'
-			| 'ai_clusters'
-	) => void;
-	handleCustomNodeClick: (node: GraphNode) => void;
 	handleLasso: (selectedIds: string[]) => void;
 	handleLassoEnd: (selectedIds: string[], event?: MouseEvent) => void;
 	closeLassoMenu: () => void;
 	handleSendToContext: (nodes: Node[]) => void;
-
-	// Computed properties
 	getNodeColor: (node: Node) => string;
-	getNodeSize: (node: Node) => number;
-
-	// Selection handlers
-	onNodeClick: (node: GraphNode) => void;
 	onCanvasClick: (event: MouseEvent) => void;
-	clearSelections: (value?: string[]) => void;
 }
 
 // Create the context
@@ -112,138 +63,66 @@ export function NetworkGraphProvider({
 	// Get data from Zustand stores
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	const filteredLinks = useAppStore((state) => state.filteredLinks);
-
-	// AI cluster assignments, kept apart from the nodes (never written onto them)
-	const [aiClusters, setAiClusters] = useState<ClusterAssignments>(NO_CLUSTERS);
-	const hasAiClusters = useMemo(
-		() => hasClustersFor(filteredResults, aiClusters),
-		[filteredResults, aiClusters]
+	// AI cluster assignments live in the store (selection slice)
+	const aiClusters = useAppStore((state) => state.aiClusters);
+	const { showLabels, colorMode, nodeSizeMode, clusterMode } = useAppStore(
+		useShallow((s) => ({
+			showLabels: s.showLabels,
+			colorMode: s.colorMode,
+			nodeSizeMode: s.nodeSizeMode,
+			clusterMode: s.clusterMode,
+		}))
 	);
+	const { layoutType } = useGraphLayout();
 
-	// Hook: Visualization settings (replaces direct store access)
-	const {
-		showLabels,
+	// Graph data transformation
+	const { graphNodes, graphEdges, getNodeColor } = useGraphData(filteredResults, filteredLinks, {
 		colorMode,
 		nodeSizeMode,
 		clusterMode,
-		setShowLabels,
-		setColorMode,
-		setNodeSizeMode,
-		setClusterMode,
-	} = useGraphVisualizationSettings();
+		aiClusters,
+	});
 
-	const applyAiClusters = useCallback(
-		(assignments: Record<string, string>) => {
-			const next = toAssignments(assignments);
-			setAiClusters(next);
-
-			// Automatically switch to AI clusters mode when user runs clustering
-			if (Object.keys(next).length > 0) {
-				setClusterMode('ai_clusters');
-			}
-		},
-		[setClusterMode]
-	);
-
-	const clearAiClusters = useCallback(() => {
-		setAiClusters(NO_CLUSTERS);
-		setClusterMode('none');
-	}, [setClusterMode]);
-
-	// Hook: Layout management with cluster validation
-	const { layoutType, handleLayoutChange } = useGraphLayout();
-
-	// ============= CUSTOM HOOKS =============
-	// Hook 1: Graph data transformation
-	const { graphNodes, graphEdges, getNodeColor, getNodeSize } = useGraphData(
-		filteredResults,
-		filteredLinks,
-		{ colorMode, nodeSizeMode, clusterMode, aiClusters }
-	);
-
-	// Hook 2: Lasso selection state management
+	// Lasso selection state management
 	const {
 		lassoSelectedNodes,
 		showLassoMenu,
 		lassoMenuPosition,
 		handleLasso,
-		handleLassoEnd: handleLassoEndFromHook,
+		handleLassoEnd,
 		closeLassoMenu: closeLassoMenuFromHook,
 	} = useLassoSelection();
 
-	// Hook 3: Coordination - provides refs and handlers in one call
-	const { 
-		graphRef, 
-		handleSendToContext, 
-		handleCloseLassoMenu: closeLassoMenu 
-	} = useGraphCoordination({
+	// Coordination - provides refs and handlers in one call
+	const { graphRef, handleSendToContext, handleCloseLassoMenu: closeLassoMenu } = useGraphCoordination({
 		closeLassoMenuFromHook,
 	});
 
-	// Hook 4: Selection state management (needs graphRef from coordination hook)
-	const {
-		selections,
-		selectedNode,
-		onNodeClick: handleCustomNodeClick,
-		onCanvasClick,
-		clearSelections,
-	} = useGraphSelectionReagraph({ graphNodes, graphEdges, graphRef });
+	// Selection state management (needs graphRef from coordination hook)
+	const { selections, onCanvasClick } = useGraphSelectionReagraph({ graphNodes, graphEdges, graphRef });
 
-	// Create the context value
 	const contextValue = useMemo(
 		() => ({
-			// Graph data
 			graphNodes,
 			graphEdges,
 			filteredResults,
 			filteredLinks,
-
-			// Graph state
 			layoutType,
 			showLabels,
 			colorMode,
 			nodeSizeMode,
 			clusterMode,
-
-			// Selection state
 			selections,
-			selectedNode,
-
-			// Lasso selection state
 			lassoSelectedNodes,
 			showLassoMenu,
 			lassoMenuPosition,
-
-			// Refs
 			graphRef,
-
-			// Actions
-			handleLayoutChange,
-			setShowLabels,
-			setColorMode,
-			setNodeSizeMode,
-			setClusterMode,
-			handleCustomNodeClick,
 			handleLasso,
-			handleLassoEnd: (ids: string[], event?: MouseEvent) => {
-				handleLassoEndFromHook(ids, event);
-			},
+			handleLassoEnd,
 			closeLassoMenu,
 			handleSendToContext,
-
-			// Computed properties
 			getNodeColor,
-			getNodeSize,
-
-			// Selection handlers (from useGraphSelection hook)
-			onNodeClick: handleCustomNodeClick,
 			onCanvasClick,
-			clearSelections,
-
-			// AI Clustering functions
-			hasAiClusters,
-			applyAiClusters,
-			clearAiClusters,
 		}),
 		[
 			graphNodes,
@@ -256,27 +135,16 @@ export function NetworkGraphProvider({
 			nodeSizeMode,
 			clusterMode,
 			selections,
-			selectedNode,
 			lassoSelectedNodes,
 			showLassoMenu,
 			lassoMenuPosition,
-			handleLayoutChange,
-			setShowLabels,
-			setColorMode,
-			setNodeSizeMode,
-			setClusterMode,
-			handleCustomNodeClick,
+			graphRef,
 			handleLasso,
-			handleLassoEndFromHook,
+			handleLassoEnd,
 			closeLassoMenu,
 			handleSendToContext,
 			getNodeColor,
-			getNodeSize,
 			onCanvasClick,
-			clearSelections,
-			hasAiClusters,
-			applyAiClusters,
-			clearAiClusters,
 		]
 	);
 

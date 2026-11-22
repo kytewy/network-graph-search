@@ -18,26 +18,39 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
+import { useShallow } from 'zustand/react/shallow';
+import { useAppStore } from '@/lib/stores/app-state';
+import { useGraphLayout } from '@/hooks/use-graph-layout';
+import { useHasAiClusters } from '@/hooks/use-ai-clusters';
 
 // No props needed as we'll use context
 interface VisualizationControlsProps {}
 
 export function VisualizationControls({}: VisualizationControlsProps) {
-	// Get all the state and handlers from context
+	// Settings straight from the store (one shallow read), layout from its hook
+	const { layoutType: currentLayout, handleLayoutChange: onLayoutChange } = useGraphLayout();
+	const hasAiClusters = useHasAiClusters();
 	const {
-		layoutType: currentLayout,
-		handleLayoutChange: onLayoutChange,
-		colorMode: currentColorBy,
-		setColorMode: onColorByChange,
-		nodeSizeMode: currentSizeBy,
-		setNodeSizeMode: onSizeByChange,
-		clusterMode: currentClusterBy,
-		setClusterMode: onClusterByChange,
+		currentColorBy,
+		onColorByChange,
+		currentSizeBy,
+		onSizeByChange,
+		currentClusterBy,
+		onClusterByChange,
 		showLabels,
-		setShowLabels: onShowLabelsChange,
-		hasAiClusters,
-	} = useNetworkGraph();
+		onShowLabelsChange,
+	} = useAppStore(
+		useShallow((s) => ({
+			currentColorBy: s.colorMode,
+			onColorByChange: s.setColorMode,
+			currentSizeBy: s.nodeSizeMode,
+			onSizeByChange: s.setNodeSizeMode,
+			currentClusterBy: s.clusterMode,
+			onClusterByChange: s.setClusterMode,
+			showLabels: s.showLabels,
+			onShowLabelsChange: s.setShowLabels,
+		}))
+	);
 
 	// Layout options with descriptions
 	const layoutOptions = [
