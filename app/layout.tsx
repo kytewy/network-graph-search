@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Suspense } from "react"
 import "./globals.css"
+import { QueryProvider } from "@/components/providers/query-provider"
 
 export const metadata: Metadata = {
   title: "v0 App",
@@ -19,9 +20,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-          {children}
-        </Suspense>
+        <QueryProvider>
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+            {children}
+          </Suspense>
+        </QueryProvider>
       </body>
     </html>
   )

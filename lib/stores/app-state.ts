@@ -1,6 +1,7 @@
 import { debugLog } from '@/lib/utils/debug';
-import { searchResponseSchema, type SearchRequest } from '@/lib/contracts/search';
-import { createLatestRequest, isAbortError } from '@/lib/utils/latest-request';
+import { isCancelledError } from '@tanstack/react-query';
+import { cancelSearch, searchOnce } from '@/lib/api/search-client';
+import { isAbortError } from '@/lib/utils/latest-request';
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { filterNodes } from '@/lib/filters/filter-nodes';
 import { create } from 'zustand';
@@ -14,7 +15,8 @@ import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from './country_map';
 import { reportError } from '@/lib/observability/capture-client';
 
 // A new search cancels the one still running
-const searchRequests = createLatestRequest();
+// The search currently on screen (or on its way), so older replies are ignored
+let latestSearch: { query: string; topK: number } | null = null;
 
 // Define the app state interface
 interface AppState {
@@ -225,47 +227,30 @@ export const useAppStore = create<AppState>()(
 			state.setError(null);
 			state.setQuery(query);
 
-			const signal = searchRequests.next();
+			// A newer search replaces this one: stop the old one and ignore its reply
+			if (latestSearch && (latestSearch.query !== query || latestSearch.topK !== topK)) {
+				cancelSearch(latestSearch.query, latestSearch.topK);
+			}
+			const thisSearch = { query, topK };
+			latestSearch = thisSearch;
 
 			try {
-				const response = await fetch('/api/reranked-vector-search', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					// No filters: the filter panel narrows the results in the browser
-					body: JSON.stringify({ query, topK } satisfies SearchRequest),
-					signal,
-				});
-
-				const data = await response.json();
-				// A newer search started while this one was in flight
-				if (signal.aborted) return;
-
-				if (!response.ok) {
-					// API routes return { error }; older responses used { message }
-					throw new Error(data.error || data.message || 'Search failed');
-				}
-
-				// Check the reply against the rulebook before drawing anything
-				const reply = searchResponseSchema.safeParse(data);
-				if (!reply.success) {
-					throw new Error('Search returned an unexpected reply. Please try again.');
-				}
+				// Answered from memory when the same search ran in the last few minutes
+				const reply = await searchOnce(query, topK);
+				if (latestSearch !== thisSearch) return;
 
 				// The route has already turned Pinecone's results into documents
-				const nodes: Node[] = reply.data.nodes;
-				const links: Link[] = reply.data.edges;
-
-				state.setSearchResults(nodes);
-				state.setLinks(links);
+				state.setSearchResults(reply.nodes as Node[]);
+				state.setLinks(reply.edges as Link[]);
 				state.setHasSearched(true);
 			} catch (err: any) {
-				if (signal.aborted || isAbortError(err)) return;
+				if (latestSearch !== thisSearch || isCancelledError(err) || isAbortError(err)) return;
 				// Reported without the query text: what people search stays private
 				reportError('search', err);
 				state.setError(err.message || 'An error occurred during search');
 			} finally {
 				// The newer search owns the spinner
-				if (!signal.aborted) state.setIsLoading(false);
+				if (latestSearch === thisSearch) state.setIsLoading(false);
 			}
 		},
 

@@ -1,3 +1,4 @@
+import { queryClient } from '@/lib/api/query-client';
 import { toApiEdges, toApiNode, type PineconeHit } from '@/lib/contracts/node';
 /**
  * Core Search Functionality Tests
@@ -19,6 +20,9 @@ const fromRaw = (raw: { result: { hits: PineconeHit[] } }) => ({
 });
 
 global.fetch = jest.fn();
+
+// Searches are remembered for a few minutes; each test starts with none
+beforeEach(() => queryClient.clear());
 
 describe('Search Functionality', () => {
   beforeEach(() => {

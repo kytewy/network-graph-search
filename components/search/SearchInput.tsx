@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearch } from '@/hooks/use-search';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,10 +33,10 @@ export function SearchInput() {
 	// Get state and actions from app store - MUST be called before conditional returns
 	const query = useAppStore((state) => state.query);
 	const setQuery = useAppStore((state) => state.setQuery);
-	const isLoading = useAppStore((state) => state.isLoading);
 	const topK = useAppStore((state) => state.topK);
 	const setTopK = useAppStore((state) => state.setTopK);
-	const performSearch = useAppStore((state) => state.performSearch);
+	// Remembered searches, retries and cancelling: see hooks/use-search.ts
+	const { search, isLoading } = useSearch();
 	const searchResults = useAppStore((state) => state.searchResults);
 	const setSearchResults = useAppStore((state) => state.setSearchResults);
 
@@ -60,7 +61,7 @@ export function SearchInput() {
 	// Handle search
 	const handleSearch = () => {
 		if (!query.trim()) return;
-		performSearch(query, topK);
+		search(query, topK);
 	};
 
 	// Handle clear search
