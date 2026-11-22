@@ -16,7 +16,6 @@ export interface ContextNodeLike {
 	country?: string;
 	publisher?: string;
 	documentType?: string;
-	fields?: { full_text?: string };
 }
 
 /**
@@ -28,8 +27,8 @@ export function toAnalysisNode(node: ContextNodeLike): AnalysisNode {
 		id: node.id,
 		name: node.label,
 		documentType: node.documentType,
-		text: node.fields?.full_text || node.summary || node.content || 'No content available',
-		content: node.fields?.full_text || node.content,
+		text: node.summary || node.content || 'No content available',
+		content: node.content,
 		summary: node.summary,
 		country: node.country,
 		publisher: node.publisher,

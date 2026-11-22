@@ -15,8 +15,9 @@ const node = (extra: Record<string, unknown>) =>
 	({ id: 'A50', label: 'Article 50', publisher: 'Government', documentType: 'Law', country: 'European Union', ...extra } as any);
 
 describe('toAnalysisNode (what the chat sends)', () => {
-	it('prefers full text, then summary, then content', () => {
-		expect(toAnalysisNode(node({ fields: { full_text: 'F' }, summary: 'S', content: 'C' })).text).toBe('F');
+	// Search results never carried a separate full text (fields.full_text), so
+	// the summary comes first, then the document's text
+	it('prefers summary, then content', () => {
 		expect(toAnalysisNode(node({ summary: 'S', content: 'C' })).text).toBe('S');
 		expect(toAnalysisNode(node({ content: 'C' })).text).toBe('C');
 		expect(toAnalysisNode(node({})).text).toBe('No content available');

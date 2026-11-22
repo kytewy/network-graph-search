@@ -1,3 +1,4 @@
+import { toApiEdges, toApiNode, type PineconeHit } from '@/lib/contracts/node';
 /**
  * Core Search Functionality Tests
  * 
@@ -11,6 +12,12 @@ import { useAppStore } from '@/lib/stores/app-state';
 import { Node } from '@/lib/config/types';
 
 // Mock fetch globally
+// What the search route sends: Pinecone's results already turned into documents
+const fromRaw = (raw: { result: { hits: PineconeHit[] } }) => ({
+  nodes: raw.result.hits.map(toApiNode),
+  edges: toApiEdges(raw.result.hits),
+});
+
 global.fetch = jest.fn();
 
 describe('Search Functionality', () => {
@@ -42,7 +49,7 @@ describe('Search Functionality', () => {
     it('should perform a search and update results', async () => {
       // Mock API response
       const mockResponse = {
-        nodes: [], edges: [], rawResponse: {
+        ...fromRaw({
           result: {
             hits: [
               {
@@ -69,7 +76,7 @@ describe('Search Functionality', () => {
               },
             ],
           },
-        },
+        }),
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -134,7 +141,7 @@ describe('Search Functionality', () => {
       const reply = (label: string) => ({
         ok: true,
         json: async () => ({
-          nodes: [], edges: [], rawResponse: { result: { hits: [{ _id: label, _score: 0.9, fields: { label } }] } },
+          ...fromRaw({ result: { hits: [{ _id: label, _score: 0.9, fields: { label } }] } }),
         }),
       });
       let finishFirst: (value: unknown) => void = () => {};
@@ -173,7 +180,7 @@ describe('Search Functionality', () => {
 
       expect(useAppStore.getState().isLoading).toBe(true);
       expect(useAppStore.getState().error).toBeNull();
-      finishSecond({ ok: true, json: async () => ({ nodes: [], edges: [], rawResponse: { result: { hits: [] } } }) });
+      finishSecond({ ok: true, json: async () => ({ ...fromRaw({ result: { hits: [] } }) }) });
       await second;
       expect(useAppStore.getState().isLoading).toBe(false);
     });
@@ -205,11 +212,11 @@ describe('Search Functionality', () => {
 
     it('should use updated topK in search', async () => {
       const mockResponse = {
-        nodes: [], edges: [], rawResponse: {
+        ...fromRaw({
           result: {
             hits: [],
           },
-        },
+        }),
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -248,7 +255,7 @@ describe('Search Functionality', () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          nodes: [], edges: [], rawResponse: {
+          ...fromRaw({
             result: {
               hits: [
                 hit('eu', 'Europe', 'Government', 0.9),
@@ -256,7 +263,7 @@ describe('Search Functionality', () => {
                 hit('us', 'North America', 'Law firm', 0.3),
               ],
             },
-          },
+          }),
         }),
       });
       await useAppStore.getState().performSearch('AI regulation');
@@ -265,7 +272,7 @@ describe('Search Functionality', () => {
 
     it('searches without sending filters to Pinecone', async () => {
       useAppStore.setState({ selectedPublishers: ['Law firm'] } as any);
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({ nodes: [], edges: [], rawResponse: { result: { hits: [] } } }) });
+      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({ ...fromRaw({ result: { hits: [] } }) }) });
       await useAppStore.getState().performSearch('again');
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.filters).toBeUndefined();
@@ -297,7 +304,7 @@ describe('Search Functionality', () => {
       useAppStore.getState().toggleContinent('Asia');
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ nodes: [], edges: [], rawResponse: { result: { hits: [hit('a2', 'Asia', 'NGO'), hit('e2', 'Europe', 'NGO')] } } }),
+        json: async () => ({ ...fromRaw({ result: { hits: [hit('a2', 'Asia', 'NGO'), hit('e2', 'Europe', 'NGO')] } }) }),
       });
       await useAppStore.getState().performSearch('watermarking');
       expect(ids()).toEqual(['a2']);

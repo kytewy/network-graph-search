@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/lib/stores/app-state';
-import { SearchDataNormalizer } from '@/lib/utils/search-data-normalizer';
+import { contentPreview } from '@/lib/utils/text-preview';
 import { BookOpen, ArrowUpDown } from 'lucide-react';
 import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
 import { useContextStore } from '@/lib/stores/context-store';
@@ -80,15 +80,13 @@ export function SearchResults() {
 		if (node) addNodesToContext([node]);
 	};
 
-	// Normalize and sort results by score
+	// Sort results by score (they arrive ready to show from the search route)
 	const processedResults = useMemo(() => {
 		const safeFilteredResults = Array.isArray(filteredResults)
 			? filteredResults
 			: [];
-		const normalized = SearchDataNormalizer.normalizeArray(safeFilteredResults);
 
-		// Sort by score based on direction
-		return [...normalized].sort((a, b) => {
+		return [...safeFilteredResults].sort((a, b) => {
 			return sortDirection === 'desc' ? b.score - a.score : a.score - b.score;
 		});
 	}, [filteredResults, sortDirection]);
@@ -141,10 +139,7 @@ export function SearchResults() {
 				{processedResults.map((result, index) => {
 					const scorePercent = Math.round(result.score * 100);
 					const scoreColor = getScoreColor(result.score);
-					const previewContent = SearchDataNormalizer.extractPreview(
-						result.content,
-						120
-					);
+					const previewContent = contentPreview(result.content, 120);
 
 					return (
 						<div

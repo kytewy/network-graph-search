@@ -6,11 +6,9 @@
 /**
  * Node Type Definition
  * 
- * ⚠️ IMPORTANT: This is the single source of truth for node properties.
- * When adding new fields, update ALL transformation points:
- * 1. lib/stores/app-state.ts - processApiResponse()
- * 2. hooks/use-graph-data.ts - graphNode transformation
- * 3. components/network/NetworkGraphCanvas.tsx - contextMenu
+ * A search result arrives in this shape from lib/contracts/node.ts
+ * (toApiNode), the one place Pinecone fields become a Node. To add a field,
+ * add it to apiNodeSchema (lib/contracts/search.ts) and read it in toApiNode.
  * 
  * This is the UI-enhanced version that includes display properties like size and color.
  * Note: This extends the base Node type from app-state with additional visual properties.
@@ -31,7 +29,7 @@ export interface Node {
   
   // Visual properties (added for display)
   size: number;
-  color: string;
+  color?: string; // Not sent by the search; set by the graph when needed
   
   // Link property
   url?: string; // External link to the resource
@@ -51,9 +49,6 @@ export interface Node {
   
   // Tagging properties
   tags?: string[]; // User-defined tags for categorization and filtering
-  
-  // Raw fields for backward compatibility
-  fields?: any;
 }
 
 /**
@@ -67,47 +62,6 @@ export interface Link {
   weight?: number;
   type?: string;
   label?: string;
-}
-
-/**
- * Search Result Type
- * Raw search result from API before normalization
- */
-export interface SearchResult {
-  id: string;
-  _score?: number;
-  score?: number;
-  similarity?: number;
-  label?: string;
-  title?: string;
-  content?: string;
-  text?: string;
-  summary?: string;
-  publisher?: string;
-  documentType?: string;
-  continent?: string;
-  country?: string;
-  url?: string;
-  tags?: string[];
-  [key: string]: any; // Allow additional properties
-}
-
-/**
- * Normalized Search Result Type
- * Standardized format after data normalization
- */
-export interface NormalizedSearchResult {
-  id: string;
-  label: string;
-  content: string;
-  score: number;
-  similarity: number;
-  publisher: string;
-  documentType: string;
-  continent?: string;
-  country?: string;
-  url?: string;
-  tags?: string[];
 }
 
 /**

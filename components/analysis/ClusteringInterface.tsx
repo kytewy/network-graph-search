@@ -274,9 +274,8 @@ export default function ClusteringInterface({
 		// Get first 5 documents with full content for citations
 		const sampleDocuments = clusterNodes.slice(0, 5).map((n) => ({
 			label: n.label,
-			content: n.fields?.full_text || n.summary || n.content || '',
+			content: n.summary || n.content || '',
 			summary: n.summary,
-			text: n.fields?.full_text,
 		}));
 		const remainingCount = Math.max(0, clusterNodes.length - 5);
 

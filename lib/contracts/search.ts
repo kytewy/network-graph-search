@@ -68,8 +68,6 @@ export const apiEdgeSchema = z.object({
 export const searchResponseSchema = z.object({
 	nodes: z.array(apiNodeSchema),
 	edges: z.array(apiEdgeSchema),
-	// Pinecone's own reply; the app still reads it until P1-2 removes it
-	rawResponse: z.unknown().optional(),
 });
 
 export type SearchRequest = z.input<typeof searchRequestSchema>;

@@ -9,7 +9,6 @@ import type { Node, Link } from '@/lib/config/types';
 // Re-export so existing imports from this store keep working.
 // The single source of truth for these types is lib/config/types.ts.
 export type { Node, Link };
-import { SearchDataNormalizer } from '@/lib/utils/search-data-normalizer';
 import { devtools } from 'zustand/middleware';
 import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from './country_map';
 import { reportError } from '@/lib/observability/capture-client';
@@ -79,7 +78,6 @@ interface AppState {
 
 	// Complex actions
 	performSearch: (query: string, topK?: number) => Promise<void>;
-	processApiResponse: (data: any) => { nodes: Node[]; links: Link[] };
 
 	// Location filtering state
 	selectedContinents: string[]; // e.g., ['Europe', 'Asia']
@@ -218,89 +216,6 @@ export const useAppStore = create<AppState>()(
 			});
 		},
 
-		// Process API response to extract nodes and links
-		processApiResponse: (data: any) => {
-			if (!data) return { nodes: [], links: [] };
-
-			let nodes: Node[] = [];
-			let links: Link[] = [];
-
-			// Check if the response has a rawResponse.result.hits structure (Pinecone format)
-			if (
-				data.rawResponse?.result?.hits &&
-				Array.isArray(data.rawResponse.result.hits)
-			) {
-				const hits = data.rawResponse.result.hits;
-
-				// Extract nodes with normalized data structure
-				nodes = hits.map((hit: any) => {
-					// Get country and continent from fields or default to empty string
-					const country = hit.fields?.country || '';
-					// Look up continent from country map if not directly provided
-					const continent =
-						hit.fields?.continent ||
-						(country ? COUNTRY_CONTINENT_MAP[country] || '' : '');
-
-					return {
-						id: hit._id,
-						score: hit._score,
-						label: hit.fields?.label || hit._id,
-						publisher: hit.fields?.publisher || '',
-						documentType: hit.fields?.documentType || '',
-						text: hit.fields?.chunk_text || hit.fields?.content || '',
-						summary: hit.fields?.summary || '',
-						content: hit.fields?.content || '',
-						// Add normalized direct properties
-						country,
-						continent,
-						ai_clusters: undefined, // Will be assigned by AI clustering API
-						tags: hit.fields?.tags || [], // User-defined tags
-						url: hit.fields?.url || '', // URL for "Open Link" button
-						// Keep original fields for backward compatibility
-						fields: hit.fields || {},
-					};
-				});
-
-				// Extract links
-				const nodeIds = new Set(nodes.map((node) => node.id));
-
-				hits.forEach((hit: any) => {
-					const connectedTo = hit.fields?.connected_to || [];
-					if (Array.isArray(connectedTo)) {
-						connectedTo.forEach((targetId: string) => {
-							if (nodeIds.has(targetId)) {
-								links.push({
-									id: `${hit._id}-${targetId}`,
-									source: hit._id,
-									target: targetId,
-									label: `${hit.fields?.label || hit._id} → ${targetId}`,
-									type: 'connected',
-									weight: 1,
-								});
-							}
-						});
-					}
-				});
-			} else if (data.results && Array.isArray(data.results)) {
-				// Handle other result formats with normalization
-				nodes = data.results.map((node: any) => {
-					const country = node.fields?.country || node.country || '';
-					const continent =
-						node.fields?.continent ||
-						node.continent ||
-						(country ? COUNTRY_CONTINENT_MAP[country] || '' : '');
-
-					return {
-						...node,
-						country,
-						continent,
-					};
-				});
-			}
-
-			return { nodes, links };
-		},
-
 		// Perform search
 		performSearch: async (query, topK = get().topK) => {
 			if (!query.trim()) return;
@@ -336,7 +251,9 @@ export const useAppStore = create<AppState>()(
 					throw new Error('Search returned an unexpected reply. Please try again.');
 				}
 
-				const { nodes, links } = state.processApiResponse(reply.data);
+				// The route has already turned Pinecone's results into documents
+				const nodes: Node[] = reply.data.nodes;
+				const links: Link[] = reply.data.edges;
 
 				state.setSearchResults(nodes);
 				state.setLinks(links);
