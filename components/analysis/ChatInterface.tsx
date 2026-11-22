@@ -1,6 +1,7 @@
 'use client';
 import { useMutation } from '@tanstack/react-query';
 import { analyzeNodes } from '@/lib/api/analysis-client';
+import { queryClient } from '@/lib/api/query-client';
 import { RETRY, shouldRetry } from '@/lib/api/http';
 import { debugLog } from '@/lib/utils/debug';
 
@@ -55,7 +56,7 @@ export default function ChatInterface({
 	const [editedPrompt, setEditedPrompt] = useState<string>('');
 
 	// Sending, waiting and errors through TanStack Query (questions are never remembered)
-	const analyze = useMutation({ mutationFn: analyzeNodes, retry: shouldRetry, retryDelay: RETRY.DELAY_MS });
+	const analyze = useMutation({ mutationFn: analyzeNodes, retry: shouldRetry, retryDelay: RETRY.DELAY_MS }, queryClient);
 
 	const handleSendMessage = useCallback(
 		async (message?: string, conversationIdToUpdate?: string) => {
