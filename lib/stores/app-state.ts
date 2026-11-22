@@ -1,4 +1,5 @@
 import { debugLog } from '@/lib/utils/debug';
+import { searchResponseSchema, type SearchRequest } from '@/lib/contracts/search';
 import { createLatestRequest, isAbortError } from '@/lib/utils/latest-request';
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { filterNodes } from '@/lib/filters/filter-nodes';
@@ -316,7 +317,7 @@ export const useAppStore = create<AppState>()(
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					// No filters: the filter panel narrows the results in the browser
-					body: JSON.stringify({ query, topK }),
+					body: JSON.stringify({ query, topK } satisfies SearchRequest),
 					signal,
 				});
 
@@ -329,7 +330,13 @@ export const useAppStore = create<AppState>()(
 					throw new Error(data.error || data.message || 'Search failed');
 				}
 
-				const { nodes, links } = state.processApiResponse(data);
+				// Check the reply against the rulebook before drawing anything
+				const reply = searchResponseSchema.safeParse(data);
+				if (!reply.success) {
+					throw new Error('Search returned an unexpected reply. Please try again.');
+				}
+
+				const { nodes, links } = state.processApiResponse(reply.data);
 
 				state.setSearchResults(nodes);
 				state.setLinks(links);

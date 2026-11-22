@@ -1,34 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchPinecone } from '@/lib/services/vector_search';
 import { buildPineconeFilter, logFilterExpression } from '@/lib/utils/pinecone-filters';
-import { LIMITS, badRequest, rateLimit, serverError } from '@/lib/utils/api-guard';
+import { badRequest, rateLimit, serverError } from '@/lib/utils/api-guard';
+import {
+	parseSearchRequest,
+	type ApiEdge,
+	type ApiNode,
+	type SearchResponse,
+} from '@/lib/contracts/search';
 
 export async function POST(request: NextRequest) {
 	const limited = rateLimit(request, 'search');
 	if (limited) return limited;
 
 	try {
-		// Parse the request body
-		const body = await request.json();
-		const { 
-			query, 
-			topK = 10,
-			filters = {} // New: filter metadata
-		} = body;
-
-		// Validate required parameters
-		if (!query || typeof query !== 'string') {
-			return badRequest('Query parameter is required');
+		// The body must be JSON; anything else is the caller's mistake, not ours
+		let body: unknown;
+		try {
+			body = await request.json();
+		} catch {
+			return badRequest('Request body must be JSON');
 		}
 
-		if (query.length > LIMITS.MAX_QUERY_CHARS) {
-			return badRequest(`Query must be under ${LIMITS.MAX_QUERY_CHARS} characters`);
-		}
-
-		const requestedTopK = Number(topK);
-		if (!Number.isInteger(requestedTopK) || requestedTopK < 1 || requestedTopK > LIMITS.MAX_TOP_K) {
-			return badRequest(`topK must be a whole number from 1 to ${LIMITS.MAX_TOP_K}`);
-		}
+		const parsed = parseSearchRequest(body);
+		if (!parsed.ok) return badRequest(parsed.error);
+		const { query, topK: requestedTopK, filters = {} } = parsed.data;
 
 		// Build Pinecone metadata filter expression from user filters
 		const pineconeFilter = buildPineconeFilter(filters);
@@ -38,35 +34,9 @@ export async function POST(request: NextRequest) {
 		const { results } = await searchPinecone(query, requestedTopK, true, pineconeFilter);
 
 
-		// Define interfaces for nodes and edges
-		interface Node {
-			id: string;
-			label: string;
-			score: number;
-			similarity: number;
-			publisher: string;
-			documentType: string;
-			summary: string;
-			content: string;
-			continent: string;
-			country: string;
-			size: number;
-			url?: string;
-			tags?: string[];
-		}
-
-		interface Edge {
-			id: string;
-			source: string;
-			target: string;
-			label: string;
-			type: string;
-			weight: number;
-		}
-
 		// Process the results based on the v6.1.2 searchRecords response format
-		let nodes: Node[] = [];
-		let edges: Edge[] = [];
+		let nodes: ApiNode[] = [];
+		const edges: ApiEdge[] = [];
 
 		// Use any type to avoid TypeScript errors with the response format
 		const responseData = results as any;
@@ -136,11 +106,12 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Return the nodes and edges with rawResponse for compatibility
-		return NextResponse.json({
+		const reply: SearchResponse = {
 			nodes,
 			edges,
 			rawResponse: results, // Include raw response for processApiResponse
-		});
+		};
+		return NextResponse.json(reply);
 	} catch (error) {
 		return serverError('reranked-vector-search', error, 'Search failed');
 	}

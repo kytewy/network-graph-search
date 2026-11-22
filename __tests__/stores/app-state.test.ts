@@ -42,7 +42,7 @@ describe('Search Functionality', () => {
     it('should perform a search and update results', async () => {
       // Mock API response
       const mockResponse = {
-        rawResponse: {
+        nodes: [], edges: [], rawResponse: {
           result: {
             hits: [
               {
@@ -116,11 +116,25 @@ describe('Search Functionality', () => {
       expect(useAppStore.getState().error).toBe('Query must be under 500 characters');
     });
 
+    it('shows a clear error when the reply is not the shape the rulebook describes', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ unexpected: true }),
+      });
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      await useAppStore.getState().performSearch('test query', 20);
+
+      const state = useAppStore.getState();
+      expect(state.error).toBe('Search returned an unexpected reply. Please try again.');
+      expect(state.isLoading).toBe(false);
+    });
+
     it('ignores an older search that finishes after a newer one', async () => {
       const reply = (label: string) => ({
         ok: true,
         json: async () => ({
-          rawResponse: { result: { hits: [{ _id: label, _score: 0.9, fields: { label } }] } },
+          nodes: [], edges: [], rawResponse: { result: { hits: [{ _id: label, _score: 0.9, fields: { label } }] } },
         }),
       });
       let finishFirst: (value: unknown) => void = () => {};
@@ -159,7 +173,7 @@ describe('Search Functionality', () => {
 
       expect(useAppStore.getState().isLoading).toBe(true);
       expect(useAppStore.getState().error).toBeNull();
-      finishSecond({ ok: true, json: async () => ({ rawResponse: { result: { hits: [] } } }) });
+      finishSecond({ ok: true, json: async () => ({ nodes: [], edges: [], rawResponse: { result: { hits: [] } } }) });
       await second;
       expect(useAppStore.getState().isLoading).toBe(false);
     });
@@ -191,7 +205,7 @@ describe('Search Functionality', () => {
 
     it('should use updated topK in search', async () => {
       const mockResponse = {
-        rawResponse: {
+        nodes: [], edges: [], rawResponse: {
           result: {
             hits: [],
           },
@@ -234,7 +248,7 @@ describe('Search Functionality', () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          rawResponse: {
+          nodes: [], edges: [], rawResponse: {
             result: {
               hits: [
                 hit('eu', 'Europe', 'Government', 0.9),
@@ -251,7 +265,7 @@ describe('Search Functionality', () => {
 
     it('searches without sending filters to Pinecone', async () => {
       useAppStore.setState({ selectedPublishers: ['Law firm'] } as any);
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({ rawResponse: { result: { hits: [] } } }) });
+      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({ nodes: [], edges: [], rawResponse: { result: { hits: [] } } }) });
       await useAppStore.getState().performSearch('again');
       const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
       expect(body.filters).toBeUndefined();
@@ -283,7 +297,7 @@ describe('Search Functionality', () => {
       useAppStore.getState().toggleContinent('Asia');
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ rawResponse: { result: { hits: [hit('a2', 'Asia', 'NGO'), hit('e2', 'Europe', 'NGO')] } } }),
+        json: async () => ({ nodes: [], edges: [], rawResponse: { result: { hits: [hit('a2', 'Asia', 'NGO'), hit('e2', 'Europe', 'NGO')] } } }),
       });
       await useAppStore.getState().performSearch('watermarking');
       expect(ids()).toEqual(['a2']);

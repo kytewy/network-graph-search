@@ -1,0 +1,111 @@
+/**
+ * @jest-environment node
+ */
+
+/**
+ * The search rulebook (contract): what a valid search request and reply
+ * look like, shared by the route and the app.
+ */
+
+import { NextRequest } from 'next/server';
+import {
+	SEARCH_LIMITS,
+	parseSearchRequest,
+	searchResponseSchema,
+} from '@/lib/contracts/search';
+
+jest.mock('@/lib/services/vector_search', () => ({ searchPinecone: jest.fn() }));
+import { searchPinecone } from '@/lib/services/vector_search';
+import { POST as search } from '@/app/api/reranked-vector-search/route';
+import { resetRateLimits } from '@/lib/utils/api-guard';
+
+const mockSearch = searchPinecone as jest.Mock;
+
+const post = (body: string) =>
+	search(
+		new NextRequest('http://localhost/api/reranked-vector-search', {
+			method: 'POST',
+			body,
+			headers: { 'content-type': 'application/json' },
+		})
+	);
+
+describe('parseSearchRequest', () => {
+	it('accepts a query and fills in the default result count', () => {
+		expect(parseSearchRequest({ query: 'AI Act' })).toEqual({
+			ok: true,
+			data: { query: 'AI Act', topK: 10 },
+		});
+	});
+
+	it('trims the query and rejects an empty one', () => {
+		expect(parseSearchRequest({ query: '  AI  ', topK: 5 })).toMatchObject({ ok: true, data: { query: 'AI' } });
+		expect(parseSearchRequest({ query: '   ' })).toEqual({ ok: false, error: 'Query parameter is required' });
+		expect(parseSearchRequest({})).toEqual({ ok: false, error: 'Query parameter is required' });
+	});
+
+	it('rejects a query that is too long', () => {
+		const query = 'a'.repeat(SEARCH_LIMITS.MAX_QUERY_CHARS + 1);
+		expect(parseSearchRequest({ query })).toEqual({
+			ok: false,
+			error: `Query must be under ${SEARCH_LIMITS.MAX_QUERY_CHARS} characters`,
+		});
+	});
+
+	it.each([0, 1.5, SEARCH_LIMITS.MAX_TOP_K + 1, 'lots'])('rejects topK = %p', (topK) => {
+		expect(parseSearchRequest({ query: 'AI', topK })).toEqual({
+			ok: false,
+			error: `topK must be a whole number from 1 to ${SEARCH_LIMITS.MAX_TOP_K}`,
+		});
+	});
+
+	it('still accepts topK sent as text, as older clients did', () => {
+		expect(parseSearchRequest({ query: 'AI', topK: '20' })).toMatchObject({ ok: true, data: { topK: 20 } });
+	});
+});
+
+describe('search route', () => {
+	beforeEach(() => {
+		resetRateLimits();
+		mockSearch.mockReset();
+	});
+
+	it('answers a body that is not JSON with 400, not a server error', async () => {
+		const res = await post('not json');
+		expect(res.status).toBe(400);
+		expect(mockSearch).not.toHaveBeenCalled();
+	});
+
+	it('rejects an invalid request before calling Pinecone', async () => {
+		const res = await post(JSON.stringify({ query: '' }));
+		expect(res.status).toBe(400);
+		expect(await res.json()).toEqual({ error: 'Query parameter is required' });
+		expect(mockSearch).not.toHaveBeenCalled();
+	});
+
+	it('replies in the shape the rulebook describes', async () => {
+		mockSearch.mockResolvedValue({
+			results: {
+				result: {
+					hits: [
+						{ _id: 'a', _score: 0.9, fields: { label: 'Doc A', connected_to: ['b'], tags: ['x'] } },
+						{ _id: 'b', _score: 0.5, fields: { label: 'Doc B' } },
+					],
+				},
+			},
+		});
+		const res = await post(JSON.stringify({ query: 'AI', topK: 2 }));
+		expect(res.status).toBe(200);
+		const parsed = searchResponseSchema.safeParse(await res.json());
+		expect(parsed.success).toBe(true);
+		expect(parsed.data?.nodes.map((n) => n.id)).toEqual(['a', 'b']);
+		expect(parsed.data?.edges).toHaveLength(1);
+		expect(mockSearch).toHaveBeenCalledWith('AI', 2, true, undefined);
+	});
+});
+
+describe('searchResponseSchema', () => {
+	it('rejects a reply without nodes, so the app can show a clear error', () => {
+		expect(searchResponseSchema.safeParse({ edges: [] }).success).toBe(false);
+	});
+});

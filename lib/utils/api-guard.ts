@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { captureServerError } from '@/lib/observability/posthog-server';
 import { log } from '@/lib/observability/logger';
 import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
+import { SEARCH_LIMITS } from '@/lib/contracts/search';
 
 export const LIMITS = {
 	/** Max nodes sent to an LLM in one request */
@@ -24,9 +25,9 @@ export const LIMITS = {
 	/** Max length of a user-written prompt */
 	MAX_PROMPT_CHARS: 2_000,
 	/** Max length of a search query */
-	MAX_QUERY_CHARS: 500,
+	MAX_QUERY_CHARS: SEARCH_LIMITS.MAX_QUERY_CHARS,
 	/** Matches SEARCH_CONFIG.MAX_TOP_K in the UI */
-	MAX_TOP_K: 100,
+	MAX_TOP_K: SEARCH_LIMITS.MAX_TOP_K,
 	/** Max documents changed by one tag request */
 	MAX_TAG_DOCS: 100,
 	/** Max length of a tag */
