@@ -3,8 +3,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/stores/app-state';
 import type { Node } from '@/lib/config/types';
-import { safeIncludes, ensureArray } from '@/lib/utils/array-safety';
-import { logArrayOperation } from '@/lib/utils/error-tracker';
 import { SEARCH_CONFIG } from '@/lib/config/search-config';
 
 /**
@@ -32,7 +30,7 @@ export function SimilarityHistogram() {
 		const ranges = SEARCH_CONFIG.SIMILARITY_RANGES;
 
 		// Always show bars if we have nodes
-		const safeSearchResults = ensureArray(searchResults);
+		const safeSearchResults = searchResults;
 		if (safeSearchResults.length === 0) {
 			// Return minimal width bars when no results are available
 			return ranges.map(({ range, min, max }) => ({
@@ -113,10 +111,7 @@ export function SimilarityHistogram() {
 						<div className="flex-1 relative">
 							<div
 								className={`${SEARCH_CONFIG.HISTOGRAM.BAR_HEIGHT} rounded cursor-pointer transition-all ${SEARCH_CONFIG.HISTOGRAM.ANIMATION_DURATION} flex items-center justify-end pr-2 ${
-									(() => {
-										logArrayOperation('safeIncludes check', selectedSimilarityRanges, 'SimilarityHistogram bar selection');
-										return safeIncludes(selectedSimilarityRanges, bar.range);
-									})()
+									selectedSimilarityRanges.includes(bar.range)
 										? 'bg-primary hover:bg-primary/90 shadow-md'
 										: 'bg-muted hover:bg-muted/80'
 								}`}

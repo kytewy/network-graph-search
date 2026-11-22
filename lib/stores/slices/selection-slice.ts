@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type { ClusterMode } from '@/lib/config/view-modes';
+import type { AppState } from '@/lib/stores/app-state';
 import { NO_CLUSTERS, toAssignments, type ClusterAssignments } from '@/lib/clustering/assignments';
 
 /** What is picked out on the graph right now. */
@@ -24,9 +24,7 @@ export interface SelectionSlice {
 	closeLasso: () => void;
 }
 
-type Needs = SelectionSlice & { setClusterMode: (mode: ClusterMode) => void };
-
-export const createSelectionSlice: StateCreator<Needs, [['zustand/devtools', never]], [], SelectionSlice> = (
+export const createSelectionSlice: StateCreator<AppState, [['zustand/devtools', never], ['zustand/persist', unknown]], [], SelectionSlice> = (
 	set,
 	get
 ) => ({

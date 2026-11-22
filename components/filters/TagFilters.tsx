@@ -3,7 +3,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { safeIncludes } from '@/lib/utils/array-safety';
 
 interface TagFiltersProps {
 	availableTags: string[];
@@ -26,7 +25,7 @@ export function TagFilters({
 		<div className="space-y-1 max-h-64 overflow-y-auto">
 				{availableTags.map((tag) => {
 					const count = getNodeCountByTag(tag);
-					const isSelected = safeIncludes(selectedTags, tag);
+					const isSelected = selectedTags.includes(tag);
 
 					return (
 						<div

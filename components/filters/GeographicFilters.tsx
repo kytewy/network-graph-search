@@ -1,7 +1,6 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { safeIncludes } from '@/lib/utils/array-safety';
 
 interface GeographicFiltersProps {
 	availableContinents: string[];
@@ -35,8 +34,8 @@ export function GeographicFilters({
 	return (
 		<div className="space-y-2">
 				{availableContinents.map((continent) => {
-					const isSelected = safeIncludes(selectedContinents, continent);
-					const isExpanded = safeIncludes(expandedContinents, continent);
+					const isSelected = selectedContinents.includes(continent);
+					const isExpanded = expandedContinents.includes(continent);
 
 					return (
 						<div key={continent} className="space-y-1">
@@ -116,7 +115,7 @@ export function GeographicFilters({
 												</div>
 												<div className="grid grid-cols-1 gap-1">
 													{filteredCountries.map((country) => {
-														const isCountrySelected = safeIncludes(selectedCountries, country);
+														const isCountrySelected = selectedCountries.includes(country);
 														const nodeCount = getNodeCountByCountry(country);
 
 														return (

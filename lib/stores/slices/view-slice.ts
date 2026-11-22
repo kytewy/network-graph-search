@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import type { AppState } from '@/lib/stores/app-state';
 import type { ClusterMode, ColorMode, NetworkLayout, NodeSizeMode } from '@/lib/config/view-modes';
 
 /** How the graph and panels look. The modes are listed in lib/config/view-modes.ts. */
@@ -21,7 +22,7 @@ export interface ViewSlice {
 	setShowActiveNodes: (show: boolean) => void;
 }
 
-export const createViewSlice: StateCreator<ViewSlice, [['zustand/devtools', never]], [], ViewSlice> = (set) => ({
+export const createViewSlice: StateCreator<AppState, [['zustand/devtools', never], ['zustand/persist', unknown]], [], ViewSlice> = (set) => ({
 	colorMode: 'continent',
 	nodeSizeMode: 'none',
 	clusterMode: 'none',

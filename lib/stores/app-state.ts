@@ -13,7 +13,7 @@ import { createSelectionSlice, type SelectionSlice } from './slices/selection-sl
 // Re-export so existing imports from this store keep working.
 // The single source of truth for these types is lib/config/types.ts.
 export type { Node, Link };
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from './country_map';
 import { reportError } from '@/lib/observability/capture-client';
 
@@ -89,8 +89,13 @@ interface SearchState {
 export type AppState = SearchState & ViewSlice & SelectionSlice;
 
 // One store built from slices, with DevTools middleware
+/** Where the browser keeps your preferences between visits */
+export const PREFERENCES_STORAGE_KEY = 'network-graph-search:preferences';
+
 export const useAppStore = create<AppState>()(
-	devtools((set, get, store) => ({
+	devtools(
+		persist(
+			(set, get, store) => ({
 		...createViewSlice(set, get, store),
 		...createSelectionSlice(set, get, store),
 
@@ -140,9 +145,8 @@ export const useAppStore = create<AppState>()(
 				debugLog('🔍 [toggleSimilarityRange] Called with:', {
 					range,
 					selectedSimilarityRanges: state.selectedSimilarityRanges,
-					isArray: Array.isArray(state.selectedSimilarityRanges)
 				});
-				const safeRanges = Array.isArray(state.selectedSimilarityRanges) ? state.selectedSimilarityRanges : [];
+				const safeRanges = state.selectedSimilarityRanges;
 				const isSelected = safeRanges.includes(range);
 				const selectedSimilarityRanges = isSelected
 					? safeRanges.filter((r) => r !== range)
@@ -170,7 +174,7 @@ export const useAppStore = create<AppState>()(
 
 				// Only show links between visible nodes
 				const nodeIds = new Set(filtered.map((node) => node.id));
-				const safeLinks = Array.isArray(state.links) ? state.links : [];
+				const safeLinks = state.links;
 				const filteredLinks = safeLinks.filter(
 					(link: any) => nodeIds.has(link.source) && nodeIds.has(link.target)
 				);
@@ -227,7 +231,7 @@ export const useAppStore = create<AppState>()(
 		// If deselecting: removes continent and all its countries
 		toggleContinent: (continent) => {
 			set((state) => {
-				const safeContinents = Array.isArray(state.selectedContinents) ? state.selectedContinents : [];
+				const safeContinents = state.selectedContinents;
 				const isSelected = safeContinents.includes(continent);
 				const continentCountries =
 					CONTINENT_COUNTRY_MAP[
@@ -236,7 +240,7 @@ export const useAppStore = create<AppState>()(
 
 				if (isSelected) {
 					// Deselecting continent - remove it and any of its individual countries
-					const safeCountries = Array.isArray(state.selectedCountries) ? state.selectedCountries : [];
+					const safeCountries = state.selectedCountries;
 					return {
 						selectedContinents: safeContinents.filter(
 							(c) => c !== continent
@@ -248,7 +252,7 @@ export const useAppStore = create<AppState>()(
 				} else {
 					// Selecting continent - add it and remove any individual countries from this continent
 					// This prevents duplicate filtering (continent + its individual countries)
-					const safeCountries = Array.isArray(state.selectedCountries) ? state.selectedCountries : [];
+					const safeCountries = state.selectedCountries;
 					return {
 						selectedContinents: [...safeContinents, continent],
 						selectedCountries: safeCountries.filter(
@@ -266,7 +270,7 @@ export const useAppStore = create<AppState>()(
 		toggleCountry: (country) => {
 			set((state) => {
 				const continent = COUNTRY_CONTINENT_MAP[country];
-				const safeCountries = Array.isArray(state.selectedCountries) ? state.selectedCountries : [];
+				const safeCountries = state.selectedCountries;
 				const isSelected = safeCountries.includes(country);
 
 				if (isSelected) {
@@ -278,7 +282,7 @@ export const useAppStore = create<AppState>()(
 					};
 				} else {
 					// Add country and remove its continent to prevent double-inclusion
-					const safeContinents = Array.isArray(state.selectedContinents) ? state.selectedContinents : [];
+					const safeContinents = state.selectedContinents;
 					return {
 						selectedContinents: safeContinents.filter(
 							(c) => c !== continent
@@ -326,7 +330,7 @@ export const useAppStore = create<AppState>()(
 		
 		toggleTag: (tag) => {
 			set((state) => {
-				const safeTags = Array.isArray(state.selectedTags) ? state.selectedTags : [];
+				const safeTags = state.selectedTags;
 				const isSelected = safeTags.includes(tag);
 				return {
 					selectedTags: isSelected
@@ -344,7 +348,7 @@ export const useAppStore = create<AppState>()(
 
 		getAvailableTags: () => {
 			const { searchResults } = get();
-			const safeSearchResults = Array.isArray(searchResults) ? searchResults : [];
+			const safeSearchResults = searchResults;
 			const tags = new Set<string>();
 			safeSearchResults.forEach((node) => {
 				if (Array.isArray(node.tags)) {
@@ -356,7 +360,7 @@ export const useAppStore = create<AppState>()(
 
 		getNodeCountByTag: (tag: string) => {
 			const { searchResults } = get();
-			const safeFilteredResults = Array.isArray(searchResults) ? searchResults : [];
+			const safeFilteredResults = searchResults;
 			return safeFilteredResults.filter((node) => 
 				Array.isArray(node.tags) && node.tags.includes(tag)
 			).length;
@@ -385,5 +389,19 @@ export const useAppStore = create<AppState>()(
 
 		getNodeCountByPublisher: (publisher) =>
 			get().searchResults.filter((node) => node.publisher === publisher).length,
-	}))
+			}),
+			{
+				name: PREFERENCES_STORAGE_KEY,
+				version: 1,
+				// Preferences only: results and filters are per search, and the view
+				// modes live in the web address so a link opens exactly what it says
+				partialize: (state) => ({
+					showLabels: state.showLabels,
+					rightPanelExpanded: state.rightPanelExpanded,
+					showActiveNodes: state.showActiveNodes,
+					topK: state.topK,
+				}),
+			}
+		)
+	)
 );
