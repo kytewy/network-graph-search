@@ -5,11 +5,11 @@
 
 import { act, renderHook } from '@testing-library/react';
 import { useHighlightOnHover } from '@/hooks/use-highlight-on-hover';
-import { useNetworkStore } from '@/lib/stores/network-store';
+import { useAppStore } from '@/lib/stores/app-state';
 
-const highlighted = () => useNetworkStore.getState().highlightedNodes;
+const highlighted = () => useAppStore.getState().highlightedNodes;
 
-beforeEach(() => useNetworkStore.setState({ highlightedNodes: [] }));
+beforeEach(() => useAppStore.setState({ highlightedNodes: [] }));
 
 describe('useHighlightOnHover', () => {
 	it('highlights on hover and clears on leave', () => {
@@ -37,7 +37,7 @@ describe('useHighlightOnHover', () => {
 
 	it('leaves someone else’s highlight alone on unmount', () => {
 		const { unmount } = renderHook(() => useHighlightOnHover());
-		act(() => useNetworkStore.getState().setHighlightedNodes(['X']));
+		act(() => useAppStore.getState().setHighlightedNodes(['X']));
 		unmount();
 		expect(highlighted()).toEqual(['X']);
 	});

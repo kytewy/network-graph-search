@@ -9,7 +9,7 @@ import { NodeContextMenu } from './NodeContextMenu';
 import { PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/config/graph-config';
 import { Z_INDEX } from '@/lib/config/graph-config';
 import { logArrayOperation } from '@/lib/utils/error-tracker';
-import { useNetworkStore } from '@/lib/stores/network-store';
+import { useAppStore } from '@/lib/stores/app-state';
 import { useLayoutOverrides } from '@/hooks/use-layout-overrides';
 import { useToggleContextOnClick } from '@/hooks/use-toggle-context-on-click';
 import { useContextStore } from '@/lib/stores/context-store';
@@ -60,14 +60,14 @@ export function NetworkGraphCanvasClient() {
 
 	// Nodes hovered in the side panels (search results, context, cluster cards).
 	// Read straight from the store so hovering doesn't rebuild the graph data.
-	const highlightedNodes = useNetworkStore((state) => state.highlightedNodes);
-	const setHighlightedNodes = useNetworkStore((state) => state.setHighlightedNodes);
+	const highlightedNodes = useAppStore((state) => state.highlightedNodes);
+	const setHighlightedNodes = useAppStore((state) => state.setHighlightedNodes);
 	const highlightedSet = useMemo(() => new Set(highlightedNodes), [highlightedNodes]);
 	// Hovering a node on the graph highlights it the same way hovering a card does
 	const onNodePointerOver = useCallback((node: { id: string }) => setHighlightedNodes([node.id]), [setHighlightedNodes]);
 	const onNodePointerOut = useCallback(
 		(node: { id: string }) => {
-			const current = useNetworkStore.getState().highlightedNodes;
+			const current = useAppStore.getState().highlightedNodes;
 			if (current.length === 1 && current[0] === node.id) setHighlightedNodes([]);
 		},
 		[setHighlightedNodes]

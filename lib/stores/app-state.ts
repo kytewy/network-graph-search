@@ -7,7 +7,8 @@ import { filterNodes } from '@/lib/filters/filter-nodes';
 import { selectionsFromStore } from '@/lib/config/filters';
 import { create } from 'zustand';
 import type { Node, Link } from '@/lib/config/types';
-import type { ClusterMode, ColorMode, NodeSizeMode } from '@/lib/config/view-modes';
+import { createViewSlice, type ViewSlice } from './slices/view-slice';
+import { createSelectionSlice, type SelectionSlice } from './slices/selection-slice';
 
 // Re-export so existing imports from this store keep working.
 // The single source of truth for these types is lib/config/types.ts.
@@ -20,8 +21,8 @@ import { reportError } from '@/lib/observability/capture-client';
 // The search currently on screen (or on its way), so older replies are ignored
 let latestSearch: { query: string; topK: number } | null = null;
 
-// Define the app state interface
-interface AppState {
+// Search results and filters; view settings and the hover highlight are slices
+interface SearchState {
 	// Search state
 	query: string;
 	isLoading: boolean;
@@ -36,13 +37,6 @@ interface AppState {
 	links: Link[];
 	filteredLinks: Link[];
 
-	// Visualization state
-	colorMode: ColorMode;
-	nodeSizeMode: NodeSizeMode;
-	clusterMode: ClusterMode;
-	showLabels: boolean;
-	rightPanelExpanded: boolean;
-
 	// Similarity histogram state
 	selectedSimilarityRanges: string[];
 
@@ -55,11 +49,6 @@ interface AppState {
 	setSearchStatus: (status: string) => void; // Moved from ui-store (Phase 1)
 	setSearchResults: (results: Node[]) => void;
 	setLinks: (links: Link[]) => void;
-	setColorMode: (mode: ColorMode) => void;
-	setNodeSizeMode: (mode: NodeSizeMode) => void;
-	setClusterMode: (mode: ClusterMode) => void;
-	setShowLabels: (show: boolean) => void;
-	setRightPanelExpanded: (expanded: boolean) => void;
 	toggleSimilarityRange: (range: string) => void;
 	clearSimilarityRanges: () => void;
 	applyFilters: () => void;
@@ -97,9 +86,14 @@ interface AppState {
 	getNodeCountByPublisher: (publisher: string) => number;
 }
 
-// Create the store with DevTools middleware
+export type AppState = SearchState & ViewSlice & SelectionSlice;
+
+// One store built from slices, with DevTools middleware
 export const useAppStore = create<AppState>()(
-	devtools((set, get) => ({
+	devtools((set, get, store) => ({
+		...createViewSlice(set, get, store),
+		...createSelectionSlice(set, get, store),
+
 		// Initial state
 		query: '',
 		isLoading: false,
@@ -111,11 +105,6 @@ export const useAppStore = create<AppState>()(
 		filteredResults: [],
 		links: [],
 		filteredLinks: [],
-		colorMode: 'continent',
-		nodeSizeMode: 'none',
-		clusterMode: 'none',
-		showLabels: true,
-		rightPanelExpanded: false,
 		selectedSimilarityRanges: [],
 
 		// Location filtering state
@@ -146,13 +135,6 @@ export const useAppStore = create<AppState>()(
 			set({ links });
 			get().applyFilters(); // Apply any existing filters to links as well
 		},
-
-		// Visualization state actions
-		setColorMode: (colorMode) => set({ colorMode }),
-		setNodeSizeMode: (nodeSizeMode) => set({ nodeSizeMode }),
-		setClusterMode: (clusterMode) => set({ clusterMode }),
-		setShowLabels: (showLabels) => set({ showLabels }),
-		setRightPanelExpanded: (rightPanelExpanded) => set({ rightPanelExpanded }),
 
 		// Toggle a similarity range selection
 		toggleSimilarityRange: (range) => {

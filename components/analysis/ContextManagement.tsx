@@ -16,7 +16,6 @@ import {
 	ChevronLeft,
 	ChevronRight,
 } from 'lucide-react';
-import { useUIStore } from '@/lib/stores/ui-store';
 import { useContextStore } from '@/lib/stores/context-store';
 import { useAppStore } from '@/lib/stores/app-state';
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
@@ -74,8 +73,8 @@ export default function ContextManagement({
 
 	// Get all store state - MUST be called before conditional returns
 	const highlight = useHighlightOnHover(); // Hover a row to highlight its node on the graph
-	const showActiveNodes = useUIStore((state) => state.showActiveNodes);
-	const setShowActiveNodes = useUIStore((state) => state.setShowActiveNodes);
+	const showActiveNodes = useAppStore((state) => state.showActiveNodes);
+	const setShowActiveNodes = useAppStore((state) => state.setShowActiveNodes);
 
 	// Get nodes from NetworkGraph context (same source as the graph itself!)
 	const { filteredResults } = useNetworkGraph();

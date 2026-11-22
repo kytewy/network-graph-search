@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Filter, Target, Globe, Tag, Building2 } from 'lucide-react';
 import { useAppStore } from '@/lib/stores/app-state';
+import { useShallow } from 'zustand/react/shallow';
 import { SimilarityHistogram } from '@/components/filters/SimilarityHistogram';
 import { GeographicFilters } from './GeographicFilters';
 import { PublisherFilters } from './PublisherFilters';
@@ -24,47 +25,57 @@ import { TagFilters } from './TagFilters';
 const FilterPanel = () => {
 	const [isClient, setIsClient] = useState(false);
 
-	// Get all required state and actions from app-state store - MUST be called before conditional returns
-	const filteredResults = useAppStore((state) => state.filteredResults);
-	const selectedContinents = useAppStore((state) => state.selectedContinents);
-	const selectedCountries = useAppStore((state) => state.selectedCountries);
-	const toggleContinent = useAppStore((state) => state.toggleContinent);
-	const toggleCountry = useAppStore((state) => state.toggleCountry);
-	const clearLocationFilters = useAppStore(
-		(state) => state.clearLocationFilters
+	// Everything the panel reads from the store, in one read (MUST be called before
+	// conditional returns). useShallow redraws the panel only when one of these changes.
+	const {
+		filteredResults,
+		selectedContinents,
+		selectedCountries,
+		toggleContinent,
+		toggleCountry,
+		clearLocationFilters,
+		getNodeCountByContinent,
+		getNodeCountByCountry,
+		getAvailableContinents,
+		getCountriesByContinent,
+		selectedTags,
+		toggleTag,
+		clearTagFilters,
+		getAvailableTags,
+		getNodeCountByTag,
+		selectedSimilarityRanges,
+		clearSimilarityRanges,
+		selectedPublishers,
+		togglePublisher,
+		clearPublisherFilters,
+		getAvailablePublishers,
+		getNodeCountByPublisher,
+	} = useAppStore(
+		useShallow((state) => ({
+			filteredResults: state.filteredResults,
+			selectedContinents: state.selectedContinents,
+			selectedCountries: state.selectedCountries,
+			toggleContinent: state.toggleContinent,
+			toggleCountry: state.toggleCountry,
+			clearLocationFilters: state.clearLocationFilters,
+			getNodeCountByContinent: state.getNodeCountByContinent,
+			getNodeCountByCountry: state.getNodeCountByCountry,
+			getAvailableContinents: state.getAvailableContinents,
+			getCountriesByContinent: state.getCountriesByContinent,
+			selectedTags: state.selectedTags,
+			toggleTag: state.toggleTag,
+			clearTagFilters: state.clearTagFilters,
+			getAvailableTags: state.getAvailableTags,
+			getNodeCountByTag: state.getNodeCountByTag,
+			selectedSimilarityRanges: state.selectedSimilarityRanges,
+			clearSimilarityRanges: state.clearSimilarityRanges,
+			selectedPublishers: state.selectedPublishers,
+			togglePublisher: state.togglePublisher,
+			clearPublisherFilters: state.clearPublisherFilters,
+			getAvailablePublishers: state.getAvailablePublishers,
+			getNodeCountByPublisher: state.getNodeCountByPublisher,
+		}))
 	);
-
-	// Get helper functions from store
-	const getNodeCountByContinent = useAppStore(
-		(state) => state.getNodeCountByContinent
-	);
-	const getNodeCountByCountry = useAppStore(
-		(state) => state.getNodeCountByCountry
-	);
-	const getAvailableContinents = useAppStore(
-		(state) => state.getAvailableContinents
-	);
-	const getCountriesByContinent = useAppStore(
-		(state) => state.getCountriesByContinent
-	);
-
-	// Tag filtering state and actions
-	const selectedTags = useAppStore((state) => state.selectedTags);
-	const toggleTag = useAppStore((state) => state.toggleTag);
-	const clearTagFilters = useAppStore((state) => state.clearTagFilters);
-	const getAvailableTags = useAppStore((state) => state.getAvailableTags);
-	const getNodeCountByTag = useAppStore((state) => state.getNodeCountByTag);
-
-	// Similarity filtering state and actions
-	const selectedSimilarityRanges = useAppStore((state) => state.selectedSimilarityRanges);
-	const clearSimilarityRanges = useAppStore((state) => state.clearSimilarityRanges);
-
-	// Publisher filtering state and actions
-	const selectedPublishers = useAppStore((state) => state.selectedPublishers);
-	const togglePublisher = useAppStore((state) => state.togglePublisher);
-	const clearPublisherFilters = useAppStore((state) => state.clearPublisherFilters);
-	const getAvailablePublishers = useAppStore((state) => state.getAvailablePublishers);
-	const getNodeCountByPublisher = useAppStore((state) => state.getNodeCountByPublisher);
 
 	// Local UI state
 	const [expandedContinents, setExpandedContinents] = useState<string[]>([]);

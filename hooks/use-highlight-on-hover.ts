@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { useNetworkStore } from '@/lib/stores/network-store';
+import { useAppStore } from '@/lib/stores/app-state';
 
 /**
  * Hover (or keyboard focus) on a document row highlights its node on the
@@ -10,7 +10,7 @@ import { useNetworkStore } from '@/lib/stores/network-store';
  * Usage: const highlight = useHighlightOnHover(); <div {...highlight(node.id)}>
  */
 export function useHighlightOnHover() {
-	const setHighlightedNodes = useNetworkStore((state) => state.setHighlightedNodes);
+	const setHighlightedNodes = useAppStore((state) => state.setHighlightedNodes);
 	const ownId = useRef<string | null>(null);
 
 	const clear = useCallback(() => {
@@ -22,9 +22,9 @@ export function useHighlightOnHover() {
 	// Only clear a highlight this list set, not one from another list.
 	useEffect(
 		() => () => {
-			const highlighted = useNetworkStore.getState().highlightedNodes;
+			const highlighted = useAppStore.getState().highlightedNodes;
 			if (ownId.current && highlighted.length === 1 && highlighted[0] === ownId.current) {
-				useNetworkStore.getState().setHighlightedNodes([]);
+				useAppStore.getState().setHighlightedNodes([]);
 			}
 		},
 		[]

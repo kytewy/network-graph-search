@@ -3,7 +3,6 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import type { GraphCanvasRef } from 'reagraph';
 import { useContextStore } from '@/lib/stores/context-store';
-import { useNetworkStore } from '@/lib/stores/network-store';
 import { toast } from 'sonner';
 import type { Node } from '@/lib/stores/app-state';
 
@@ -108,8 +107,7 @@ export function useGraphCoordination(
 	/**
 	 * Close lasso menu and clear all selection state
 	 * Coordinates cleanup across 2 different systems:
-	 * 1. Lasso selection hook state
-	 * 2. Network store selection state
+	 * the lasso selection hook state.
 	 * Note: Reagraph selections are handled by the selection hook directly
 	 */
 	const handleCloseLassoMenu = useCallback(() => {
@@ -117,12 +115,6 @@ export function useGraphCoordination(
 		if (isClient) {
 			// 1. Close lasso menu (from hook)
 			closeLassoMenuFromHook();
-
-			// 2. Clear network store selections (if available)
-			const networkStore = useNetworkStore.getState();
-			if (networkStore.setSelectedNodes) {
-				networkStore.setSelectedNodes([]);
-			}
 		}
 	}, [isClient, closeLassoMenuFromHook]);
 

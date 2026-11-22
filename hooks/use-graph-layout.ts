@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useNetworkStore } from '@/lib/stores/network-store';
 import { useAppStore } from '@/lib/stores/app-state';
 import {
 	LayoutMapper,
@@ -57,7 +56,7 @@ interface UseGraphLayoutReturn {
  */
 export function useGraphLayout(): UseGraphLayoutReturn {
 	// Get layout from network store
-	const networkLayoutType = useNetworkStore((state) => state.layoutType);
+	const networkLayoutType = useAppStore((state) => state.layoutType);
 	
 	// Get cluster mode for validation
 	const clusterMode = useAppStore((state) => state.clusterMode);
@@ -98,7 +97,7 @@ export function useGraphLayout(): UseGraphLayoutReturn {
 			}
 
 			// Update network store with new layout
-			useNetworkStore.getState().setLayoutType(networkLayout);
+			useAppStore.getState().setLayoutType(networkLayout);
 		},
 		[clusterMode, setClusterModeStore]
 	);

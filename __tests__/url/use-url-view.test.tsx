@@ -3,7 +3,6 @@ import { withNuqsTestingAdapter, type UrlUpdateEvent } from 'nuqs/adapters/testi
 import { useViewInUrl } from '@/hooks/use-url-view';
 import { cleanView } from '@/lib/url/view-params';
 import { useAppStore } from '@/lib/stores/app-state';
-import { useNetworkStore } from '@/lib/stores/network-store';
 
 function setup(searchParams = '') {
 	const updates: UrlUpdateEvent[] = [];
@@ -18,7 +17,7 @@ const reset = () => {
 		selectedSimilarityRanges: [], colorMode: 'continent', nodeSizeMode: 'none', clusterMode: 'none',
 		searchResults: [], filteredResults: [],
 	});
-	useNetworkStore.setState({ layoutType: 'forceDirected2d' });
+	useAppStore.setState({ layoutType: 'forceDirected2d' });
 };
 
 describe('cleanView', () => {
@@ -44,13 +43,13 @@ describe('filters and view settings in the web address', () => {
 		expect(app.selectedPublishers).toEqual(['Regulator']);
 		expect(app.colorMode).toBe('publisher');
 		expect(app.nodeSizeMode).toBe('similarity');
-		expect(useNetworkStore.getState().layoutType).toBe('circular2d');
+		expect(useAppStore.getState().layoutType).toBe('circular2d');
 	});
 
 	it('ignores an unknown setting in a link', () => {
 		setup('?color=rainbow&layout=spiral');
 		expect(useAppStore.getState().colorMode).toBe('continent');
-		expect(useNetworkStore.getState().layoutType).toBe('forceDirected2d');
+		expect(useAppStore.getState().layoutType).toBe('forceDirected2d');
 	});
 
 	it('writes a changed filter or setting into the address without a new history entry', async () => {

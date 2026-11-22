@@ -7,7 +7,6 @@ import { FILTERS } from '@/lib/config/filters';
 
 type FilterUrlKey = (typeof FILTERS)[number]['urlKey'];
 import { useAppStore } from '@/lib/stores/app-state';
-import { useNetworkStore } from '@/lib/stores/network-store';
 
 const sameList = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
 
@@ -20,7 +19,7 @@ function viewFromStores(): UrlView {
 		color: app.colorMode,
 		size: app.nodeSizeMode,
 		cluster: app.clusterMode,
-		layout: useNetworkStore.getState().layoutType,
+		layout: useAppStore.getState().layoutType,
 	};
 }
 
@@ -37,7 +36,7 @@ function applyView(view: UrlView) {
 	if (app.colorMode !== view.color) app.setColorMode(view.color);
 	if (app.nodeSizeMode !== view.size) app.setNodeSizeMode(view.size);
 	if (app.clusterMode !== view.cluster) app.setClusterMode(view.cluster);
-	if (useNetworkStore.getState().layoutType !== view.layout) useNetworkStore.getState().setLayoutType(view.layout);
+	if (useAppStore.getState().layoutType !== view.layout) useAppStore.getState().setLayoutType(view.layout);
 }
 
 /**
@@ -66,11 +65,6 @@ export function useViewInUrl() {
 			lastWritten.current = key;
 			setUrl(view);
 		};
-		const stopApp = useAppStore.subscribe(write);
-		const stopNetwork = useNetworkStore.subscribe(write);
-		return () => {
-			stopApp();
-			stopNetwork();
-		};
+		return useAppStore.subscribe(write);
 	}, [setUrl]);
 }
