@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
 import { resolveClusterNodes } from '@/lib/clustering/resolve-cluster-nodes';

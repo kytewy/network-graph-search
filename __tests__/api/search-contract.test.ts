@@ -1,5 +1,6 @@
+import type { Mock } from 'vitest';
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
 /**
@@ -14,12 +15,12 @@ import {
 	searchResponseSchema,
 } from '@/lib/contracts/search';
 
-jest.mock('@/lib/services/vector_search', () => ({ searchPinecone: jest.fn() }));
+vi.mock('@/lib/services/vector_search', () => ({ searchPinecone: vi.fn() }));
 import { searchPinecone } from '@/lib/services/vector_search';
 import { POST as search } from '@/app/api/reranked-vector-search/route';
 import { resetRateLimits } from '@/lib/utils/api-guard';
 
-const mockSearch = searchPinecone as jest.Mock;
+const mockSearch = searchPinecone as Mock;
 
 const post = (body: string) =>
 	search(

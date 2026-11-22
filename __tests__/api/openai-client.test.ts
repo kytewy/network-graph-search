@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
 /**
@@ -9,11 +9,11 @@
 
 import { APIConnectionTimeoutError } from 'openai';
 
-const create = jest.fn();
+const create = vi.fn();
 const constructed: Array<Record<string, unknown>> = [];
 
-jest.mock('openai', () => {
-	const actual = jest.requireActual('openai');
+vi.mock('openai', async () => {
+	const actual = await vi.importActual<Record<string, unknown>>('openai');
 	class FakeOpenAI {
 		chat = { completions: { create } };
 		constructor(options: Record<string, unknown>) {

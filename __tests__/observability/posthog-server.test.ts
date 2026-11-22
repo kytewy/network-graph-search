@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
 /**
@@ -7,10 +7,10 @@
  * set, so dev, tests and forks without a key send nothing.
  */
 
-const captureException = jest.fn();
+const captureException = vi.fn();
 const constructed: Array<{ token: string; options: Record<string, unknown> }> = [];
 
-jest.mock('posthog-node', () => ({
+vi.mock('posthog-node', () => ({
 	PostHog: class {
 		captureException = captureException;
 		constructor(token: string, options: Record<string, unknown>) {
@@ -40,10 +40,10 @@ beforeEach(() => {
 	resetPostHogServer();
 	captureException.mockClear();
 	constructed.length = 0;
-	jest.spyOn(console, 'error').mockImplementation(() => {});
+	vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => vi.restoreAllMocks());
 
 describe('getPostHogServer', () => {
 	it('is off without a project token', () => {
@@ -132,8 +132,8 @@ describe('gaps found in the logging audit', () => {
 	});
 
 	it('documents/list reports errors and hides their details', async () => {
-		jest.resetModules();
-		jest.doMock('@pinecone-database/pinecone', () => ({
+		vi.resetModules();
+		vi.doMock('@pinecone-database/pinecone', () => ({
 			Pinecone: class {
 				index() {
 					return { query: async () => { throw new Error('Vector dimension 1536 does not match 1024'); } };

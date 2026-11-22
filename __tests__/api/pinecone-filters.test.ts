@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
 import { buildPineconeFilter } from '@/lib/utils/pinecone-filters';

@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
 import { filterNodes } from '@/lib/filters/filter-nodes';

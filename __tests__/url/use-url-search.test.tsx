@@ -4,7 +4,7 @@ import { useSearchFromUrl, useUrlSearch } from '@/hooks/use-url-search';
 import { SEARCH_LIMITS } from '@/lib/contracts/search';
 import { useAppStore } from '@/lib/stores/app-state';
 
-const performSearch = jest.fn();
+const performSearch = vi.fn();
 
 function setup(searchParams = '') {
 	const updates: UrlUpdateEvent[] = [];

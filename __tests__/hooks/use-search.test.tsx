@@ -8,7 +8,7 @@ const hit = { id: 'a', label: 'Doc A', score: 0.9, similarity: 0.9, publisher: '
 describe('useSearch', () => {
 	beforeEach(() => {
 		queryClient.clear();
-		global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ nodes: [hit], edges: [] }) });
+		global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ nodes: [hit], edges: [] }) });
 	});
 
 	it('searches, fills the results, and answers a repeat from memory', async () => {

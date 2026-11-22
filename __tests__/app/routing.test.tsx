@@ -5,8 +5,8 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-const redirect = jest.fn();
-jest.mock('next/navigation', () => ({ redirect: (path: string) => redirect(path) }));
+const redirect = vi.fn();
+vi.mock('next/navigation', () => ({ redirect: (path: string) => redirect(path) }));
 
 import Home from '@/app/page';
 import GraphError from '@/app/graph/error';
@@ -19,11 +19,11 @@ describe('/', () => {
 });
 
 describe('graph error page', () => {
-	beforeEach(() => jest.spyOn(console, 'error').mockImplementation(() => {}));
-	afterEach(() => jest.restoreAllMocks());
+	beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => {}));
+	afterEach(() => vi.restoreAllMocks());
 
 	it('shows a friendly message and retries', () => {
-		const reset = jest.fn();
+		const reset = vi.fn();
 		render(<GraphError error={new Error('boom')} reset={reset} />);
 
 		expect(screen.getByRole('alert')).toHaveTextContent(/something went wrong/i);
@@ -34,7 +34,7 @@ describe('graph error page', () => {
 
 	it('offers a reload when part of the app failed to download', () => {
 		const error = Object.assign(new Error('Loading chunk failed'), { name: 'ChunkLoadError' });
-		render(<GraphError error={error} reset={jest.fn()} />);
+		render(<GraphError error={error} reset={vi.fn()} />);
 
 		expect(screen.getByRole('button', { name: /reload/i })).toBeInTheDocument();
 		expect(screen.getByRole('alert')).toHaveTextContent(/reload/i);

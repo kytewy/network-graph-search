@@ -6,9 +6,9 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 
-const mockPosthog = { __loaded: false, captureException: jest.fn() };
+const mockPosthog = { __loaded: false, captureException: vi.fn() };
 // Getter: jest hoists this mock above the const, so read it lazily
-jest.mock('posthog-js', () => ({ __esModule: true, get default() { return mockPosthog; } }));
+vi.mock('posthog-js', () => ({ __esModule: true, get default() { return mockPosthog; } }));
 const posthog = mockPosthog;
 
 import { captureClientError, reportError } from '@/lib/observability/capture-client';
@@ -18,10 +18,10 @@ import GlobalError from '@/app/global-error';
 beforeEach(() => {
 	posthog.__loaded = false;
 	posthog.captureException.mockClear();
-	jest.spyOn(console, 'error').mockImplementation(() => {});
+	vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => vi.restoreAllMocks());
 
 describe('captureClientError', () => {
 	it('does nothing when PostHog is not set up', () => {
@@ -41,7 +41,7 @@ describe('error pages report what they caught', () => {
 	it('graph error page', () => {
 		posthog.__loaded = true;
 		const error = new Error('graph crashed');
-		render(<GraphError error={error} reset={jest.fn()} />);
+		render(<GraphError error={error} reset={vi.fn()} />);
 		expect(posthog.captureException).toHaveBeenCalledWith(error, { boundary: 'graph' });
 	});
 

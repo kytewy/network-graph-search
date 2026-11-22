@@ -4,7 +4,7 @@ import { PublisherFilters } from '@/components/filters/PublisherFilters';
 
 describe('PublisherFilters', () => {
 	const setup = (selected: string[] = []) => {
-		const togglePublisher = jest.fn();
+		const togglePublisher = vi.fn();
 		render(
 			<PublisherFilters
 				availablePublishers={['Government', 'Law firm']}

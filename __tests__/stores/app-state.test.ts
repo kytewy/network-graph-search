@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { queryClient } from '@/lib/api/query-client';
 import { toApiEdges, toApiNode, type PineconeHit } from '@/lib/contracts/node';
 /**
@@ -19,7 +20,7 @@ const fromRaw = (raw: { result: { hits: PineconeHit[] } }) => ({
   edges: toApiEdges(raw.result.hits),
 });
 
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Searches are remembered for a few minutes; each test starts with none
 beforeEach(() => queryClient.clear());
@@ -46,7 +47,7 @@ describe('Search Functionality', () => {
     });
     
     // Clear all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Test 1: Perform Search', () => {
@@ -83,7 +84,7 @@ describe('Search Functionality', () => {
         }),
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
@@ -104,7 +105,7 @@ describe('Search Functionality', () => {
     });
 
     it('should handle search errors gracefully', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as Mock).mockRejectedValueOnce(new Error('Network error'));
 
       const store = useAppStore.getState();
       
@@ -116,11 +117,11 @@ describe('Search Functionality', () => {
     });
 
     it('shows the error message the search route returns', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as Mock).mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Query must be under 500 characters' }),
       });
-      jest.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'error').mockImplementation(() => {});
 
       await useAppStore.getState().performSearch('test query', 20);
 
@@ -128,11 +129,11 @@ describe('Search Functionality', () => {
     });
 
     it('shows a clear error when the reply is not the shape the rulebook describes', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ unexpected: true }),
       });
-      jest.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'error').mockImplementation(() => {});
 
       await useAppStore.getState().performSearch('test query', 20);
 
@@ -149,7 +150,7 @@ describe('Search Functionality', () => {
         }),
       });
       let finishFirst: (value: unknown) => void = () => {};
-      (global.fetch as jest.Mock)
+      (global.fetch as Mock)
         .mockImplementationOnce(() => new Promise((resolve) => { finishFirst = resolve; }))
         .mockResolvedValueOnce(reply('asia'));
 
@@ -163,14 +164,14 @@ describe('Search Functionality', () => {
       expect(state.searchResults.map((n) => n.id)).toEqual(['asia']);
       expect(state.error).toBeNull();
       expect(state.isLoading).toBe(false);
-      const [firstCall, secondCall] = (global.fetch as jest.Mock).mock.calls;
+      const [firstCall, secondCall] = (global.fetch as Mock).mock.calls;
       expect(firstCall[1].signal.aborted).toBe(true);
       expect(secondCall[1].signal.aborted).toBe(false);
     });
 
     it('keeps the spinner on while the newer search is still running', async () => {
       let finishSecond: (value: unknown) => void = () => {};
-      (global.fetch as jest.Mock)
+      (global.fetch as Mock)
         .mockImplementationOnce((_url, init) => new Promise((_resolve, reject) => {
           init.signal.addEventListener('abort', () =>
             reject(Object.assign(new Error('aborted'), { name: 'AbortError' })));
@@ -223,7 +224,7 @@ describe('Search Functionality', () => {
         }),
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
@@ -256,7 +257,7 @@ describe('Search Functionality', () => {
     const ids = () => useAppStore.getState().filteredResults.map((n) => n.id);
 
     beforeEach(async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           ...fromRaw({
@@ -271,14 +272,14 @@ describe('Search Functionality', () => {
         }),
       });
       await useAppStore.getState().performSearch('AI regulation');
-      (global.fetch as jest.Mock).mockClear();
+      (global.fetch as Mock).mockClear();
     });
 
     it('searches without sending filters to Pinecone', async () => {
       useAppStore.setState({ selectedPublishers: ['Law firm'] } as any);
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({ ...fromRaw({ result: { hits: [] } }) }) });
+      (global.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => ({ ...fromRaw({ result: { hits: [] } }) }) });
       await useAppStore.getState().performSearch('again');
-      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      const body = JSON.parse((global.fetch as Mock).mock.calls[0][1].body);
       expect(body.filters).toBeUndefined();
     });
 
@@ -306,7 +307,7 @@ describe('Search Functionality', () => {
 
     it('a new search keeps the ticked filters and applies them to the new results', async () => {
       useAppStore.getState().toggleContinent('Asia');
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ ...fromRaw({ result: { hits: [hit('a2', 'Asia', 'NGO'), hit('e2', 'Europe', 'NGO')] } }) }),
       });

@@ -1,5 +1,6 @@
+import type { Mock } from 'vitest';
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
 /**
@@ -22,12 +23,12 @@ import {
 	truncate,
 } from '@/lib/utils/api-guard';
 
-jest.mock('@/lib/utils/openai-client', () => ({
-	llmError: jest.requireActual('@/lib/utils/openai-client').llmError,
+vi.mock('@/lib/utils/openai-client', async () => ({
+	llmError: (await vi.importActual<typeof import('@/lib/utils/openai-client')>('@/lib/utils/openai-client')).llmError,
 	openai: {
 		chat: {
 			completions: {
-				create: jest.fn(),
+				create: vi.fn(),
 			},
 		},
 	},
@@ -36,7 +37,7 @@ jest.mock('@/lib/utils/openai-client', () => ({
 import { openai } from '@/lib/utils/openai-client';
 import { POST as analyzeNodes } from '@/app/api/analyze-nodes/route';
 
-const mockCreate = openai.chat.completions.create as jest.Mock;
+const mockCreate = openai.chat.completions.create as Mock;
 
 function makeRequest(body: unknown, ip = '1.2.3.4') {
 	return new NextRequest('http://localhost/api/test', {
@@ -133,7 +134,7 @@ describe('POST /api/analyze-nodes', () => {
 
 	it('hides internal error details from the client', async () => {
 		mockCreate.mockRejectedValue(new Error('secret upstream failure'));
-		const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+		const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
 		const res = await analyzeNodes(makeRequest({ nodes: [sampleNode] }));
 		const body = await res.json();
 		expect(res.status).toBe(500);
