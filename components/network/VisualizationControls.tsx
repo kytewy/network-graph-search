@@ -1,5 +1,6 @@
 'use client';
 
+import { CLUSTER_MODES, COLOR_MODES, SIZE_MODES } from '@/lib/config/view-modes';
 import { Check, Layers, Palette, Maximize2, Tag, Network } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
@@ -71,31 +72,11 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 		},
 	];
 
-	// Color by options
-	const colorByOptions = [
-		{ id: 'continent', name: 'Continent' },
-		{ id: 'country', name: 'Country' },
-		{ id: 'publisher', name: 'Publisher' },
-		{ id: 'documentType', name: 'Document type' },
-		{ id: 'similarityRange', name: 'Similarity Range' },
-	];
-
-	// Size by options
-	const sizeByOptions = [
-		{ id: 'none', name: 'None' },
-		{ id: 'similarity', name: 'Similarity' },
-		{ id: 'contentLength', name: 'Content Length' },
-	];
-
-	// Cluster by options
-	const clusterByOptions = [
-		{ id: 'none', name: 'None' },
-		{ id: 'documentType', name: 'Document type' },
-		{ id: 'continent', name: 'Continent' },
-		{ id: 'country', name: 'Country' },
-		{ id: 'publisher', name: 'Publisher' },
-		...(hasAiClusters ? [{ id: 'ai_clusters', name: 'AI Clusters' }] : []),
-	];
+	// Options come from the one list of view modes (lib/config/view-modes.ts)
+	const toOption = (m: { id: string; label: string }) => ({ id: m.id, name: m.label });
+	const colorByOptions = COLOR_MODES.map(toOption);
+	const sizeByOptions = SIZE_MODES.filter((m) => m.inControls).map(toOption);
+	const clusterByOptions = CLUSTER_MODES.filter((m) => !m.needsAiClusters || hasAiClusters).map(toOption);
 
 	// Get display name for current layout
 	const getCurrentLayoutName = () => {

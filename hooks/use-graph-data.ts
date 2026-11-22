@@ -3,22 +3,11 @@
 import { useMemo, useCallback } from 'react';
 import type { GraphNode, GraphEdge } from 'reagraph';
 import type { Node, Link } from '@/lib/stores/app-state';
-import { NodeColorCalculator } from '@/lib/utils/node-colors';
 import { NodeSizeCalculator } from '@/lib/utils/node-sizing';
 import { NO_CLUSTERS, type ClusterAssignments } from '@/lib/clustering/assignments';
 
-export type ColorMode =
-	| 'publisher'
-	| 'continent'
-	| 'similarityRange'
-	| 'documentType'
-	| 'country';
-
-export type NodeSizeMode =
-	| 'none'
-	| 'contentLength'
-	| 'summaryLength'
-	| 'similarity';
+import { colorOfNode, type ColorMode, type NodeSizeMode } from '@/lib/config/view-modes';
+export type { ColorMode, NodeSizeMode };
 
 interface UseGraphDataOptions {
 	colorMode: ColorMode;
@@ -67,7 +56,7 @@ export function useGraphData(
 ): UseGraphDataReturn {
 	const getNodeColor = useCallback(
 		(node: Node) => {
-			return NodeColorCalculator.getColor(node, colorMode);
+			return colorOfNode(node, colorMode);
 		},
 		[colorMode]
 	);

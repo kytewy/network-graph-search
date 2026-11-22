@@ -2,13 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/stores/app-state';
-import {
-	nodeColors,
-	colorMappings,
-	getColorByMode,
-	getSimilarityColor,
-} from '@/lib/theme/colors';
-import { DOCUMENT_TYPES, PUBLISHERS, legendEntries } from '@/lib/config/document-taxonomy';
+import { nodeColors } from '@/lib/theme/colors';
+import { COLOR_MODES, SIZE_MODES, colorLegend, modeLabel } from '@/lib/config/view-modes';
 
 export function ColorLegend() {
 	const [isClient, setIsClient] = useState(false);
@@ -26,65 +21,15 @@ export function ColorLegend() {
 		return null; // Don't render anything during SSR
 	}
 
-	const getColorLegendData = () => {
-		switch (colorMode) {
-			case 'publisher':
-				return legendEntries(PUBLISHERS, filteredResults.map((node) => node.publisher));
-
-			case 'continent':
-				return [
-					{ label: 'North America', color: '#4f46e5' },
-					{ label: 'Europe', color: '#10b981' },
-					{ label: 'Asia', color: '#f59e0b' },
-					{ label: 'Africa', color: '#ef4444' },
-					{ label: 'South America', color: '#a855f7' },
-					{ label: 'Unknown', color: '#6b7280' },
-				];
-
-			case 'country':
-				// Specific colors for important countries, hash for others
-				return [
-					{ label: 'USA', color: '#1e40af' }, // Dark blue
-					{ label: 'Canada', color: '#ef4444' }, // Red
-					{ label: 'Europian Union', color: '#60a5fa' }, // Light blue
-					{ label: 'Other', color: '#6b7280' }, // Gray
-				];
-
-			case 'documentType':
-				return legendEntries(DOCUMENT_TYPES, filteredResults.map((node) => node.documentType));
-
-			case 'similarityRange':
-				return [
-					{ label: 'Very High (81-100%)', color: '#22c55e' }, // Green
-					{ label: 'High (61-80%)', color: '#84cc16' }, // Light green
-					{ label: 'Medium (41-60%)', color: '#eab308' }, // Yellow
-					{ label: 'Low (20-40%)', color: '#f97316' }, // Orange
-					{ label: 'Very Low (0-19%)', color: '#ef4444' }, // Red
-				];
-
-			default:
-				return [];
-		}
-	};
-
 	return (
 		<div className="absolute top-4 left-4 space-y-4 pointer-events-none">
 			{/* Color Legend */}
 			<div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-3 shadow-lg">
 				<div className="text-sm font-medium text-gray-700 mb-2">
-					Color by:{' '}
-					{colorMode === 'publisher'
-						? 'Publisher'
-						: colorMode === 'continent'
-						? 'Continent'
-						: colorMode === 'similarityRange'
-						? 'Similarity Range'
-						: colorMode === 'documentType'
-						? 'Document type'
-						: 'Country'}
+					Color by: {modeLabel(COLOR_MODES, colorMode)}
 				</div>
 				<div className="space-y-1">
-					{getColorLegendData().map((item, index) => (
+					{colorLegend(colorMode, filteredResults).map((item, index) => (
 						<div key={index} className="flex items-center gap-2">
 							<div
 								className="w-3 h-3 rounded-full flex-shrink-0"
@@ -100,12 +45,7 @@ export function ColorLegend() {
 			{nodeSizeMode !== 'none' && (
 				<div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-3 shadow-lg">
 					<div className="text-sm font-medium text-gray-700 mb-2">
-						Size by:{' '}
-						{nodeSizeMode === 'contentLength'
-							? 'Content Length'
-							: nodeSizeMode === 'summaryLength'
-							? 'Summary Length'
-							: 'Similarity'}
+						Size by: {modeLabel(SIZE_MODES, nodeSizeMode)}
 					</div>
 					<div className="space-y-1">
 						{nodeSizeMode === 'contentLength' && (

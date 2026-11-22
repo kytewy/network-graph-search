@@ -7,11 +7,8 @@ import { parseAsArrayOf, parseAsString, parseAsStringLiteral, type inferParserTy
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { SEARCH_CONFIG } from '@/lib/config/search-config';
 import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from '@/lib/stores/country_map';
+import { CLUSTER_MODES, COLOR_MODES, LAYOUT_IDS, SIZE_MODES, ids } from '@/lib/config/view-modes';
 
-const COLOR_MODES = ['continent', 'publisher', 'similarityRange', 'documentType', 'country'] as const;
-const SIZE_MODES = ['none', 'contentLength', 'summaryLength', 'similarity'] as const;
-const CLUSTER_MODES = ['none', 'documentType', 'continent', 'country', 'publisher', 'ai_clusters'] as const;
-const LAYOUTS = ['forceDirected2d', 'circular2d', 'treeTd2d', 'treeLr2d', 'radialOut2d', 'forceatlas2'] as const;
 
 const list = parseAsArrayOf(parseAsString).withDefault([]);
 
@@ -22,10 +19,10 @@ export const viewUrlParams = {
 	tag: list,
 	similarity: list,
 	// An unknown value in a link falls back to the default
-	color: parseAsStringLiteral(COLOR_MODES).withDefault('continent'),
-	size: parseAsStringLiteral(SIZE_MODES).withDefault('none'),
-	cluster: parseAsStringLiteral(CLUSTER_MODES).withDefault('none'),
-	layout: parseAsStringLiteral(LAYOUTS).withDefault('forceDirected2d'),
+	color: parseAsStringLiteral(ids(COLOR_MODES)).withDefault('continent'),
+	size: parseAsStringLiteral(ids(SIZE_MODES)).withDefault('none'),
+	cluster: parseAsStringLiteral(ids(CLUSTER_MODES)).withDefault('none'),
+	layout: parseAsStringLiteral(LAYOUT_IDS).withDefault('forceDirected2d'),
 };
 
 export type UrlView = inferParserType<typeof viewUrlParams>;

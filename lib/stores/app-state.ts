@@ -6,6 +6,7 @@ import { PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { filterNodes } from '@/lib/filters/filter-nodes';
 import { create } from 'zustand';
 import type { Node, Link } from '@/lib/config/types';
+import type { ClusterMode, ColorMode, NodeSizeMode } from '@/lib/config/view-modes';
 
 // Re-export so existing imports from this store keep working.
 // The single source of truth for these types is lib/config/types.ts.
@@ -35,14 +36,9 @@ interface AppState {
 	filteredLinks: Link[];
 
 	// Visualization state
-	colorMode:
-		| 'publisher'
-		| 'continent'
-		| 'similarityRange'
-		| 'documentType'
-		| 'country';
-	nodeSizeMode: 'none' | 'contentLength' | 'summaryLength' | 'similarity';
-	clusterMode: 'none' | 'documentType' | 'continent' | 'country' | 'publisher' | 'ai_clusters';
+	colorMode: ColorMode;
+	nodeSizeMode: NodeSizeMode;
+	clusterMode: ClusterMode;
 	showLabels: boolean;
 	rightPanelExpanded: boolean;
 
@@ -58,20 +54,9 @@ interface AppState {
 	setSearchStatus: (status: string) => void; // Moved from ui-store (Phase 1)
 	setSearchResults: (results: Node[]) => void;
 	setLinks: (links: Link[]) => void;
-	setColorMode: (
-		mode:
-			| 'publisher'
-			| 'continent'
-			| 'similarityRange'
-			| 'documentType'
-			| 'country'
-	) => void;
-	setNodeSizeMode: (
-		mode: 'none' | 'contentLength' | 'summaryLength' | 'similarity'
-	) => void;
-	setClusterMode: (
-		mode: 'none' | 'documentType' | 'continent' | 'country' | 'publisher' | 'ai_clusters'
-	) => void;
+	setColorMode: (mode: ColorMode) => void;
+	setNodeSizeMode: (mode: NodeSizeMode) => void;
+	setClusterMode: (mode: ClusterMode) => void;
 	setShowLabels: (show: boolean) => void;
 	setRightPanelExpanded: (expanded: boolean) => void;
 	toggleSimilarityRange: (range: string) => void;

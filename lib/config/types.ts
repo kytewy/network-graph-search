@@ -84,33 +84,8 @@ export type ReagraphLayoutType =
   | 'radialOut2d' 
   | 'forceatlas2';
 
-/**
- * Color Mode Types
- * Different ways to color nodes in the graph
- */
-export type ColorMode = 
-  | 'publisher' 
-  | 'continent' 
-  | 'similarityRange' 
-  | 'documentType' 
-  | 'country';
-
-/**
- * Cluster Mode Types
- * Different clustering visualization modes
- */
-export type ClusterMode = 
-  | 'none' 
-  | 'ai_clusters';
-
-/**
- * Node Size Mode Types
- * Different ways to size nodes in the graph
- */
-export type NodeSizeMode = 
-  | 'uniform' 
-  | 'score' 
-  | 'degree';
+// The view modes are defined once, in lib/config/view-modes.ts
+export type { ColorMode, ClusterMode, NodeSizeMode } from '@/lib/config/view-modes';
 
 /**
  * Similarity Range Type

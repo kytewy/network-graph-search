@@ -38,7 +38,8 @@ import type { ColorMode, NodeSizeMode } from './use-graph-data';
  * ```
  */
 
-export type ClusterMode = 'none' | 'documentType' | 'continent' | 'country' | 'publisher' | 'ai_clusters';
+import type { ClusterMode } from '@/lib/config/view-modes';
+export type { ClusterMode };
 
 interface UseGraphVisualizationSettingsReturn {
 	// Visual state
