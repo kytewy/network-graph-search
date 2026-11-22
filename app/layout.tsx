@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono"
 import { Suspense } from "react"
 import "./globals.css"
 import { QueryProvider } from "@/components/providers/query-provider"
+import { NuqsAdapter } from "nuqs/adapters/next/app"
 
 export const metadata: Metadata = {
   title: "v0 App",
@@ -20,11 +21,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <QueryProvider>
-          <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-            {children}
-          </Suspense>
-        </QueryProvider>
+        <NuqsAdapter>
+          <QueryProvider>
+            <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+              {children}
+            </Suspense>
+          </QueryProvider>
+        </NuqsAdapter>
       </body>
     </html>
   )

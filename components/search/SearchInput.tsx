@@ -1,6 +1,7 @@
 'use client';
 
 import { useSearch } from '@/hooks/use-search';
+import { useUrlSearch } from '@/hooks/use-url-search';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +37,9 @@ export function SearchInput() {
 	const topK = useAppStore((state) => state.topK);
 	const setTopK = useAppStore((state) => state.setTopK);
 	// Remembered searches, retries and cancelling: see hooks/use-search.ts
-	const { search, isLoading } = useSearch();
+	const { isLoading } = useSearch();
+	// A search goes into the web address, which then runs it
+	const { submit, clear } = useUrlSearch();
 	const searchResults = useAppStore((state) => state.searchResults);
 	const setSearchResults = useAppStore((state) => state.setSearchResults);
 
@@ -61,13 +64,14 @@ export function SearchInput() {
 	// Handle search
 	const handleSearch = () => {
 		if (!query.trim()) return;
-		search(query, topK);
+		submit(query, topK);
 	};
 
 	// Handle clear search
 	const handleClear = () => {
 		setQuery('');
 		setSearchResults([]);
+		clear();
 	};
 
 	// Metadata filter data - Always show these 6 continents for pre-search filtering

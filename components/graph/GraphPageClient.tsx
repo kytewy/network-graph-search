@@ -10,12 +10,16 @@ import { SearchPanel } from '@/components/search/SearchPanel';
 import ContextManagement from '@/components/analysis/ContextManagement';
 import { useAppStore } from '@/lib/stores/app-state';
 import { setupErrorTracking } from '@/lib/utils/error-tracker';
+import { useSearchFromUrl } from '@/hooks/use-url-search';
 
 export function GraphPageClient() {
 	const rightPanelExpanded = useAppStore((state) => state.rightPanelExpanded);
 	const setRightPanelExpanded = useAppStore(
 		(state) => state.setRightPanelExpanded
 	);
+
+	// The search in the web address (refresh, shared link, Back/Forward)
+	useSearchFromUrl();
 
 	// Setup error tracking on component mount
 	useEffect(() => {
