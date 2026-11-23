@@ -15,6 +15,7 @@ test('the search panel opens wide, shows results in columns, and folds back', as
 	await expect(filters).toBeVisible();
 
 	// Two result cards side by side: the first two start at the same height
+	await page.getByRole('button', { name: 'Show as cards' }).click();
 	const cards = panel.locator('[data-result-card]');
 	await expect.poll(async () => {
 		const [a, b] = [await cards.nth(0).boundingBox(), await cards.nth(1).boundingBox()];

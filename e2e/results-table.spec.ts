@@ -3,7 +3,7 @@ import { RESULT_COUNT, search } from './helpers';
 
 test('results switch to a table, sort by column, and the ● adds a document to context', async ({ page }) => {
 	await search(page);
-	await page.getByRole('button', { name: 'Show as table' }).click();
+	// The table is the default view
 
 	const table = page.getByTestId('results-table');
 	const rows = table.locator('[data-result-row]');
@@ -27,7 +27,9 @@ test('results switch to a table, sort by column, and the ● adds a document to 
 	await expect(table.getByRole('columnheader')).toHaveCount(5);
 	await expect(table.getByRole('columnheader', { name: /Cluster/ })).toBeVisible();
 
-	// The choice is remembered after a refresh
+	// Switching to cards is remembered after a refresh
+	await page.getByRole('button', { name: 'Show as cards' }).click();
 	await page.reload();
-	await expect(page.getByTestId('results-table')).toBeVisible();
+	await expect(page.locator('[data-result-card]').first()).toBeVisible();
+	await expect(page.getByTestId('results-table')).toHaveCount(0);
 });

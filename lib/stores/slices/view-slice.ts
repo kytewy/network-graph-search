@@ -37,7 +37,7 @@ export const createViewSlice: StateCreator<AppState, [['zustand/devtools', never
 	rightPanelExpanded: false,
 	searchPanelExpanded: false,
 	showActiveNodes: false,
-	resultsView: 'cards',
+	resultsView: 'table', // a table is quicker to scan; cards are one click away
 
 	setColorMode: (colorMode) => set({ colorMode }),
 	setNodeSizeMode: (nodeSizeMode) => set({ nodeSizeMode }),
