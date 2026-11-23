@@ -71,7 +71,7 @@ Estimates and actuals are added source lines (tests not counted). Status as of N
 | T5 | Click a node to toggle context; purple cluster rings and fading names; grey/black node rings; darker hover labels; lasso highlight | Done |
 | T6–T7 | Timeline | Parked |
 
-**Phase 1 — foundations: 12 of 17 done**
+**Phase 1 — foundations: 13 of 17 done** (the rest paused for the search track)
 
 | ID | Task | Branch | Est. | Actual | Status |
 |---|---|---|---|---|---|
@@ -88,26 +88,42 @@ Estimates and actuals are added source lines (tests not counted). Status as of N
 | P1-10b | Move the rest; context keeps only the graph ref | `p1/context-out-2` | 200 | 82 | Done |
 | P1-11 | `persist` for preferences; remove array-safety and error-tracker | `p1/persist` | 90 | 42 | Done |
 | P1-12 | Jest → Vitest | `mech/vitest` | mech. | mech. | Done (Vitest 5; Node 24 for PC, Docker and CI) |
-| P1-13 | Playwright: 3 flows (search, filter, lasso → context), `data-node-count` hook | `p1/playwright` | 80 (+tests) | | **Next** |
-| P1-14 | Golden-set eval (recall@5/10, MRR) as a LangSmith dataset | `p1/eval` | 180 | | To do |
+| P1-13 | Playwright: 3 flows (search, filter, lasso → context), `data-node-count` hook | `p1/playwright` | 80 (+tests) | 61 | Done (`npm run e2e` builds the app and serves it on 3100) |
+| P1-14 | Golden-set eval (recall@5/10, MRR) as a LangSmith dataset | `p1/eval` | 180 | | Paused for the search track |
 | P1-15 | LangSmith tracing (`wrapOpenAI`, `traceable`) + JSON request logs | `p1/tracing` | 140 | | To do |
 | P1-16 | CI jobs: type check, unit, Playwright, eval | `p1/ci` | 70 | | To do (CI already runs unit tests on Node 24) |
 
-**After Phase 1**
+**Search track (now)**
+
+Builds toward workstreams; see [vision-architecture.md](./vision-architecture.md). Each task stays under 300 source lines.
+
+| ID | Task | Branch | Est. | Status |
+|---|---|---|---|---|
+| S1 | Show search errors on screen, with "Try again" | `search/errors` | 40 | **Next** |
+| S2 | Expandable search panel (« / », like the Analysis Workspace); tabs Search \| Filters; results in 2–3 columns when wide | `search/panel-expand` | 100 | To do |
+| S3a | Refine, server side: re-rank route (Pinecone `bge-reranker-v2-m3`) for the documents on screen + client | `search/refine-api` | 120 | To do |
+| S3b | Refine, UI: "Advanced ▸" second question, chip with ✕ to undo, graph re-sized/re-coloured by new scores, rank change (#7 → #2 ▲5) | `search/refine-ui` | 160 | To do |
+| S4 | Expand: run the second question everywhere and add new documents to the graph, marked "new"; every document records which searches found it | `search/expand` | 200 | To do |
+| S5 | "Colour by: Search" (one entry in the view-mode registry) | `search/color-by-search` | 40 | To do |
+| S6 | Session trail: list of this session's searches (click to restore); "found by #1, #3" in the Context table | `search/trail` | 180 | To do |
+| S7 | Save a search with a name (in the browser for now; moves to the database with workstreams) | `search/saved` | 120 | To do |
+
+Decision to make before S3b: when a refine is active, are a node's colour and size the refined score only, or a blend with the original?
+
+**After the search track**
 
 | Area | Task | Notes |
 |---|---|---|
+| Phase 1 (rest) | P1-14 eval, P1-15 tracing, P1-16 CI | Eval is most useful once Refine/Expand change rankings |
+| Workstreams | Database, workstreams, saved searches and sessions inside them | See vision-architecture.md, step 2 |
+| Capture | URL → screenshot + Markdown + hashes → searchable | Step 3 |
+| Monitoring | Scheduled re-runs and re-captures; changes and alerts | Step 4 |
 | Housekeeping | PostHog through a reverse proxy | Before the demo, so ad blockers don't drop events |
 | Housekeeping | Vercel preview links | Test pull requests from a phone |
 | Housekeeping | React 19 + Next 16 | Clears the 4 remaining audit items and the `react@^19` warnings; Node 24 already meets Next 16 |
-| Housekeeping | Small clean-ups | aria-labels on icon buttons; unused `SEARCH_DEBOUNCE_MS`; hard-coded `DOCUMENT_COUNT` |
-| Search | Show search errors on screen | Today a failed search is silent |
-| Search | Expandable search panel | Mirrors the Analysis Workspace's expand-to-overlay |
-| Search | Search within results | Re-rank the current results by a second query; never adds or removes documents |
-| Search | Search-scope filters | Send the ticked filters with the search; the filter registry (P1-8) is ready |
+| Housekeeping | Small clean-ups | aria-labels on icon buttons; unused `SEARCH_DEBOUNCE_MS`; hard-coded `DOCUMENT_COUNT`; an `act()` warning in a slice test |
 | On hold | Interpretations data (`data/interpretations`) | Tag-preserving loader |
 | On hold | Hover label that stays highlighted after a quick click | Reagraph drag behaviour |
-| Later | "Add document" form; automatic discovery | |
 
 ## Prompts
 
