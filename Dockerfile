@@ -33,4 +33,5 @@ ENV HOSTNAME="0.0.0.0"
 EXPOSE 3000
 
 # Start the app
-CMD ["npm", "start"]
+# Run Next.js directly (not through npm) so it receives the stop signal itself
+CMD ["node_modules/.bin/next", "start"]
