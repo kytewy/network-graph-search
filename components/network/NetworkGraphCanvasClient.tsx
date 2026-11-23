@@ -115,7 +115,8 @@ export function NetworkGraphCanvasClient() {
 
 	return (
 		<div className="flex flex-col h-full">
-			<div className="absolute top-4 right-4 z-10">
+			{/* A container: on a narrow graph the settings show icons only, so they clear the legend */}
+			<div className="@container absolute top-4 right-4 left-4 z-10 flex justify-end pointer-events-none">
 				<VisualizationControls />
 			</div>
 

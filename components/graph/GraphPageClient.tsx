@@ -1,6 +1,6 @@
 'use client';
 
-import { PANEL_BUTTON, PANEL_HEADER, PanelCloseButton, PanelRail } from '@/components/layout/PanelChrome';
+import { PANEL_BUTTON, PanelCloseButton, PanelRail } from '@/components/layout/PanelChrome';
 import { ColorLegend } from '@/components/network/ColorLegend';
 import { NetworkGraphCanvas } from '@/components/network/NetworkGraphCanvas';
 import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
@@ -47,37 +47,21 @@ export function GraphPageClient() {
 					className={`${
 						rightPanelExpanded ? `absolute right-0 top-0 ${leftCollapsed ? 'left-10' : 'left-96'} z-10` : 'w-96 shrink-0'
 					} h-screen bg-sidebar border-l border-sidebar-border overflow-y-auto [scrollbar-gutter:stable] transition-all duration-300 flex flex-col`}>
-					{/* Same header as the search panel: widen on the inside, close on the outside */}
-					<div data-panel-header="right" className={`${PANEL_HEADER} sticky top-0 z-10 bg-sidebar`}>
-						<button
-							type="button"
-							onClick={() => setRightPanelExpanded(!rightPanelExpanded)}
-							aria-label={rightPanelExpanded ? 'Collapse analysis panel' : 'Expand analysis panel'}
-							title={rightPanelExpanded ? 'Narrow' : 'Widen'}
-							className={PANEL_BUTTON}>
-							{rightPanelExpanded ? '»' : '«'}
-						</button>
-						<span className="ml-auto">
-							<PanelCloseButton side="right" name="analysis" onClick={() => setRightCollapsed(true)} />
-						</span>
-					</div>
-
-					<div className="p-6 flex-1">
-						{/* Centered container for entire analysis workspace */}
-						<div className="mx-auto max-w-5xl w-full space-y-6">
-							<div className="flex items-center justify-between mb-3">
-								<div>
-									<h3 className="text-2xl font-bold text-sidebar-foreground">
-										Analysis Workspace
-									</h3>
-									<p className="text-sm text-sidebar-foreground/70 mt-1"></p>
-								</div>
-							</div>
-
-							{/* Context Management */}
-							<ContextManagement rightPanelExpanded={rightPanelExpanded} />
-						</div>
-					</div>
+					{/* Context | Chat | Clusters tabs are the header, like the search panel's */}
+					<ContextManagement
+						rightPanelExpanded={rightPanelExpanded}
+						headerStart={
+							<button
+								type="button"
+								onClick={() => setRightPanelExpanded(!rightPanelExpanded)}
+								aria-label={rightPanelExpanded ? 'Collapse analysis panel' : 'Expand analysis panel'}
+								title={rightPanelExpanded ? 'Narrow' : 'Widen'}
+								className={PANEL_BUTTON}>
+								{rightPanelExpanded ? '»' : '«'}
+							</button>
+						}
+						headerEnd={<PanelCloseButton side="right" name="analysis" onClick={() => setRightCollapsed(true)} />}
+					/>
 				</div>
 				)}
 			</div>

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type ReactNode } from 'react';
+import { PANEL_HEADER, PANEL_TAB } from '@/components/layout/PanelChrome';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
 	Search,
@@ -59,12 +61,17 @@ interface ContextStats {
 
 interface ContextManagementProps {
 	rightPanelExpanded: boolean;
+	/** The panel's own buttons, either side of the tabs (widen, close) */
+	headerStart?: ReactNode;
+	headerEnd?: ReactNode;
 	networkState?: any;
 	filterState?: any;
 }
 
 export default function ContextManagement({
 	rightPanelExpanded,
+	headerStart,
+	headerEnd,
 	networkState = {},
 	filterState = {},
 }: ContextManagementProps) {
@@ -298,84 +305,50 @@ export default function ContextManagement({
 		count: contextNodes.length,
 	};
 
+	// What the AI will receive, in one line above the chat box (was its own box)
+	const budgetLine = (
+		<p className={`text-xs ${overLimit ? 'text-destructive' : 'text-muted-foreground'}`} data-testid="context-budget">
+			{overLimit
+				? `${contextNodes.length} documents: the AI takes up to ${MAX_NODES}. Remove ${contextNodes.length - MAX_NODES} to ask.`
+				: `${contextNodes.length} ${contextNodes.length === 1 ? 'document' : 'documents'} · ~${calculateContextStats.totalTokens.toLocaleString()} of ${PROMPT_CONFIG.CONTEXT_WINDOW_TOKENS.toLocaleString()} tokens`}
+		</p>
+	);
+
 	return (
-		<div className="space-y-4">
-			<h4 className="text-lg font-semibold text-sidebar-foreground border-b border-sidebar-border pb-2">
-				Context Management
-			</h4>
-
-			{/* What the AI will receive: nodes out of the request limit, and tokens */}
-			<div className="bg-muted/20 rounded p-3">
-				<div className="flex items-center justify-between mb-1">
-					<div className="text-sm font-medium text-sidebar-foreground/70">
-						Sent to the AI
-					</div>
-					<div className="text-xs text-sidebar-foreground/50">
-						{contextNodes.length} of {MAX_NODES} nodes
-					</div>
-				</div>
-
-				<div className="w-full bg-muted/30 h-2 rounded-full overflow-hidden">
-					<div
-						className={`h-full ${overLimit ? 'bg-destructive/70' : 'bg-primary/70'}`}
-						style={{ width: `${Math.min(100, (contextNodes.length / MAX_NODES) * 100)}%` }}
-					/>
-				</div>
-
-				<div className="mt-1 text-xs text-sidebar-foreground/50">
-					{overLimit
-						? `The AI takes up to ${MAX_NODES} nodes. Remove ${contextNodes.length - MAX_NODES} to analyse.`
-						: `~${calculateContextStats.totalTokens.toLocaleString()} of ${PROMPT_CONFIG.CONTEXT_WINDOW_TOKENS.toLocaleString()} tokens (first ${PROMPT_CONFIG.CHAR_LIMIT_GENERAL_ANALYSIS} characters of each)`}
-				</div>
-			</div>
-
-			{/* Tab navigation for nodes/analysis/clustering views */}
+		<div className="flex flex-col min-h-full">
+			{/* The tabs are the panel's header, like Search | Filters on the left */}
 			<Tabs
 				value={activeTab}
 				onValueChange={(value) =>
 					setActiveTab(value as 'nodes' | 'analysis' | 'clustering')
 				}
-				className="mb-4">
-				<TabsList className="grid w-full grid-cols-3">
-					<TabsTrigger
-						value="nodes"
-						className="gap-1 transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent/50">
-						<CheckSquare className="h-3.5 w-3.5" />
-						<span className="hidden sm:inline">Nodes</span>
-					</TabsTrigger>
-					<TabsTrigger
-						value="analysis"
-						className="gap-1 transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent/50">
-						<MessageSquare className="h-3.5 w-3.5" />
-						<span className="hidden sm:inline">Analysis</span>
-					</TabsTrigger>
-					<TabsTrigger
-						value="clustering"
-						className="gap-1 transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent/50">
-						<Network className="h-3.5 w-3.5" />
-						<span className="hidden sm:inline">Clustering</span>
-					</TabsTrigger>
-				</TabsList>
+				className="flex flex-col flex-1">
+				<div data-panel-header="right" className={`${PANEL_HEADER} sticky top-0 z-10 bg-sidebar`}>
+					{headerStart}
+					<TabsList className="grid flex-1 grid-cols-3 bg-transparent p-0 h-auto gap-0">
+						<TabsTrigger value="nodes" className={PANEL_TAB}>
+							<CheckSquare className="h-3 w-3" />
+							<span>Context</span>
+							{contextNodes.length > 0 && (
+								<Badge variant="secondary" className="text-xs">{contextNodes.length}</Badge>
+							)}
+						</TabsTrigger>
+						<TabsTrigger value="analysis" className={PANEL_TAB}>
+							<MessageSquare className="h-3 w-3" />
+							<span>Chat</span>
+						</TabsTrigger>
+						<TabsTrigger value="clustering" className={PANEL_TAB}>
+							<Network className="h-3 w-3" />
+							<span>Clusters</span>
+						</TabsTrigger>
+					</TabsList>
+					{headerEnd}
+				</div>
+				<div className="p-4 flex-1">
 
 				{/* Nodes Tab Content */}
 				<TabsContent value="nodes" className="mt-0">
-					<div className="border-t border-sidebar-border pt-6">
-						{/* Header */}
-						<div className="mb-6">
-							<div className="flex items-center justify-between mb-2">
-								<h4 className="text-xl font-semibold text-gray-900">
-									Context Nodes
-								</h4>
-								<span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
-									{contextNodes.length}{' '}
-									{contextNodes.length === 1 ? 'node' : 'nodes'}
-								</span>
-							</div>
-							<p className="text-sm text-gray-600">
-								Manage which nodes are included in your analysis context
-							</p>
-						</div>
-
+					<div>
 						{/* Search bar */}
 						<div className="flex flex-col gap-2">
 							<div className="relative">
@@ -581,22 +554,12 @@ export default function ContextManagement({
 						filterState={filterState}
 						rightPanelExpanded={rightPanelExpanded}
 						selectedNodesSummary={selectedNodesSummary}
+						contextSummary={budgetLine}
 					/>
 				</TabsContent>
 
 				{/* Clustering Tab Content */}
 				<TabsContent value="clustering" className="mt-0">
-					{(() => {
-						// DEBUG: Log what we're about to pass
-						console.warn(
-							' [ContextManagement] Passing to ClusteringInterface:',
-							{
-								allNodes_being_passed_count: filteredResults?.length || 0,
-								allNodes_source: 'NetworkGraph.filteredResults',
-							}
-						);
-						return null;
-					})()}
 					<ClusteringInterface
 						contextNodes={contextNodes}
 						rightPanelExpanded={rightPanelExpanded}
@@ -604,6 +567,7 @@ export default function ContextManagement({
 						allNodes={filteredResults}
 					/>
 				</TabsContent>
+				</div>
 			</Tabs>
 
 			{/* Document Overlay */}

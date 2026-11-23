@@ -14,6 +14,10 @@ export const PANEL_HEADER = 'h-12 shrink-0 border-b border-sidebar-border flex i
 export const PANEL_BUTTON =
 	'h-7 min-w-7 px-1.5 rounded-md flex items-center justify-center text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-accent/50';
 
+/** A tab in a panel header: underlined when active, the same on both sides */
+export const PANEL_TAB =
+	'flex items-center gap-2 rounded-t-md rounded-b-none border-0 border-b-2 border-transparent shadow-none data-[state=active]:shadow-none pb-2 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-b-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-accent/50';
+
 type Side = 'left' | 'right';
 
 /** Folds a panel to the edge it sits on */

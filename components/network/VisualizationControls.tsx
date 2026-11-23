@@ -117,14 +117,14 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 
 	return (
 		<div
-			className="flex items-center space-x-4 bg-card/80 backdrop-blur-sm rounded-md p-2 shadow-sm border border-border"
+			className="pointer-events-auto flex flex-wrap items-center justify-end gap-2 bg-card/80 backdrop-blur-sm rounded-md p-2 shadow-sm border border-border"
 			style={{ position: 'relative', zIndex: 9999 }}>
 			{/* Layout Dropdown */}
 			<DropdownMenu modal={false}>
 				<DropdownMenuTrigger asChild>
 					<Button variant="outline" size="sm" className="gap-2">
 						<Layers className="h-4 w-4" />
-						<span>Layout: {getCurrentLayoutName()}</span>
+						<span className="sr-only @3xl:not-sr-only">Layout: {getCurrentLayoutName()}</span>
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="w-56">
@@ -155,7 +155,7 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 					<DropdownMenuTrigger asChild>
 						<Button variant="outline" size="sm" className="gap-2">
 							<Palette className="h-4 w-4" />
-							<span>Color: {getCurrentColorByName()}</span>
+							<span className="sr-only @3xl:not-sr-only">Color: {getCurrentColorByName()}</span>
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent>
@@ -182,7 +182,7 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 					<DropdownMenuTrigger asChild>
 						<Button variant="outline" size="sm" className="gap-2">
 							<Maximize2 className="h-4 w-4" />
-							<span>Size: {getCurrentSizeByName()}</span>
+							<span className="sr-only @3xl:not-sr-only">Size: {getCurrentSizeByName()}</span>
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent>
@@ -220,7 +220,7 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 												currentLayout !== 'forceatlas2'
 											}>
 											<Network className="h-4 w-4" />
-											<span>Cluster: {getCurrentClusterByName()}</span>
+											<span className="sr-only @3xl:not-sr-only">Cluster: {getCurrentClusterByName()}</span>
 										</Button>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent>
@@ -255,7 +255,7 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 			{onShowLabelsChange && (
 				<div className="flex items-center gap-2">
 					<Tag className="h-4 w-4" />
-					<Label htmlFor="show-labels" className="text-sm cursor-pointer">
+					<Label htmlFor="show-labels" className="text-sm cursor-pointer sr-only @3xl:not-sr-only">
 						Labels
 					</Label>
 					<Switch

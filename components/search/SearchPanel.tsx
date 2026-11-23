@@ -8,7 +8,7 @@ import FilterPanel from '@/components/filters/FilterPanel';
 import { useAppStore } from '@/lib/stores/app-state';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter } from 'lucide-react';
-import { PANEL_BUTTON, PANEL_HEADER, PanelCloseButton, PanelRail } from '@/components/layout/PanelChrome';
+import { PANEL_BUTTON, PANEL_HEADER, PANEL_TAB, PanelCloseButton, PanelRail } from '@/components/layout/PanelChrome';
 
 /**
  * SearchPanel - Unified left sidebar for search and filtering
@@ -143,7 +143,7 @@ export function SearchPanel() {
 						<TabsList className="grid flex-1 grid-cols-2 bg-transparent p-0 h-auto gap-0">
 							<TabsTrigger
 								value="results"
-								className="flex items-center gap-2 rounded-t-md border-b-2 border-transparent pb-2 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-accent/50">
+								className={PANEL_TAB}>
 								<Search className="h-3 w-3" />
 								<span>Search</span>
 								{searchCount > 0 && (
@@ -155,7 +155,7 @@ export function SearchPanel() {
 
 							<TabsTrigger
 								value="filters"
-								className="flex items-center gap-2 rounded-t-md border-b-2 border-transparent pb-2 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-accent/50">
+								className={PANEL_TAB}>
 								<Filter className="h-3 w-3" />
 								<span>Filters</span>
 								{filteredCount !== searchCount && searchCount > 0 && (

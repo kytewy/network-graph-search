@@ -454,24 +454,9 @@ export default function ClusteringInterface({
 	};
 
 	return (
-		<div className="space-y-6">
-			{/* Header */}
-			<div className="border-t border-sidebar-border pt-6">
-				<div className="mb-6">
-					<div className="flex items-center justify-between mb-2">
-						<h4 className="text-xl font-semibold text-gray-900">
-							Cluster Analysis
-						</h4>
-						<span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
-							{contextNodes.length}{' '}
-							{contextNodes.length === 1 ? 'node' : 'nodes'}
-						</span>
-					</div>
-					<p className="text-sm text-gray-600">
-						Group nodes by content similarity using TF-IDF + KMeans clustering
-					</p>
-				</div>
-			</div>
+		<div className="space-y-4">
+			{/* What clustering does, in one line (the count is on the Context tab) */}
+			<p className="text-xs text-muted-foreground">Groups documents by similar content (TF-IDF + KMeans).</p>
 
 			{/* Action Buttons */}
 			<div className="flex gap-2">
