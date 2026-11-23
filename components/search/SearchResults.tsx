@@ -8,6 +8,7 @@ import { useAppStore } from '@/lib/stores/app-state';
 import { contentPreview } from '@/lib/utils/text-preview';
 import { BookOpen, ArrowUpDown, LayoutGrid, Rows3 } from 'lucide-react';
 import { ResultsTable } from './ResultsTable';
+import { foundByLabel, useFoundBy } from '@/hooks/use-found-by';
 import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
 import { useContextStore } from '@/lib/stores/context-store';
 import type { Node } from '@/lib/config/types';
@@ -44,6 +45,7 @@ export function SearchResults() {
 	const searchResults = useAppStore((state) => state.searchResults);
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	const wide = useAppStore((state) => state.searchPanelExpanded);
+	const found = useFoundBy();
 	const view = useAppStore((state) => state.resultsView);
 	const setView = useAppStore((state) => state.setResultsView);
 	
@@ -119,7 +121,8 @@ export function SearchResults() {
 			{/* One row: count and sort (no card around the list) */}
 			<div className="flex items-center justify-between">
 					<h3 className="text-base font-semibold">
-						Results ({processedResults.length})
+						{/* After two or more searches the list is the whole workspace */}
+						{found.collected ? `Workspace (${processedResults.length}) · ${found.rounds} searches` : `Results (${processedResults.length})`}
 					</h3>
 					<div className="flex items-center gap-1">
 					{view === 'cards' && (
@@ -196,6 +199,11 @@ export function SearchResults() {
 											}}>
 											{scorePercent}
 										</Badge>
+										{found.collected && (
+											<span className="text-xs text-muted-foreground whitespace-nowrap" title="Searches that found it" data-found-by>
+												{foundByLabel(found.byDoc[result.id])}
+											</span>
+										)}
 										<h4 className="font-semibold text-sm leading-tight truncate">
 											{result.label}
 										</h4>

@@ -41,6 +41,8 @@ export function SearchInput() {
 	const { isLoading } = useSearch();
 	// A search goes into the web address, which then runs it
 	const { submit } = useUrlSearch();
+	// Adding needs a workspace to add to
+	const canAdd = useAppStore((state) => state.rounds.length > 0);
 
 	// Metadata filter state
 	const selectedContinents = useAppStore((state) => state.selectedContinents);
@@ -64,6 +66,13 @@ export function SearchInput() {
 	const handleSearch = () => {
 		if (!query.trim()) return;
 		submit(query, topK);
+	};
+
+	// Collects this search into the workspace instead of replacing it. It
+	// doesn't change the web address, which holds the search the workspace started from.
+	const handleAdd = () => {
+		if (!query.trim() || !canAdd) return;
+		useAppStore.getState().performSearch(query, topK, 'add');
 	};
 
 	// Handle clear search
@@ -94,7 +103,10 @@ export function SearchInput() {
 					placeholder={SearchConfigHelpers.getSearchPlaceholder()}
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
-					onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+					onKeyDown={(e) => {
+						// Enter searches; Shift+Enter adds to the workspace
+						if (e.key === 'Enter') (e.shiftKey && canAdd ? handleAdd() : handleSearch());
+					}}
 					className="w-full h-11 text-base px-4 font-medium"
 				/>
 				{query.length > 0 && !isLoading && (
@@ -197,9 +209,20 @@ export function SearchInput() {
 						</Button>
 					</div>
 					<Button
+						onClick={handleAdd}
+						disabled={isLoading || !canAdd || !query.trim()}
+						size="icon"
+						variant="outline"
+						aria-label="Add to workspace"
+						title="Add to workspace (Shift+Enter): keeps what's there and adds these results"
+						className="h-8 w-8">
+						<Plus className="h-5 w-5" />
+					</Button>
+					<Button
 						onClick={handleSearch}
 						disabled={isLoading}
 						size="icon"
+						title="Search (Enter): starts over with these results"
 						aria-label="Search"
 						className="h-8 w-8">
 						{isLoading ? (

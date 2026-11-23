@@ -7,6 +7,7 @@ import { filterNodes } from '@/lib/filters/filter-nodes';
 import { selectionsFromStore } from '@/lib/config/filters';
 import { create } from 'zustand';
 import type { Node, Link } from '@/lib/config/types';
+import { hasRound, makeRound, mergeResults, type SearchRound } from '@/lib/workspace/collect';
 import { createViewSlice, type ViewSlice } from './slices/view-slice';
 import { createSelectionSlice, type SelectionSlice } from './slices/selection-slice';
 
@@ -36,6 +37,8 @@ interface SearchState {
 	filteredResults: Node[];
 	links: Link[];
 	filteredLinks: Link[];
+	/** The searches collected in the workspace (#1, #2, …); one after a normal search */
+	rounds: SearchRound[];
 
 	// Similarity histogram state
 	selectedSimilarityRanges: string[];
@@ -54,7 +57,8 @@ interface SearchState {
 	applyFilters: () => void;
 
 	// Complex actions
-	performSearch: (query: string, topK?: number) => Promise<void>;
+	/** 'replace' starts the workspace over with this search; 'add' collects it as another round */
+	performSearch: (query: string, topK?: number, mode?: 'replace' | 'add') => Promise<void>;
 
 	// Location filtering state
 	selectedContinents: string[]; // e.g., ['Europe', 'Asia']
@@ -110,6 +114,7 @@ export const useAppStore = create<AppState>()(
 		filteredResults: [],
 		links: [],
 		filteredLinks: [],
+		rounds: [],
 		selectedSimilarityRanges: [],
 
 		// Location filtering state
@@ -184,8 +189,10 @@ export const useAppStore = create<AppState>()(
 		},
 
 		// Perform search
-		performSearch: async (query, topK = get().topK) => {
+		performSearch: async (query, topK = get().topK, mode = 'replace') => {
 			if (!query.trim()) return;
+			// Adding a search that's already a round would change nothing
+			if (mode === 'add' && hasRound(get().rounds, query, topK)) return;
 
 			const state = get();
 			state.setIsLoading(true);
@@ -205,8 +212,15 @@ export const useAppStore = create<AppState>()(
 				if (latestSearch !== thisSearch) return;
 
 				// The route has already turned Pinecone's results into documents
-				state.setSearchResults(reply.nodes as Node[]);
-				state.setLinks(reply.edges as Link[]);
+				const found = { nodes: reply.nodes as Node[], links: reply.edges as Link[] };
+				const now = get();
+				const adding = mode === 'add' && now.rounds.length > 0;
+				// Adding merges into what's there (each document once); replacing starts over
+				const { nodes, links } = adding ? mergeResults({ nodes: now.searchResults, links: now.links }, found) : found;
+				const round = makeRound(adding ? Math.max(...now.rounds.map((r) => r.n)) + 1 : 1, query, topK, found.nodes);
+				set({ rounds: adding ? [...now.rounds, round] : [round] });
+				state.setSearchResults(nodes);
+				state.setLinks(links);
 				state.setHasSearched(true);
 			} catch (err: any) {
 				if (latestSearch !== thisSearch || isCancelledError(err) || isAbortError(err)) return;

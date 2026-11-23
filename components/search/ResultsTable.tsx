@@ -10,6 +10,7 @@ import { useContextStore } from '@/lib/stores/context-store';
 import { useHighlightOnHover } from '@/hooks/use-highlight-on-hover';
 import { clusterDisplayName, namesFromSuggestions } from '@/lib/clustering/cluster-display';
 import { contentPreview } from '@/lib/utils/text-preview';
+import { foundByLabel, useFoundBy } from '@/hooks/use-found-by';
 import { nextSort, sortRows, type ResultRow, type TableSortKey } from '@/lib/search/results-table';
 
 interface ResultsTableProps {
@@ -30,6 +31,8 @@ const summaryOf = (node: Node) => node.summary || contentPreview(node.content, 1
 export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpen }: ResultsTableProps) {
 	const [sort, setSort] = useState<{ key: TableSortKey; direction: 'asc' | 'desc' }>({ key: 'score', direction: 'desc' });
 	const highlight = useHighlightOnHover();
+	// After two or more searches: which searches found each document
+	const found = useFoundBy();
 
 	// Each document's cluster, named the same way as on the graph
 	const aiClusters = useAppStore((s) => s.aiClusters);
@@ -65,6 +68,7 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 					{header('score', 'Score', 'w-14')}
 					{header('title', wide ? 'Title · summary' : 'Title')}
 					{wide && <th className="px-2 py-1.5 font-medium w-40">Tags</th>}
+					{wide && found.collected && <th className="px-2 py-1.5 font-medium w-24 whitespace-nowrap">Found by</th>}
 					{wide && header('cluster', 'Cluster', 'w-36')}
 					{header('context', 'Ctx', 'w-10 text-center')}
 				</tr>
@@ -86,6 +90,10 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 						<td className="px-2 py-2 min-w-0">
 							<div className="flex items-start gap-1">
 								<span className="font-medium leading-tight line-clamp-1 flex-1">{node.label}</span>
+								{/* Narrow: a ★ when more than one search found it */}
+								{!wide && (found.byDoc[node.id]?.length ?? 0) > 1 && (
+									<span className="shrink-0 text-amber-500" title={`Found by ${foundByLabel(found.byDoc[node.id])}`} aria-label="Found by more than one search">★</span>
+								)}
 								<Button size="sm" variant="ghost" onClick={() => onOpen(node)} className="h-5 w-5 p-0 shrink-0" title="Open in Reading Mode">
 									<BookOpen className="h-3 w-3" />
 								</Button>
@@ -100,6 +108,11 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 									))}
 									{(node.tags?.length ?? 0) > 2 && <Badge variant="outline" className="text-xs">+{node.tags!.length - 2}</Badge>}
 								</div>
+							</td>
+						)}
+						{wide && found.collected && (
+							<td className="px-2 py-2 text-xs whitespace-nowrap" data-found-by>
+								{foundByLabel(found.byDoc[node.id])}
 							</td>
 						)}
 						{wide && <td className="px-2 py-2 text-xs">{cluster ?? <span className="text-muted-foreground">—</span>}</td>}

@@ -93,28 +93,46 @@ Estimates and actuals are added source lines (tests not counted). Status as of N
 | P1-15 | LangSmith tracing (`wrapOpenAI`, `traceable`) + JSON request logs | `p1/tracing` | 140 | | To do |
 | P1-16 | CI jobs: type check, unit, Playwright, eval | `p1/ci` | 70 | | To do (CI already runs unit tests on Node 24) |
 
-**Search track (now)**
+**Search track**
 
 Builds toward workstreams; see [vision-architecture.md](./vision-architecture.md). Each task stays under 300 source lines.
 
+| ID | Task | Branch | Status |
+|---|---|---|---|
+| S1 | Search errors on screen, with "Try again"; the ✕ clears only the text | `search/errors` | Done |
+| S2 | Expandable search panel; filters beside the results when wide; tidy-up; results as a table (default) or cards | `search/panel-expand` | Done |
+| S3a/b | Refine: re-rank the documents on screen with a second question; rank change (#7 → #2 ▲5) | `search/refine-*` | Later (works inside a workspace) |
+| S7 | Save a search: becomes "save the workspace" (C4, then workstreams) | | Folded into C4 |
+
+**Analysis panel track**
+
+| ID | Task | Status |
+|---|---|---|
+| A1 | Side panels close to a thin rail; lined-up headers | Done |
+| A2 | Context \| Chat \| Clusters tabs in the header; token line in Chat; matching widen buttons | Done |
+| A3 | Chat best practices: follow-up memory (last 6), box at the bottom, Enter sends, real Stop, Claude-style box, bubbles | Done |
+| A4 | Answers open as documents: copy, download, expand; [citations] linked to the graph; Sources | Done |
+| A5 | Saved prompts: + window (use, edit, duplicate, delete, save a chat question), "/" menu, recent-first chips | Done |
+| — | Clusters tab summary (count, AI overview, one line per cluster); chat takes up to 200 documents | Done |
+| A6 | Chat actions: answers suggest buttons ("Filter to Europe", "Cluster these"); nothing changes until clicked | Later |
+
+**Collect track (now): several searches in one workspace**
+
+Search in rounds, collect the results in one graph, then ask big questions across all of them. The *workspace* is everything the searches found; the *context* is what you send to the AI. Scores from different searches don't compare, so each round keeps its own and a document's size and colour use its best.
+
 | ID | Task | Branch | Est. | Status |
 |---|---|---|---|---|
-| S1 | Show search errors on screen, with "Try again" | `search/errors` | 40 | **Next** |
-| S2 | Expandable search panel (« / », like the Analysis Workspace); tabs Search \| Filters; results in 2–3 columns when wide | `search/panel-expand` | 100 | To do |
-| S3a | Refine, server side: re-rank route (Pinecone `bge-reranker-v2-m3`) for the documents on screen + client | `search/refine-api` | 120 | To do |
-| S3b | Refine, UI: "Advanced ▸" second question, chip with ✕ to undo, graph re-sized/re-coloured by new scores, rank change (#7 → #2 ▲5) | `search/refine-ui` | 160 | To do |
-| S4 | Expand: run the second question everywhere and add new documents to the graph, marked "new"; every document records which searches found it | `search/expand` | 200 | To do |
-| S5 | "Colour by: Search" (one entry in the view-mode registry) | `search/color-by-search` | 40 | To do |
-| S6 | Session trail: list of this session's searches (click to restore); "found by #1, #3" in the Context table | `search/trail` | 180 | To do |
-| S7 | Save a search with a name (in the browser for now; moves to the database with workstreams) | `search/saved` | 120 | To do |
+| C1 | Collect: "+" / Shift+Enter adds a search to the workspace (Search still replaces); one graph, no duplicates; "Found by #1 #2 ★" | `workspace/collect` | 220 | **In review** |
+| C2 | Search list (chips to show, hide, remove each round) + "Colour by: Search" | `workspace/rounds` | 180 | To do |
+| C3 | Context grouped by search: sections per round, add top 10 / all / remove, ★ for documents found more than once | `workspace/context-by-search` | 200 | To do |
+| C4 | Workspace question sent with every chat question; workspace kept in the browser (survives a refresh); "New workspace" | `workspace/keep` | 200 | To do |
 
-Decision to make before S3b: when a refine is active, are a node's colour and size the refined score only, or a blend with the original?
-
-**After the search track**
+**After the collect track**
 
 | Area | Task | Notes |
 |---|---|---|
-| Phase 1 (rest) | P1-14 eval, P1-15 tracing, P1-16 CI | Eval is most useful once Refine/Expand change rankings |
+| Phase 1 (rest) | P1-14 eval, P1-15 tracing, P1-16 CI | Eval is most useful once Refine/Collect change rankings |
+| Housekeeping | Docker on Windows: file-watching by polling | Stops stale styles after changes |
 | Workstreams | Database, workstreams, saved searches and sessions inside them | See vision-architecture.md, step 2 |
 | Capture | URL → screenshot + Markdown + hashes → searchable | Step 3 |
 | Monitoring | Scheduled re-runs and re-captures; changes and alerts | Step 4 |
