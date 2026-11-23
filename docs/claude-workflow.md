@@ -41,48 +41,73 @@ Use these patterns, in this order of preference:
 4. **Behind a flag.** Ship half a feature switched off, finish it in the next task.
 5. **Tests carry the weight.** Large test files are free; keep the source change minimal and let tests describe the behavior.
 
-## Phase 0 and Phase 1, already split
+## Phase 0 and Phase 1: status
 
-Estimates are added source lines. Two or three small tasks fit in one session.
+Estimates and actuals are added source lines (tests not counted). Status as of Nov 22.
 
-**Phase 0 — correctness (Nov 23–29)**
+**Phase 0 — correctness: done**
 
-| ID | Task | Branch | Est. |
-|---|---|---|---|
-| P0-1 | Clustering reads document text (`text` → `content`), with a test | `p0/cluster-text-field` | 30 |
-| P0-2 | Search shows the route's `error` message, with a test | `p0/search-error-message` | 15 |
-| P0-3 | Pinecone reranking (topK 40 → topN 10), behind the existing flag | `p0/rerank` | 50 |
-| P0-4 | Filters change membership only via Pinecone; browser filters display only | `p0/single-filtering` | 120 |
-| P0-5 | `AbortController` at the 7 fetch sites | `p0/abort-signals` | 90 |
-| P0-6 | Cluster assignments as an immutable map; no in-place mutation | `p0/cluster-map` | 110 |
-| P0-7 | OpenAI client timeout and retries; safe JSON parse | `p0/openai-timeouts` | 35 |
-| P0-8 | Redirect `/` to `/graph`; `app/graph/error.tsx` | `p0/routing-errors` | 60 |
-| P0-9 | Sentry; remove Vercel Analytics; delete empty hook file | `p0/sentry` | 80 |
-| P0-10 | `interpretation` document type: color, legend, filter (data excluded) | `p0/interpretation-type` | 150 |
+| ID | Task | Status |
+|---|---|---|
+| P0-1 | Clustering reads document text (`text` → `content`) | Done |
+| P0-2 | Search shows the route's `error` message | Done in the store; the message is still not shown on screen (see Search) |
+| P0-3 | Pinecone reranking (topK 40 → topN 10) | Done |
+| P0-4 | Single filtering path | Changed: filters narrow the loaded page only and never re-search; search-scope filters come later (Search) |
+| P0-5 | `AbortController` at the fetch sites | Done; later replaced by TanStack Query cancelling (P1-3, P1-4) |
+| P0-6 | Cluster assignments as an immutable map | Done |
+| P0-7 | OpenAI timeout and retries; safe JSON parse | Done |
+| P0-8 | Redirect `/` to `/graph`; `app/graph/error.tsx` | Done |
+| P0-9 | Error tracking | Changed: PostHog (errors, logs, OpenTelemetry) instead of Sentry |
+| P0-10 | Document types | Changed: `publisher` (who) and `documentType` (Law, Guidance, Interpretation) from `lib/config/document-taxonomy.json`; data re-uploaded |
 
-**Phase 1 — foundations (Dec 7–20)**
+**UX fixes (between phases): done**
 
-| ID | Task | Branch | Est. |
-|---|---|---|---|
-| P1-1 | zod contract for search + route validation | `p1/search-contract` | 150 |
-| P1-2 | `toApiNode()`; store uses it; delete normalizer and route node mapping | `p1/to-api-node` | 120 |
-| P1-3 | Typed API client + `useSearch` (TanStack Query) wired to the search box | `p1/use-search` | 200 |
-| P1-4 | Query hooks for clusters, analyze and documents | `p1/query-hooks` | 240 |
-| P1-5 | nuqs adapter; query and topK in the URL | `p1/url-query` | 130 |
-| P1-6 | Filters and view modes in the URL | `p1/url-filters` | 180 |
-| P1-7 | View-mode registry; controls, colors and legend read from it | `p1/view-registry` | 200 |
-| P1-8 | Filter registry; panel and Pinecone filter builder read from it | `p1/filter-registry` | 230 |
-| P1-9 | Zustand `view` and `selection` slices with `useShallow` | `p1/store-slices` | 220 |
-| P1-10a | Move graph-context consumers to hooks (first half) | `p1/context-out-1` | 200 |
-| P1-10b | Move the rest; context keeps only the graph ref | `p1/context-out-2` | 200 |
-| P1-11 | `persist` for preferences; remove array-safety and error-tracker | `p1/persist` | 90 |
-| P1-12 | Jest → Vitest | `mech/vitest` | mech. |
-| P1-13 | Playwright: 3 flows, `data-node-count` hook | `p1/playwright` | 80 (+tests) |
-| P1-14 | Golden-set eval script (recall@5/10, MRR) as a LangSmith dataset | `p1/eval` | 180 |
-| P1-15 | LangSmith tracing (`wrapOpenAI`, `traceable`) + JSON request logs | `p1/tracing` | 140 |
-| P1-16 | CI jobs: type check, unit, Playwright, eval | `p1/ci` | 70 |
+| ID | Task | Status |
+|---|---|---|
+| T1 | Search panel spacing | Done |
+| T2 | Reagraph's real types; straight edges | Done |
+| T3 | Honest AI context meter (nodes and tokens vs. real limits) | Done |
+| T4 | Hover a document anywhere to highlight it, without moving the graph | Done |
+| T5 | Click a node to toggle context; purple cluster rings and fading names; grey/black node rings; darker hover labels; lasso highlight | Done |
+| T6–T7 | Timeline | Parked |
 
-Phase 1 is 17 tasks for about 6 sessions, so it runs slightly over; the holiday buffer absorbs it. Plan Phases 2–4 the same way each Monday with the planning prompt.
+**Phase 1 — foundations: 12 of 17 done**
+
+| ID | Task | Branch | Est. | Actual | Status |
+|---|---|---|---|---|---|
+| P1-1 | zod contract for search + route validation | `p1/search-contract` | 150 | 121 | Done |
+| P1-2 | `toApiNode()`; delete normalizer and route node mapping | `p1/to-api-node` | 120 | 101 | Done (also keeps full document text) |
+| P1-3 | Search client + `useSearch` (TanStack Query) | `p1/use-search` | 200 | 132 | Done |
+| P1-4 | Query hooks for clusters, analysis and tags | `p1/query-hooks` | 240 | 180 | Done (fixed cluster tags not showing; documents-list hook skipped, unused) |
+| P1-5 | nuqs; query and topK in the URL | `p1/url-query` | 130 | 93 | Done |
+| P1-6 | Filters and view modes in the URL | `p1/url-filters` | 180 | 136 | Done |
+| P1-7 | View-mode registry (`lib/config/view-modes.ts`) | `p1/view-registry` | 200 | 164 | Done |
+| P1-8 | Filter registry (`lib/config/filters.ts`) | `p1/filter-registry` | 230 | 165 | Done |
+| P1-9 | Store slices; fold in ui-store and network-store | `p1/store-slices` | 220 | 133 | Done |
+| P1-10a | Move graph-context consumers to the store (first half) | `p1/context-out-1` | 200 | 93 | Done |
+| P1-10b | Move the rest; context keeps only the graph ref | `p1/context-out-2` | 200 | 82 | Done |
+| P1-11 | `persist` for preferences; remove array-safety and error-tracker | `p1/persist` | 90 | 42 | Done |
+| P1-12 | Jest → Vitest | `mech/vitest` | mech. | mech. | Done (Vitest 5; Node 24 for PC, Docker and CI) |
+| P1-13 | Playwright: 3 flows (search, filter, lasso → context), `data-node-count` hook | `p1/playwright` | 80 (+tests) | | **Next** |
+| P1-14 | Golden-set eval (recall@5/10, MRR) as a LangSmith dataset | `p1/eval` | 180 | | To do |
+| P1-15 | LangSmith tracing (`wrapOpenAI`, `traceable`) + JSON request logs | `p1/tracing` | 140 | | To do |
+| P1-16 | CI jobs: type check, unit, Playwright, eval | `p1/ci` | 70 | | To do (CI already runs unit tests on Node 24) |
+
+**After Phase 1**
+
+| Area | Task | Notes |
+|---|---|---|
+| Housekeeping | PostHog through a reverse proxy | Before the demo, so ad blockers don't drop events |
+| Housekeeping | Vercel preview links | Test pull requests from a phone |
+| Housekeeping | React 19 + Next 16 | Clears the 4 remaining audit items and the `react@^19` warnings; Node 24 already meets Next 16 |
+| Housekeeping | Small clean-ups | aria-labels on icon buttons; unused `SEARCH_DEBOUNCE_MS`; hard-coded `DOCUMENT_COUNT` |
+| Search | Show search errors on screen | Today a failed search is silent |
+| Search | Expandable search panel | Mirrors the Analysis Workspace's expand-to-overlay |
+| Search | Search within results | Re-rank the current results by a second query; never adds or removes documents |
+| Search | Search-scope filters | Send the ticked filters with the search; the filter registry (P1-8) is ready |
+| On hold | Interpretations data (`data/interpretations`) | Tag-preserving loader |
+| On hold | Hover label that stays highlighted after a quick click | Reagraph drag behaviour |
+| Later | "Add document" form; automatic discovery | |
 
 ## Prompts
 
