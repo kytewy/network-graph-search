@@ -1,6 +1,6 @@
 'use client';
 
-import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 
 /**
  * The pieces both side panels share, so they line up: one header height, and
@@ -18,7 +18,38 @@ export const PANEL_BUTTON =
 export const PANEL_TAB =
 	'flex items-center gap-2 rounded-t-md rounded-b-none border-0 border-b-2 border-transparent shadow-none data-[state=active]:shadow-none pb-2 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-b-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-accent/50';
 
+/**
+ * Panel widths, written out in full so Tailwind finds them. The analysis panel
+ * is a little wider so its three tabs fit. A wide panel stops at the other
+ * panel's edge (or its 40px rail).
+ */
+export const PANEL_WIDTH = { left: 'w-96', right: 'w-[26rem]' } as const;
+export const WIDE_STOPS_AT = {
+	left: { open: 'right-[26rem]', closed: 'right-10' },
+	right: { open: 'left-96', closed: 'left-10' },
+} as const;
+
 type Side = 'left' | 'right';
+
+/**
+ * Widens a panel over the graph, or narrows it back. Same icon on both sides,
+ * mirrored: the arrows point into the graph to widen, back to the edge to narrow.
+ */
+export function PanelWidenButton({ side, name, wide, onClick }: { side: Side; name: string; wide: boolean; onClick: () => void }) {
+	const towardGraph = side === 'left' ? ChevronsRight : ChevronsLeft;
+	const towardEdge = side === 'left' ? ChevronsLeft : ChevronsRight;
+	const Icon = wide ? towardEdge : towardGraph;
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			aria-label={`${wide ? 'Collapse' : 'Expand'} ${name} panel`}
+			title={wide ? 'Narrow' : 'Widen'}
+			className={PANEL_BUTTON}>
+			<Icon className="h-4 w-4" />
+		</button>
+	);
+}
 
 /** Folds a panel to the edge it sits on */
 export function PanelCloseButton({ side, name, onClick }: { side: Side; name: string; onClick: () => void }) {

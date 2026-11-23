@@ -8,7 +8,7 @@ import FilterPanel from '@/components/filters/FilterPanel';
 import { useAppStore } from '@/lib/stores/app-state';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter } from 'lucide-react';
-import { PANEL_BUTTON, PANEL_HEADER, PANEL_TAB, PanelCloseButton, PanelRail } from '@/components/layout/PanelChrome';
+import { PANEL_HEADER, PANEL_TAB, PANEL_WIDTH, WIDE_STOPS_AT, PanelCloseButton, PanelRail, PanelWidenButton } from '@/components/layout/PanelChrome';
 
 /**
  * SearchPanel - Unified left sidebar for search and filtering
@@ -71,14 +71,7 @@ export function SearchPanel() {
 
 	// » / « toggles between the tabbed sidebar and the wide view
 	const expandButton = (
-		<button
-			type="button"
-			onClick={() => setExpanded(!expanded)}
-			aria-label={expanded ? 'Collapse search panel' : 'Expand search panel'}
-			title={expanded ? 'Narrow' : 'Widen'}
-			className={PANEL_BUTTON}>
-			{expanded ? '«' : '»'}
-		</button>
+		<PanelWidenButton side="left" name="search" wide={expanded} onClick={() => setExpanded(!expanded)} />
 	);
 	// Folds the panel to a thin rail on the left edge
 	const closeButton = <PanelCloseButton side="left" name="search" onClick={() => setCollapsed(true)} />;
@@ -89,7 +82,7 @@ export function SearchPanel() {
 		return (
 			<div
 				data-testid="search-panel"
-				className={`absolute left-0 top-0 ${rightCollapsed ? 'right-10' : 'right-96'} z-20 shadow-xl bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
+				className={`absolute left-0 top-0 ${rightCollapsed ? WIDE_STOPS_AT.left.closed : WIDE_STOPS_AT.left.open} z-20 shadow-xl bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
 				<div data-panel-header="left" className={PANEL_HEADER}>
 					{closeButton}
 					<span className="flex items-center gap-2 text-sm font-semibold text-primary">
@@ -128,7 +121,7 @@ export function SearchPanel() {
 	return (
 		<div
 			data-testid="search-panel"
-			className={`w-96 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
+			className={`${PANEL_WIDTH.left} shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
 
 			{/* Tabbed Content Area */}
 			<div className="flex-1 overflow-hidden">

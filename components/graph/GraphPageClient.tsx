@@ -1,6 +1,6 @@
 'use client';
 
-import { PANEL_BUTTON, PanelCloseButton, PanelRail } from '@/components/layout/PanelChrome';
+import { PANEL_WIDTH, WIDE_STOPS_AT, PanelCloseButton, PanelRail, PanelWidenButton } from '@/components/layout/PanelChrome';
 import { ColorLegend } from '@/components/network/ColorLegend';
 import { NetworkGraphCanvas } from '@/components/network/NetworkGraphCanvas';
 import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
@@ -45,20 +45,13 @@ export function GraphPageClient() {
 				) : (
 				<div
 					className={`${
-						rightPanelExpanded ? `absolute right-0 top-0 ${leftCollapsed ? 'left-10' : 'left-96'} z-10` : 'w-96 shrink-0'
+						rightPanelExpanded ? `absolute right-0 top-0 ${leftCollapsed ? WIDE_STOPS_AT.right.closed : WIDE_STOPS_AT.right.open} z-10` : `${PANEL_WIDTH.right} shrink-0`
 					} h-screen bg-sidebar border-l border-sidebar-border overflow-y-auto [scrollbar-gutter:stable] transition-all duration-300 flex flex-col`}>
 					{/* Context | Chat | Clusters tabs are the header, like the search panel's */}
 					<ContextManagement
 						rightPanelExpanded={rightPanelExpanded}
 						headerStart={
-							<button
-								type="button"
-								onClick={() => setRightPanelExpanded(!rightPanelExpanded)}
-								aria-label={rightPanelExpanded ? 'Collapse analysis panel' : 'Expand analysis panel'}
-								title={rightPanelExpanded ? 'Narrow' : 'Widen'}
-								className={PANEL_BUTTON}>
-								{rightPanelExpanded ? '»' : '«'}
-							</button>
+							<PanelWidenButton side="right" name="analysis" wide={rightPanelExpanded} onClick={() => setRightPanelExpanded(!rightPanelExpanded)} />
 						}
 						headerEnd={<PanelCloseButton side="right" name="analysis" onClick={() => setRightCollapsed(true)} />}
 					/>
