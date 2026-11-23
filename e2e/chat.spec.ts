@@ -11,9 +11,14 @@ test('chat: Enter sends, follow-ups carry earlier turns, and Stop cancels', asyn
 	});
 
 	await search(page);
-	await page.getByTestId('results-table').locator('[data-result-row]').first().getByRole('switch').click();
 	await page.locator('[data-panel-header="right"]').getByRole('tab', { name: 'Chat' }).click();
 	const box = page.getByRole('textbox', { name: 'Ask about the documents' });
+
+	// With nothing in context there's nothing to ask about, so Send is off
+	await box.fill('Summarize these');
+	await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
+	await page.getByTestId('results-table').locator('[data-result-row]').first().getByRole('switch').click();
+	await expect(page.getByRole('button', { name: 'Send' })).toBeEnabled();
 
 	// Enter sends; the answer appears above the box
 	await box.fill('Summarize these');

@@ -63,8 +63,10 @@ export const PROMPT_CONFIG = {
 	// Model and its real limits (gpt-4o-mini: 128k-token context window)
 	MODEL: 'gpt-4o-mini',
 	CONTEXT_WINDOW_TOKENS: 128_000,
-	// Most nodes one analysis request accepts (enforced by the API route)
-	MAX_NODES_PER_REQUEST: 50,
+	// Most nodes one analysis request accepts (enforced by the API route).
+	// Each sends ~800 characters (~230 tokens): 200 is ~46k tokens, leaving
+	// room in the 128k window for follow-up memory and the answer.
+	MAX_NODES_PER_REQUEST: 200,
 
 	// Character limits per document
 	CHAR_LIMIT_GENERAL_ANALYSIS: 800,

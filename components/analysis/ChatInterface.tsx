@@ -6,10 +6,10 @@ import remarkGfm from 'remark-gfm';
 import { ArrowUp, Copy, Download, Pencil, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { analyzeNodes } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
-import { RETRY, shouldRetry } from '@/lib/api/http';
+import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
 import { chatMemory, CHAT_LIMITS } from '@/lib/contracts/analysis';
 import { useContextStore, type ChatConversation } from '@/lib/stores/context-store';
-import { getQuickPrompt, CHAT_PLACEHOLDERS } from '@/lib/prompts/analysis-prompts';
+import { getQuickPrompt, CHAT_PLACEHOLDERS, PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 import { reportError } from '@/lib/observability/capture-client';
 import { toAnalysisNode } from '@/lib/utils/llm-tokens';
 import { debugLog } from '@/lib/utils/debug';
@@ -81,10 +81,13 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 	const finished = conversations.filter((c) => (c.status ?? 'done') === 'done');
 	const memory = chatMemory(finished);
 
+	// The AI needs at least one document and takes up to the limit (the line above the box says which)
+	const canAsk = contextNodes.length > 0 && contextNodes.length <= PROMPT_CONFIG.MAX_NODES_PER_REQUEST;
+
 	const send = useCallback(
 		async (text?: string) => {
 			const prompt = (text ?? chatInput).trim();
-			if (!prompt || thinking) return;
+			if (!prompt || thinking || !canAsk) return;
 			const id = Date.now().toString();
 			addTurn({ id, prompt, response: '', timestamp: new Date(), status: 'thinking' });
 			setChatInput('');
@@ -104,14 +107,16 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 					updateTurn(id, { response: STOPPED, status: 'stopped' });
 				} else {
 					reportError('chat', error);
-					updateTurn(id, { response: FAILED, status: 'failed' });
+					// A request the server turned down says why; anything else gets the general message
+					const why = error instanceof ApiError && error.status === 400 ? `Couldn't ask: ${error.message}.` : FAILED;
+					updateTurn(id, { response: why, status: 'failed' });
 				}
 			} finally {
 				stopRef.current = null;
 				setThinking(false);
 			}
 		},
-		[chatInput, thinking, contextNodes, memory, addTurn, updateTurn, analyze]
+		[chatInput, thinking, canAsk, contextNodes, memory, addTurn, updateTurn, analyze]
 	);
 
 	const stop = () => stopRef.current?.abort();
@@ -255,7 +260,7 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 								<Square className="h-3 w-3 fill-current" />
 							</button>
 						) : (
-							<button type="button" onClick={() => send()} disabled={!chatInput.trim()} aria-label="Send" title="Send (Enter)" className="ml-auto h-8 w-8 shrink-0 rounded-lg bg-primary text-white flex items-center justify-center disabled:opacity-40">
+							<button type="button" onClick={() => send()} disabled={!chatInput.trim() || !canAsk} aria-label="Send" title={canAsk ? 'Send (Enter)' : contextNodes.length === 0 ? 'Add documents to context first' : `The AI takes up to ${PROMPT_CONFIG.MAX_NODES_PER_REQUEST} documents`} className="ml-auto h-8 w-8 shrink-0 rounded-lg bg-primary text-white flex items-center justify-center disabled:opacity-40">
 								<ArrowUp className="h-4 w-4" />
 							</button>
 						)}
