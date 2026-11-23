@@ -78,3 +78,20 @@ describe('lasso in the store', () => {
 		expect(useAppStore.getState()).toMatchObject({ lassoNodes: [], lassoMenuOpen: false });
 	});
 });
+
+describe('wide panels', () => {
+	it('opening the search panel folds the analysis workspace, and the other way round', () => {
+		const s = useAppStore.getState();
+		s.setRightPanelExpanded(true);
+		s.setSearchPanelExpanded(true);
+		expect(useAppStore.getState()).toMatchObject({ searchPanelExpanded: true, rightPanelExpanded: false });
+		useAppStore.getState().setRightPanelExpanded(true);
+		expect(useAppStore.getState()).toMatchObject({ searchPanelExpanded: false, rightPanelExpanded: true });
+	});
+
+	it('folding one leaves the other as it is', () => {
+		useAppStore.getState().setRightPanelExpanded(true);
+		useAppStore.getState().setSearchPanelExpanded(false);
+		expect(useAppStore.getState().rightPanelExpanded).toBe(true);
+	});
+});

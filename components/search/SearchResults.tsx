@@ -42,6 +42,7 @@ export function SearchResults() {
 	// Get state from app store
 	const searchResults = useAppStore((state) => state.searchResults);
 	const filteredResults = useAppStore((state) => state.filteredResults);
+	const wide = useAppStore((state) => state.searchPanelExpanded);
 	
 	// Get context store methods
 	const contextNodes = useContextStore((state) => state.contextNodes);
@@ -135,7 +136,11 @@ export function SearchResults() {
 				</div>
 			</CardHeader>
 
-			<CardContent className="space-y-2 p-4 pt-0">
+			{/* One column, or 2–3 when the search panel is open wide */}
+			<CardContent
+				className={`p-4 pt-0 ${
+					wide ? 'grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-start' : 'space-y-2'
+				}`}>
 				{processedResults.map((result, index) => {
 					const scorePercent = Math.round(result.score * 100);
 					const scoreColor = getScoreColor(result.score);
@@ -144,6 +149,7 @@ export function SearchResults() {
 					return (
 						<div
 							key={result.id}
+							data-result-card
 							{...highlight(result.id)}
 							className="border rounded-lg p-3 transition-all duration-200 hover:border-primary/50 hover:shadow-sm">
 							{/* Result Header */}

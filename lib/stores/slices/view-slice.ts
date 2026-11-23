@@ -10,6 +10,8 @@ export interface ViewSlice {
 	layoutType: NetworkLayout;
 	showLabels: boolean;
 	rightPanelExpanded: boolean;
+	/** The search panel opened wide; only one side panel is wide at a time */
+	searchPanelExpanded: boolean;
 	/** Context table: show only the documents still on the graph */
 	showActiveNodes: boolean;
 
@@ -19,6 +21,7 @@ export interface ViewSlice {
 	setLayoutType: (layout: NetworkLayout) => void;
 	setShowLabels: (show: boolean) => void;
 	setRightPanelExpanded: (expanded: boolean) => void;
+	setSearchPanelExpanded: (expanded: boolean) => void;
 	setShowActiveNodes: (show: boolean) => void;
 }
 
@@ -29,6 +32,7 @@ export const createViewSlice: StateCreator<AppState, [['zustand/devtools', never
 	layoutType: 'forceDirected2d',
 	showLabels: true,
 	rightPanelExpanded: false,
+	searchPanelExpanded: false,
 	showActiveNodes: false,
 
 	setColorMode: (colorMode) => set({ colorMode }),
@@ -36,6 +40,10 @@ export const createViewSlice: StateCreator<AppState, [['zustand/devtools', never
 	setClusterMode: (clusterMode) => set({ clusterMode }),
 	setLayoutType: (layoutType) => set({ layoutType }),
 	setShowLabels: (showLabels) => set({ showLabels }),
-	setRightPanelExpanded: (rightPanelExpanded) => set({ rightPanelExpanded }),
+	// Opening one wide panel folds the other, so they never overlap
+	setRightPanelExpanded: (rightPanelExpanded) =>
+		set(rightPanelExpanded ? { rightPanelExpanded, searchPanelExpanded: false } : { rightPanelExpanded }),
+	setSearchPanelExpanded: (searchPanelExpanded) =>
+		set(searchPanelExpanded ? { searchPanelExpanded, rightPanelExpanded: false } : { searchPanelExpanded }),
 	setShowActiveNodes: (showActiveNodes) => set({ showActiveNodes }),
 });

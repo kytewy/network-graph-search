@@ -398,6 +398,7 @@ export const useAppStore = create<AppState>()(
 				partialize: (state) => ({
 					showLabels: state.showLabels,
 					rightPanelExpanded: state.rightPanelExpanded,
+					searchPanelExpanded: state.searchPanelExpanded,
 					showActiveNodes: state.showActiveNodes,
 					topK: state.topK,
 				}),

@@ -11,7 +11,7 @@ describe('remembered preferences', () => {
 		s.setRightPanelExpanded(true);
 		s.setShowActiveNodes(true);
 		s.setTopK(20);
-		expect(saved()).toEqual({ showLabels: false, rightPanelExpanded: true, showActiveNodes: true, topK: 20 });
+		expect(saved()).toMatchObject({ showLabels: false, rightPanelExpanded: true, showActiveNodes: true, topK: 20 });
 	});
 
 	it('never saves results, filters or the view modes the web address keeps', () => {

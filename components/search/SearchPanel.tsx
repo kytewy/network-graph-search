@@ -8,6 +8,7 @@ import FilterPanel from '@/components/filters/FilterPanel';
 import { useAppStore } from '@/lib/stores/app-state';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 /**
  * SearchPanel - Unified left sidebar for search and filtering
@@ -32,6 +33,9 @@ export function SearchPanel() {
 	const searchResults = useAppStore((state) => state.searchResults);
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	const hasSearched = useAppStore((state) => state.hasSearched);
+	// » opens the panel wide over the graph (like the Analysis Workspace's «)
+	const expanded = useAppStore((state) => state.searchPanelExpanded);
+	const setExpanded = useAppStore((state) => state.setSearchPanelExpanded);
 
 	useEffect(() => {
 		setIsClient(true);
@@ -58,13 +62,10 @@ export function SearchPanel() {
 		: 0;
 
 	return (
-		<div className="w-96 bg-sidebar border-r border-sidebar-border flex flex-col h-screen">
-			{/* Header - Always visible */}
-			<div className="p-6 pb-4 border-b border-sidebar-border shrink-0">
-				<h1 className="text-2xl font-bold text-sidebar-foreground mb-4"></h1>
-				{/* Search Input - Always visible */}
-				<SearchInput />
-			</div>
+		<div
+			className={`${
+				expanded ? 'absolute left-0 top-0 right-96 z-20 shadow-xl' : 'w-96'
+			} bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
 
 			{/* Tabbed Content Area */}
 			<div className="flex-1 overflow-hidden">
@@ -74,13 +75,13 @@ export function SearchPanel() {
 					className="flex h-full flex-col">
 					{/* Tab Headers */}
 					{/* Divider under the tabs, with the same 16px gap as the line above them */}
-					<div className="px-6 py-4 bg-sidebar shrink-0 border-b border-sidebar-border">
-						<TabsList className="grid w-full grid-cols-2 bg-transparent p-0 h-auto gap-0">
+					<div className="px-6 py-4 bg-sidebar shrink-0 border-b border-sidebar-border flex items-center gap-2">
+						<TabsList className="grid flex-1 grid-cols-2 bg-transparent p-0 h-auto gap-0">
 							<TabsTrigger
 								value="results"
 								className="flex items-center gap-2 rounded-t-md border-b-2 border-transparent pb-3 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-accent/50">
 								<Search className="h-3 w-3" />
-								<span>Results</span>
+								<span>Search</span>
 								{searchCount > 0 && (
 									<Badge variant="secondary" className="ml-1 text-xs">
 										{searchCount}
@@ -100,14 +101,24 @@ export function SearchPanel() {
 								)}
 							</TabsTrigger>
 						</TabsList>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setExpanded(!expanded)}
+							aria-label={expanded ? 'Collapse search panel' : 'Expand search panel'}
+							title={expanded ? 'Collapse' : 'Expand'}
+							className="h-6 px-2 text-sidebar-foreground/70 hover:text-sidebar-foreground">
+							{expanded ? '«' : '»'}
+						</Button>
 					</div>
 
 					{/* Results Tab */}
 					<TabsContent
 						value="results"
 						className="flex-1 overflow-y-auto data-[state=inactive]:hidden">
-						{/* 16px below the divider, matching the gap under the search box */}
-						<div className="p-6 pt-4">
+						{/* The search box sits in the Search tab; 16px gaps throughout */}
+						<div className="p-6 pt-4 space-y-4">
+							<SearchInput />
 							{searchCount > 0 ? (
 								<SearchResults />
 							) : (
