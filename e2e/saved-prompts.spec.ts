@@ -78,6 +78,7 @@ test('typing / lists saved prompts, filters as you type, and Enter picks one; re
 	await box.fill('/');
 	await expect(menu.getByRole('option')).toHaveCount(3);
 
+
 	// Typing filters; the arrow keys move; Enter puts the prompt in the box (and doesn't send)
 	await box.fill('/i');
 	await box.press('ArrowDown');
@@ -98,4 +99,27 @@ test('typing / lists saved prompts, filters as you type, and Enter picks one; re
 	// The prompt you just used is now the first chip
 	const chips = page.locator('button[title]').filter({ hasText: /^(Summary|Business impact|Citations)$/ });
 	await expect(chips.first()).toHaveText('Business impact');
+});
+
+test('the / list scrolls to keep the highlighted prompt in view', async ({ page }) => {
+	// 15 saved prompts: more than the list shows at once
+	await page.addInitScript(() => {
+		const prompts = Array.from({ length: 15 }, (_, i) => ({ id: `p${i + 1}`, name: `Prompt ${i + 1}`, text: `Question number ${i + 1}` }));
+		localStorage.setItem('network-graph-search:saved-prompts', JSON.stringify({ state: { prompts }, version: 1 }));
+	});
+	await search(page);
+	await page.locator('[data-panel-header="right"]').getByRole('tab', { name: 'Chat' }).click();
+	const box = page.getByRole('textbox', { name: 'Ask about the documents' });
+	const menu = page.getByRole('listbox', { name: 'Saved prompts matching' });
+	await box.fill('/');
+	await expect(menu.getByRole('option')).toHaveCount(15);
+
+	for (let i = 0; i < 14; i++) await box.press('ArrowDown');
+	const last = menu.getByRole('option', { name: /^Prompt 15/ });
+	await expect(last).toHaveAttribute('aria-selected', 'true');
+	await expect(last).toBeInViewport({ ratio: 1 });
+
+	// Past the bottom it wraps to the top, and the list scrolls back up
+	await box.press('ArrowDown');
+	await expect(menu.getByRole('option', { name: /^Prompt 1\b/ })).toBeInViewport({ ratio: 1 });
 });

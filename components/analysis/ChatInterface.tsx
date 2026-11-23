@@ -68,7 +68,8 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 	const [slashIndex, setSlashIndex] = useState(0);
 	const [slashClosed, setSlashClosed] = useState(false);
 	const slashOpen = chatInput.startsWith('/') && !chatInput.includes('\n') && !slashClosed;
-	const slashMatches = slashOpen ? matchPrompts(savedPrompts, chatInput.slice(1)).slice(0, 8) : [];
+	const slashMatches = slashOpen ? matchPrompts(savedPrompts, chatInput.slice(1)) : [];
+	const slashListRef = useRef<HTMLUListElement>(null);
 	const [promptsOpen, setPromptsOpen] = useState(false);
 	// A chat question being saved as a prompt (opens the window on its form)
 	const [saveText, setSaveText] = useState<string | null>(null);
@@ -148,6 +149,11 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 		box.style.height = `${Math.min(box.scrollHeight, MAX_BOX_PX)}px`;
 		box.style.overflowY = box.scrollHeight > MAX_BOX_PX ? 'auto' : 'hidden';
 	}, [chatInput]);
+
+	// The highlighted prompt in the "/" list stays in view as the arrows move past the edge
+	useEffect(() => {
+		slashListRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({ block: 'nearest' });
+	}, [slashIndex, slashOpen]);
 
 	// The newest message stays in view
 	useEffect(() => {
@@ -250,6 +256,7 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 				{slashOpen && (
 					<ul
 						id="slash-menu"
+						ref={slashListRef}
 						role="listbox"
 						aria-label="Saved prompts matching"
 						className="max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg">
