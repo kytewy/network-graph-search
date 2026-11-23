@@ -3,13 +3,15 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowUp, Copy, Download, Pencil, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ArrowUp, Copy, Download, Pencil, Plus, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { analyzeNodes } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
 import { chatMemory, CHAT_LIMITS } from '@/lib/contracts/analysis';
 import { useContextStore, type ChatConversation } from '@/lib/stores/context-store';
-import { getQuickPrompt, CHAT_PLACEHOLDERS, PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
+import { CHAT_PLACEHOLDERS, PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
+import { useSavedPrompts } from '@/lib/stores/saved-prompts';
+import { SavedPromptsDialog } from './SavedPromptsDialog';
 import { reportError } from '@/lib/observability/capture-client';
 import { toAnalysisNode } from '@/lib/utils/llm-tokens';
 import { debugLog } from '@/lib/utils/debug';
@@ -24,11 +26,8 @@ interface ChatInterfaceProps {
 	contextSummary?: ReactNode;
 }
 
-const QUICK = [
-	['Summary', 'summary'],
-	['Business impact', 'businessImpact'],
-	['Citations', 'citations'],
-] as const;
+/** Saved prompts shown as chips in the box; the rest are behind + */
+const CHIPS_SHOWN = 3;
 
 const STOPPED = '_Stopped._';
 /** Tallest the question box grows before it scrolls */
@@ -63,7 +62,8 @@ function downloadTurn(turn: ChatConversation, filterState: any, nodeIds: string[
  */
 export default function ChatInterface({ safeSelectedNodes, filterState, rightPanelExpanded, contextSummary }: ChatInterfaceProps) {
 	const [chatInput, setChatInput] = useState('');
-	const [placeholder, setPlaceholder] = useState<string>(CHAT_PLACEHOLDERS.default);
+	const savedPrompts = useSavedPrompts((s) => s.prompts);
+	const [promptsOpen, setPromptsOpen] = useState(false);
 	const conversations = useContextStore((s) => s.chatConversations);
 	const contextNodes = useContextStore((s) => s.contextNodes);
 	const addTurn = useContextStore((s) => s.addChatConversation);
@@ -120,6 +120,12 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 	);
 
 	const stop = () => stopRef.current?.abort();
+
+	/** Puts a saved prompt in the box, ready to edit or send */
+	const fillBox = (text: string) => {
+		setChatInput(text);
+		requestAnimationFrame(() => inputRef.current?.focus());
+	};
 
 	// The box grows upward with what you type, up to about 8 lines, then scrolls inside
 	useEffect(() => {
@@ -227,7 +233,7 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 						ref={inputRef}
 						value={chatInput}
 						onChange={(e) => setChatInput(e.target.value)}
-						placeholder={placeholder}
+						placeholder={CHAT_PLACEHOLDERS.default}
 						aria-label="Ask about the documents"
 						rows={1}
 						className="block w-full resize-none bg-transparent px-4 pt-3 pb-1 text-sm leading-relaxed placeholder:text-gray-400 focus:outline-none"
@@ -241,18 +247,24 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 						}}
 					/>
 					<div className="flex items-center gap-1.5 px-2 pb-2">
-						{QUICK.map(([label, key]) => (
+						{/* + opens every saved prompt: use, edit, delete, or save a new one */}
+						<button
+							type="button"
+							onClick={() => setPromptsOpen(true)}
+							aria-label="Saved prompts"
+							title="Saved prompts"
+							className="h-7 w-7 shrink-0 rounded-full border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50">
+							<Plus className="h-4 w-4" />
+						</button>
+						{savedPrompts.slice(0, CHIPS_SHOWN).map((p) => (
 							<button
-								key={key}
+								key={p.id}
 								type="button"
 								disabled={thinking}
-								onClick={() => {
-									setChatInput(getQuickPrompt(key, safeSelectedNodes.length > 0));
-									setPlaceholder(CHAT_PLACEHOLDERS[key]);
-									inputRef.current?.focus();
-								}}
-								className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50">
-								{label}
+								title={p.text}
+								onClick={() => fillBox(p.text)}
+								className="max-w-32 truncate rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50">
+								{p.name}
 							</button>
 						))}
 						{thinking ? (
@@ -267,6 +279,7 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 					</div>
 				</div>
 			</div>
+			<SavedPromptsDialog open={promptsOpen} onOpenChange={setPromptsOpen} onUse={fillBox} draft={chatInput} />
 		</div>
 	);
 }
