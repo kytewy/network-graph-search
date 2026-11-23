@@ -3,6 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev # ← Changed
+    # A tiny init process (tini) runs as PID 1 and passes Ctrl+C / "docker compose
+    # down" on to Next.js, so the container stops at once instead of hanging
+    init: true
+    stop_grace_period: 5s
     ports:
       - '3000:3000' # ← Changed to 3000 (standard dev port)
     volumes:

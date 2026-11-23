@@ -28,4 +28,5 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+# Run Next.js directly (not through npm) so it receives the stop signal itself
+CMD ["node_modules/.bin/next", "dev"]
