@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MAX_PROMPT_NAME, useSavedPrompts, type SavedPrompt } from '@/lib/stores/saved-prompts';
@@ -13,6 +13,8 @@ interface SavedPromptsDialogProps {
 	onUse: (text: string) => void;
 	/** What's in the chat box now, offered as the start of a new prompt */
 	draft: string;
+	/** Open straight into the new-prompt form with this text (Save as prompt on a chat question) */
+	saveText?: string | null;
 }
 
 /** The name + text form, for a new prompt or an edit */
@@ -45,10 +47,12 @@ function PromptForm({ initial, onSave, onCancel }: { initial: { name: string; te
  * Every saved prompt in one window: use one, edit it, delete it, or add a new
  * one (starting from whatever is in the chat box).
  */
-export function SavedPromptsDialog({ open, onOpenChange, onUse, draft }: SavedPromptsDialogProps) {
-	const { prompts, addPrompt, updatePrompt, removePrompt } = useSavedPrompts();
+export function SavedPromptsDialog({ open, onOpenChange, onUse, draft, saveText }: SavedPromptsDialogProps) {
+	const { prompts, addPrompt, updatePrompt, removePrompt, duplicatePrompt } = useSavedPrompts();
 	// 'new', a prompt's id being edited, or nothing
 	const [editing, setEditing] = useState<string | null>(null);
+	const startNew = saveText != null;
+	const formOpen = editing === 'new' || (startNew && editing === null);
 
 	const use = (p: SavedPrompt) => {
 		onUse(p.text);
@@ -62,14 +66,18 @@ export function SavedPromptsDialog({ open, onOpenChange, onUse, draft }: SavedPr
 				setEditing(null);
 				onOpenChange(next);
 			}}>
-			<DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+			<DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>Saved prompts</DialogTitle>
 					<DialogDescription>Questions you ask often. Pick one to put it in the chat box.</DialogDescription>
 				</DialogHeader>
 
-				{editing === 'new' ? (
-					<PromptForm initial={{ name: '', text: draft }} onSave={(n, t) => addPrompt(n, t) !== null} onCancel={() => setEditing(null)} />
+				{formOpen ? (
+					<PromptForm
+						initial={{ name: '', text: saveText ?? draft }}
+						onSave={(n, t) => addPrompt(n, t) !== null}
+						onCancel={() => (startNew ? onOpenChange(false) : setEditing(null))}
+					/>
 				) : (
 					<Button variant="outline" className="w-full justify-start gap-2" onClick={() => setEditing('new')}>
 						<Plus className="h-4 w-4" />
@@ -88,7 +96,10 @@ export function SavedPromptsDialog({ open, onOpenChange, onUse, draft }: SavedPr
 							<li key={p.id} className="group flex items-start gap-2 rounded-lg border border-gray-200 bg-white p-3 hover:border-primary/40">
 								<button type="button" onClick={() => use(p)} className="min-w-0 flex-1 text-left" aria-label={`Use ${p.name}`}>
 									<span className="block text-sm font-medium">{p.name}</span>
-									<span className="block text-xs text-muted-foreground line-clamp-2">{p.text}</span>
+									<span className="text-xs text-muted-foreground line-clamp-2">{p.text}</span>
+								</button>
+								<button type="button" onClick={() => setEditing(duplicatePrompt(p.id))} aria-label={`Duplicate ${p.name}`} title="Duplicate and edit" className="h-7 w-7 shrink-0 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50">
+									<Copy className="h-3.5 w-3.5" />
 								</button>
 								<button type="button" onClick={() => setEditing(p.id)} aria-label={`Edit ${p.name}`} title="Edit" className="h-7 w-7 shrink-0 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50">
 									<Pencil className="h-3.5 w-3.5" />

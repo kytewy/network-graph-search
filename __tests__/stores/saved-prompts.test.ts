@@ -20,6 +20,14 @@ describe('saved prompts', () => {
 		expect(names()).toHaveLength(3);
 	});
 
+	it('duplicates a prompt just below the original', () => {
+		const copyId = useSavedPrompts.getState().duplicatePrompt('summary')!;
+		expect(names()).toEqual(['Summary', 'Summary (copy)', 'Business impact', 'Citations']);
+		const [original, copy] = useSavedPrompts.getState().prompts;
+		expect(copy).toEqual({ id: copyId, name: 'Summary (copy)', text: original.text });
+		expect(useSavedPrompts.getState().duplicatePrompt('missing')).toBeNull();
+	});
+
 	it('refuses an empty name or text, and keeps names short', () => {
 		const { addPrompt, updatePrompt } = useSavedPrompts.getState();
 		expect(addPrompt('', 'text')).toBeNull();

@@ -35,16 +35,20 @@ interface SavedPromptsState {
 	addPrompt: (name: string, text: string) => string | null;
 	updatePrompt: (id: string, name: string, text: string) => boolean;
 	removePrompt: (id: string) => void;
+	/** Copies a prompt (named "… (copy)") just below the original; returns the copy's id */
+	duplicatePrompt: (id: string) => string | null;
 }
+
+const newId = () => `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
 export const useSavedPrompts = create<SavedPromptsState>()(
 	persist(
-		(set) => ({
+		(set, get) => ({
 			prompts: STARTER_PROMPTS,
 			addPrompt: (name, text) => {
 				const clean = cleanPrompt(name, text);
 				if (!clean) return null;
-				const id = `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+				const id = newId();
 				set((s) => ({ prompts: [...s.prompts, { id, ...clean }] }));
 				return id;
 			},
@@ -55,6 +59,14 @@ export const useSavedPrompts = create<SavedPromptsState>()(
 				return true;
 			},
 			removePrompt: (id) => set((s) => ({ prompts: s.prompts.filter((p) => p.id !== id) })),
+			duplicatePrompt: (id) => {
+				const at = get().prompts.findIndex((p) => p.id === id);
+				if (at < 0) return null;
+				const original = get().prompts[at];
+				const copy = { id: newId(), name: `${original.name} (copy)`.slice(0, MAX_PROMPT_NAME), text: original.text };
+				set((s) => ({ prompts: [...s.prompts.slice(0, at + 1), copy, ...s.prompts.slice(at + 1)] }));
+				return copy.id;
+			},
 		}),
 		{ name: SAVED_PROMPTS_KEY, version: 1 }
 	)

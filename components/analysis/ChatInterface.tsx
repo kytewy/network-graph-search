@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowUp, Copy, Download, Pencil, Plus, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ArrowUp, BookmarkPlus, Copy, Download, Pencil, Plus, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { analyzeNodes } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
@@ -64,6 +64,12 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 	const [chatInput, setChatInput] = useState('');
 	const savedPrompts = useSavedPrompts((s) => s.prompts);
 	const [promptsOpen, setPromptsOpen] = useState(false);
+	// A chat question being saved as a prompt (opens the window on its form)
+	const [saveText, setSaveText] = useState<string | null>(null);
+	const openPrompts = (text: string | null = null) => {
+		setSaveText(text);
+		setPromptsOpen(true);
+	};
 	const conversations = useContextStore((s) => s.chatConversations);
 	const contextNodes = useContextStore((s) => s.contextNodes);
 	const addTurn = useContextStore((s) => s.addChatConversation);
@@ -205,6 +211,9 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 										}}>
 										<Pencil className="h-3.5 w-3.5" />
 									</button>
+									<button type="button" className={tool} title="Save the question as a prompt" aria-label="Save question as prompt" onClick={() => openPrompts(turn.prompt)}>
+										<BookmarkPlus className="h-3.5 w-3.5" />
+									</button>
 									<button type="button" className={tool} title="Download" aria-label="Download answer" onClick={() => downloadTurn(turn, filterState, safeSelectedNodes)}>
 										<Download className="h-3.5 w-3.5" />
 									</button>
@@ -250,7 +259,7 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 						{/* + opens every saved prompt: use, edit, delete, or save a new one */}
 						<button
 							type="button"
-							onClick={() => setPromptsOpen(true)}
+							onClick={() => openPrompts()}
 							aria-label="Saved prompts"
 							title="Saved prompts"
 							className="h-7 w-7 shrink-0 rounded-full border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50">
@@ -279,7 +288,16 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 					</div>
 				</div>
 			</div>
-			<SavedPromptsDialog open={promptsOpen} onOpenChange={setPromptsOpen} onUse={fillBox} draft={chatInput} />
+			<SavedPromptsDialog
+				open={promptsOpen}
+				onOpenChange={(open) => {
+					setPromptsOpen(open);
+					if (!open) setSaveText(null);
+				}}
+				onUse={fillBox}
+				draft={chatInput}
+				saveText={saveText}
+			/>
 		</div>
 	);
 }
