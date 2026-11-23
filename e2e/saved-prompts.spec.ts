@@ -23,7 +23,7 @@ test('saved prompts: + opens them, use one, save a new one from the box, edit an
 	await dialog.getByRole('button', { name: 'Edit Compare to OSFI' }).click();
 	await dialog.getByLabel('Prompt name').fill('OSFI check');
 	await dialog.getByRole('button', { name: 'Save prompt' }).click();
-	await expect(dialog.getByRole('button', { name: 'Use OSFI check' })).toBeVisible();
+	await expect(dialog.getByRole('button', { name: 'Use OSFI check', exact: true })).toBeVisible();
 	await dialog.getByRole('button', { name: 'Use Summary', exact: true }).click();
 	await expect(dialog).toBeHidden();
 	await expect(box).toHaveValue(/comprehensive summary/);
@@ -36,16 +36,16 @@ test('saved prompts: + opens them, use one, save a new one from the box, edit an
 	await dialog.getByLabel('Prompt text').fill('Summarize in 3 bullets.');
 	await dialog.getByRole('button', { name: 'Save prompt' }).click();
 	await expect(dialog.getByRole('button', { name: 'Use Summary', exact: true })).toBeVisible();
-	await expect(dialog.getByRole('button', { name: 'Use Short summary' })).toBeVisible();
+	await expect(dialog.getByRole('button', { name: 'Use Short summary', exact: true })).toBeVisible();
 	await page.keyboard.press('Escape');
 
 	// Saved prompts survive a refresh; delete one
 	await page.reload();
 	await page.locator('[data-panel-header="right"]').getByRole('tab', { name: 'Chat' }).click();
 	await page.getByRole('button', { name: 'Saved prompts' }).click();
-	await expect(dialog.getByRole('button', { name: 'Use OSFI check' })).toBeVisible();
+	await expect(dialog.getByRole('button', { name: 'Use OSFI check', exact: true })).toBeVisible();
 	await dialog.getByRole('button', { name: 'Delete Citations' }).click();
-	await expect(dialog.getByRole('button', { name: 'Use Citations' })).toHaveCount(0);
+	await expect(dialog.getByRole('button', { name: 'Use Citations', exact: true })).toHaveCount(0);
 });
 
 test('a question from the chat can be saved as a prompt', async ({ page }) => {
@@ -65,5 +65,5 @@ test('a question from the chat can be saved as a prompt', async ({ page }) => {
 	await dialog.getByRole('button', { name: 'Save prompt' }).click();
 	await expect(dialog).toBeHidden();
 	await page.getByRole('button', { name: 'Saved prompts' }).click();
-	await expect(dialog.getByRole('button', { name: 'Use Penalties' })).toBeVisible();
+	await expect(dialog.getByRole('button', { name: 'Use Penalties', exact: true })).toBeVisible();
 });
