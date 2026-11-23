@@ -66,7 +66,10 @@ export function SavedPromptsDialog({ open, onOpenChange, onUse, draft, saveText 
 				setEditing(null);
 				onOpenChange(next);
 			}}>
-			<DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+			<DialogContent
+				className="max-h-[85vh] overflow-y-auto"
+				// Width set directly, so it holds even before the styles are rebuilt
+				style={{ maxWidth: 'min(42rem, calc(100vw - 2rem))' }}>
 				<DialogHeader>
 					<DialogTitle>Saved prompts</DialogTitle>
 					<DialogDescription>Questions you ask often. Pick one to put it in the chat box.</DialogDescription>

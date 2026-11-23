@@ -174,8 +174,30 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 				)}
 				{conversations.map((turn) => (
 					<div key={turn.id} className="space-y-2" data-chat-turn>
-						<div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-primary/10 px-4 py-2 text-sm whitespace-pre-wrap" data-role="user">
-							{turn.prompt}
+						<div className="flex flex-col items-end gap-0.5">
+							<div className="w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-primary/10 px-4 py-2 text-sm whitespace-pre-wrap" data-role="user">
+								{turn.prompt}
+							</div>
+							{/* Tools for the question itself: ask again, edit, save as a prompt */}
+							<div className="flex items-center gap-0.5">
+								<button type="button" className={tool} title="Ask again" aria-label="Retry" disabled={thinking} onClick={() => send(turn.prompt)}>
+									<RotateCcw className="h-3.5 w-3.5" />
+								</button>
+								<button
+									type="button"
+									className={tool}
+									title="Edit the question"
+									aria-label="Edit question"
+									onClick={() => {
+										setChatInput(turn.prompt);
+										inputRef.current?.focus();
+									}}>
+									<Pencil className="h-3.5 w-3.5" />
+								</button>
+								<button type="button" className={tool} title="Save the question as a prompt" aria-label="Save question as prompt" onClick={() => openPrompts(turn.prompt)}>
+									<BookmarkPlus className="h-3.5 w-3.5" />
+								</button>
+							</div>
 						</div>
 						{turn.status === 'thinking' ? (
 							<div className="w-fit flex items-center gap-2 rounded-2xl rounded-bl-sm border border-gray-200 bg-white px-4 py-2 text-sm text-muted-foreground" role="status" aria-label="Thinking">
@@ -196,23 +218,6 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 								<div className="mt-1 flex items-center gap-0.5">
 									<button type="button" className={tool} title="Copy" aria-label="Copy answer" onClick={() => navigator.clipboard?.writeText(turn.response)}>
 										<Copy className="h-3.5 w-3.5" />
-									</button>
-									<button type="button" className={tool} title="Ask again" aria-label="Retry" disabled={thinking} onClick={() => send(turn.prompt)}>
-										<RotateCcw className="h-3.5 w-3.5" />
-									</button>
-									<button
-										type="button"
-										className={tool}
-										title="Edit the question"
-										aria-label="Edit question"
-										onClick={() => {
-											setChatInput(turn.prompt);
-											inputRef.current?.focus();
-										}}>
-										<Pencil className="h-3.5 w-3.5" />
-									</button>
-									<button type="button" className={tool} title="Save the question as a prompt" aria-label="Save question as prompt" onClick={() => openPrompts(turn.prompt)}>
-										<BookmarkPlus className="h-3.5 w-3.5" />
 									</button>
 									<button type="button" className={tool} title="Download" aria-label="Download answer" onClick={() => downloadTurn(turn, filterState, safeSelectedNodes)}>
 										<Download className="h-3.5 w-3.5" />
