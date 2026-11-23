@@ -11,6 +11,8 @@ test('a search lists the results, draws the graph and goes into the address', as
 
 test('refreshing the page brings the same search back', async ({ page }) => {
 	await search(page, 'AI regulation');
+	// The address bar updates just after the graph draws; reload only once it has the search
+	await expect(page).toHaveURL(/[?&]q=AI/);
 	await page.reload();
 	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', String(RESULT_COUNT));
 });

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Filter, Target, Globe, Tag, Building2 } from 'lucide-react';
+import { Filter, Target, Globe, Tag, Building2, Info, type LucideIcon } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppStore } from '@/lib/stores/app-state';
 import { useShallow } from 'zustand/react/shallow';
 import { SimilarityHistogram } from '@/components/filters/SimilarityHistogram';
@@ -22,6 +22,32 @@ import { TagFilters } from './TagFilters';
  *
  * Manages state and delegates rendering to sub-components
  */
+/** One filter group: a small title with its description in an ⓘ hover, then its controls. */
+function FilterSection({ icon: Icon, title, about, children }: {
+	icon: LucideIcon;
+	title: string;
+	about: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<section className="border-t border-sidebar-border pt-3 space-y-2" aria-label={title}>
+			<div className="flex items-center gap-2">
+				<Icon className="h-4 w-4 text-primary shrink-0" />
+				<h4 className="font-semibold text-sm">{title}</h4>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<button type="button" aria-label={`About ${title}`} className="text-muted-foreground hover:text-foreground">
+							<Info className="h-3.5 w-3.5" />
+						</button>
+					</TooltipTrigger>
+					<TooltipContent className="max-w-56">{about}</TooltipContent>
+				</Tooltip>
+			</div>
+			{children}
+		</section>
+	);
+}
+
 const FilterPanel = () => {
 	const [isClient, setIsClient] = useState(false);
 
@@ -29,6 +55,7 @@ const FilterPanel = () => {
 	// conditional returns). useShallow redraws the panel only when one of these changes.
 	const {
 		filteredResults,
+		searchResults,
 		selectedContinents,
 		selectedCountries,
 		toggleContinent,
@@ -53,6 +80,7 @@ const FilterPanel = () => {
 	} = useAppStore(
 		useShallow((state) => ({
 			filteredResults: state.filteredResults,
+			searchResults: state.searchResults,
 			selectedContinents: state.selectedContinents,
 			selectedCountries: state.selectedCountries,
 			toggleContinent: state.toggleContinent,
@@ -123,16 +151,21 @@ const FilterPanel = () => {
 		selectedSimilarityRanges.length;
 
 	return (
-		<div className="space-y-4">
-			{/* Header */}
-			<div className="flex items-center justify-between">
-				<h3 className="text-lg font-semibold">Filters</h3>
+		<div className="space-y-3">
+			{/* One header line: title, how many results are left, Clear All */}
+			<div className="flex items-center gap-2">
+				<h3 className="text-base font-semibold">Filters</h3>
+				{filteredResults.length !== (searchResults?.length ?? 0) && (
+					<span className="text-xs text-muted-foreground">
+						showing {filteredResults.length} of {searchResults?.length ?? 0}
+					</span>
+				)}
 				{totalFiltersActive > 0 && (
 					<Button
 						variant="ghost"
 						size="sm"
 						onClick={clearAllFilters}
-						className="h-8 gap-1 text-xs">
+						className="ml-auto h-7 gap-1 text-xs">
 						<Filter className="h-3 w-3" />
 						Clear All
 					</Button>
@@ -140,32 +173,13 @@ const FilterPanel = () => {
 			</div>
 
 			{/* Similarity Score Card */}
-			<Card>
-				<CardContent className="p-4 space-y-2">
-					<div className="flex items-start gap-3">
-						<Target className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-						<div className="flex-1 min-w-0">
-							<h4 className="font-semibold text-base mb-1">Similarity Score</h4>
-							<p className="text-sm text-muted-foreground mb-2">
-								Filter results by vector similarity score distribution
-							</p>
-							<SimilarityHistogram />
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+			<FilterSection icon={Target} title="Similarity Score" about="How closely each result matches your search. Tick a band to keep only those results.">
+				<SimilarityHistogram />
+			</FilterSection>
 
 			{/* Geographic Filters Card */}
-			<Card>
-				<CardContent className="p-4 space-y-2">
-					<div className="flex items-start gap-3">
-						<Globe className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-						<div className="flex-1 min-w-0">
-							<h4 className="font-semibold text-base mb-1">Geographic Filters</h4>
-							<p className="text-sm text-muted-foreground mb-2">
-								Filter by continent or region ({availableContinents.length} continents, {filteredResults.length} nodes)
-							</p>
-							<GeographicFilters
+			<FilterSection icon={Globe} title="Location" about={`Filter by continent or country (${availableContinents.length} continents, ${filteredResults.length} results)`}>
+				<GeographicFilters
 								availableContinents={availableContinents}
 								selectedContinents={selectedContinents}
 								selectedCountries={selectedCountries}
@@ -179,55 +193,30 @@ const FilterPanel = () => {
 								getNodeCountByCountry={getNodeCountByCountry}
 								getCountriesByContinent={getCountriesByContinent}
 							/>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+			</FilterSection>
 
 			{/* Publisher Card */}
 			{availablePublishers.length > 0 && (
-				<Card>
-					<CardContent className="p-4 space-y-2">
-						<div className="flex items-start gap-3">
-							<Building2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-							<div className="flex-1 min-w-0">
-								<h4 className="font-semibold text-base mb-1">Publisher</h4>
-								<p className="text-sm text-muted-foreground mb-2">
-									Who published the document. Narrows the results on screen.
-								</p>
-								<PublisherFilters
+				<FilterSection icon={Building2} title="Publisher" about="Who published the document. Narrows the results on screen.">
+					<PublisherFilters
 									availablePublishers={availablePublishers}
 									selectedPublishers={selectedPublishers}
 									togglePublisher={togglePublisher}
 									getNodeCountByPublisher={getNodeCountByPublisher}
 								/>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
+				</FilterSection>
 			)}
 
 			{/* Tags Card */}
 			{availableTags.length > 0 && (
-				<Card>
-					<CardContent className="p-4 space-y-2">
-						<div className="flex items-start gap-3">
-							<Tag className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-							<div className="flex-1 min-w-0">
-								<h4 className="font-semibold text-base mb-1">Tags</h4>
-								<p className="text-sm text-muted-foreground mb-2">
-									Filter by document tags or categories
-								</p>
-								<TagFilters
+				<FilterSection icon={Tag} title="Tags" about="Filter by document tags or categories.">
+					<TagFilters
 									availableTags={availableTags}
 									selectedTags={selectedTags}
 									toggleTag={toggleTag}
 									getNodeCountByTag={getNodeCountByTag}
 								/>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
+				</FilterSection>
 			)}
 		</div>
 	);

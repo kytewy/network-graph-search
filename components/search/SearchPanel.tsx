@@ -81,7 +81,7 @@ export function SearchPanel() {
 			<div
 				data-testid="search-panel"
 				className="absolute left-0 top-0 right-96 z-20 shadow-xl bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300">
-				<div className="px-6 py-4 shrink-0 border-b border-sidebar-border flex items-start gap-2">
+				<div className="px-4 py-3 shrink-0 border-b border-sidebar-border flex items-start gap-2">
 					<div className="flex-1">
 						<SearchInput />
 					</div>
@@ -91,13 +91,8 @@ export function SearchPanel() {
 					<div className="flex flex-1 min-h-0">
 						<aside
 							aria-label="Filters"
-							className="w-72 shrink-0 overflow-y-auto border-r border-sidebar-border p-4 space-y-2">
-							{/* FilterPanel has its own title; just say when filters narrow things */}
-							{filteredCount !== searchCount && (
-								<p className="text-xs text-muted-foreground">
-									showing {filteredCount} of {searchCount}
-								</p>
-							)}
+							className="w-72 shrink-0 overflow-y-auto border-r border-sidebar-border p-4">
+							
 							<FilterPanel />
 						</aside>
 						<div className="flex-1 min-w-0 overflow-y-auto p-4">
@@ -131,11 +126,11 @@ export function SearchPanel() {
 					className="flex h-full flex-col">
 					{/* Tab Headers */}
 					{/* Divider under the tabs, with the same 16px gap as the line above them */}
-					<div className="px-6 py-4 bg-sidebar shrink-0 border-b border-sidebar-border flex items-center gap-2">
+					<div className="px-4 py-1 bg-sidebar shrink-0 border-b border-sidebar-border flex items-center gap-2">
 						<TabsList className="grid flex-1 grid-cols-2 bg-transparent p-0 h-auto gap-0">
 							<TabsTrigger
 								value="results"
-								className="flex items-center gap-2 rounded-t-md border-b-2 border-transparent pb-3 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-accent/50">
+								className="flex items-center gap-2 rounded-t-md border-b-2 border-transparent pb-2 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-accent/50">
 								<Search className="h-3 w-3" />
 								<span>Search</span>
 								{searchCount > 0 && (
@@ -147,7 +142,7 @@ export function SearchPanel() {
 
 							<TabsTrigger
 								value="filters"
-								className="flex items-center gap-2 rounded-t-md border-b-2 border-transparent pb-3 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-accent/50">
+								className="flex items-center gap-2 rounded-t-md border-b-2 border-transparent pb-2 pt-2 px-4 font-normal text-muted-foreground transition-all duration-200 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent hover:text-foreground hover:bg-accent/50">
 								<Filter className="h-3 w-3" />
 								<span>Filters</span>
 								{filteredCount !== searchCount && searchCount > 0 && (
@@ -165,7 +160,7 @@ export function SearchPanel() {
 						value="results"
 						className="flex-1 overflow-y-auto data-[state=inactive]:hidden">
 						{/* The search box sits in the Search tab; 16px gaps throughout */}
-						<div className="p-6 pt-4 space-y-4">
+						<div className="p-4 space-y-3">
 							<SearchInput />
 							{searchCount > 0 ? (
 								<SearchResults />
@@ -187,7 +182,7 @@ export function SearchPanel() {
 					<TabsContent
 						value="filters"
 						className="flex-1 overflow-y-auto data-[state=inactive]:hidden">
-						<div className="p-6 pt-4">
+						<div className="p-4">
 							{searchCount > 0 ? (
 								<FilterPanel />
 							) : (

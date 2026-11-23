@@ -87,9 +87,7 @@ export function SearchInput() {
 	const geoCount = selectedContinents.length + selectedCountries.length;
 
 	return (
-		<Card className="p-4">
-			{/* <h2 className="text-xl font-semibold mb-4">Search</h2> */}
-			<h2 className="text-xl font-semibold mb-2">Search Context</h2>
+		<div className="space-y-2">
 			{/* Full-width search input */}
 			<div className="relative">
 				<Input
@@ -97,7 +95,7 @@ export function SearchInput() {
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
 					onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-					className="w-full h-12 text-base px-4 font-medium"
+					className="w-full h-11 text-base px-4 font-medium"
 				/>
 				{query.length > 0 && !isLoading && (
 					<button
@@ -111,10 +109,8 @@ export function SearchInput() {
 				)}
 			</div>
 
-			{/* Metadata Filters */}
-			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-				<span className="text-sm text-muted-foreground">Metadata:</span>
-				
+			{/* One row under the box: Geography, then how many results, then search */}
+			<div className="flex items-center gap-2">
 				{/* Geography Filter */}
 				<Popover>
 					<PopoverTrigger asChild>
@@ -170,16 +166,12 @@ export function SearchInput() {
 						</div>
 					</PopoverContent>
 				</Popover>
-			</div>
 
-			{/* Results to fetch + Search button */}
-			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-				<span className="text-sm text-muted-foreground">
-					{SEARCH_CONFIG.RESULTS_TO_FETCH_LABEL}
-				</span>
-
-				<div className="flex items-center gap-2">
-					<div className="flex items-center gap-1 border rounded-md p-1">
+				<div className="ml-auto flex items-center gap-2">
+					<div
+						className="flex items-center gap-1 border rounded-md p-0.5"
+						title={SEARCH_CONFIG.RESULTS_TO_FETCH_LABEL}
+						aria-label={SEARCH_CONFIG.RESULTS_TO_FETCH_LABEL}>
 						<Button
 							variant="ghost"
 							size="icon"
@@ -187,7 +179,7 @@ export function SearchInput() {
 								setTopK(SearchConfigHelpers.getNextTopK(topK, false))
 							}
 							disabled={topK <= SEARCH_CONFIG.MIN_TOP_K}
-							className="h-7 w-7">
+							className="h-6 w-6">
 							<Minus className="h-3 w-3" />
 						</Button>
 						<span className="min-w-[2rem] text-center text-sm font-medium">
@@ -200,7 +192,7 @@ export function SearchInput() {
 								setTopK(SearchConfigHelpers.getNextTopK(topK, true))
 							}
 							disabled={topK >= SEARCH_CONFIG.MAX_TOP_K}
-							className="h-7 w-7">
+							className="h-6 w-6">
 							<Plus className="h-3 w-3" />
 						</Button>
 					</div>
@@ -208,7 +200,8 @@ export function SearchInput() {
 						onClick={handleSearch}
 						disabled={isLoading}
 						size="icon"
-						className="h-9 w-9">
+						aria-label="Search"
+						className="h-8 w-8">
 						{isLoading ? (
 							<Loader2 className="h-5 w-5 animate-spin" />
 						) : (
@@ -220,6 +213,6 @@ export function SearchInput() {
 
 			{/* Why the last search failed, with Try again */}
 			<SearchError />
-		</Card>
+		</div>
 	);
 }

@@ -102,23 +102,23 @@ export function SimilarityHistogram() {
 
 	return (
 		<div className="w-full">
-			<div className="space-y-2">
+			<div className="space-y-1">
 				{histogramData.map((bar) => (
-					<div key={bar.range} className="flex items-center gap-3">
-						<div className="w-16 text-xs text-muted-foreground text-right">
+					<div key={bar.range} className="flex items-center gap-2">
+						<div className="w-14 text-xs text-muted-foreground text-right">
 							{bar.range}%
 						</div>
 						<div className="flex-1 relative">
 							<div
 								className={`${SEARCH_CONFIG.HISTOGRAM.BAR_HEIGHT} rounded cursor-pointer transition-all ${SEARCH_CONFIG.HISTOGRAM.ANIMATION_DURATION} flex items-center justify-end pr-2 ${
 									selectedSimilarityRanges.includes(bar.range)
-										? 'bg-primary hover:bg-primary/90 shadow-md'
-										: 'bg-muted hover:bg-muted/80'
+										? 'bg-primary text-white hover:bg-primary/90 shadow-md'
+										: 'bg-primary/20 text-primary hover:bg-primary/30'
 								}`}
 								style={{ width: `${bar.width}%` }}
 								onClick={() => toggleSimilarityRange(bar.range)}>
 								{bar.count > 0 && (
-									<span className="text-xs font-medium text-white">
+									<span className="text-xs font-medium">
 										{bar.count}
 									</span>
 								)}

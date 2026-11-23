@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -112,10 +112,10 @@ export function SearchResults() {
 
 	return (
 		<>
-		<Card className="flex flex-col">
-			<CardHeader className="pb-3">
-				<div className="flex items-center justify-between">
-					<h3 className="text-lg font-semibold">
+		<div className="flex flex-col gap-2">
+			{/* One row: count and sort (no card around the list) */}
+			<div className="flex items-center justify-between">
+					<h3 className="text-base font-semibold">
 						Results ({processedResults.length})
 					</h3>
 					<Button
@@ -133,12 +133,11 @@ export function SearchResults() {
 							{sortDirection === 'desc' ? 'High → Low' : 'Low → High'}
 						</span>
 					</Button>
-				</div>
-			</CardHeader>
+			</div>
 
 			{/* One column, or 2–3 when the search panel is open wide */}
-			<CardContent
-				className={`p-4 pt-0 ${
+			<div
+				className={`${
 					wide ? 'grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-start' : 'space-y-2'
 				}`}>
 				{processedResults.map((result, index) => {
@@ -217,8 +216,8 @@ export function SearchResults() {
 						</p>
 					</div>
 				)}
-			</CardContent>
-		</Card>
+			</div>
+		</div>
 		{/* Document Overlay */}
 		{showDocumentOverlay && selectedNode && (
 			<DocumentOverlay
