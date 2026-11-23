@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { PANEL_BUTTON, PANEL_HEADER, PanelCloseButton, PanelRail } from '@/components/layout/PanelChrome';
 import { ColorLegend } from '@/components/network/ColorLegend';
 import { NetworkGraphCanvas } from '@/components/network/NetworkGraphCanvas';
 import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
@@ -15,6 +15,10 @@ export function GraphPageClient() {
 	const setRightPanelExpanded = useAppStore(
 		(state) => state.setRightPanelExpanded
 	);
+	const rightCollapsed = useAppStore((state) => state.rightPanelCollapsed);
+	const setRightCollapsed = useAppStore((state) => state.setRightPanelCollapsed);
+	// The wide view stops at the search panel, which may be folded to its rail
+	const leftCollapsed = useAppStore((state) => state.searchPanelCollapsed);
 
 	// The search, filters and graph settings in the web address
 	// (refresh, shared link, Back/Forward)
@@ -35,20 +39,27 @@ export function GraphPageClient() {
 					<ColorLegend />
 				</div>
 
-				{/* Right Panel */}
+				{/* Right Panel, or its thin rail when closed */}
+				{rightCollapsed ? (
+					<PanelRail side="right" name="analysis" onOpen={() => setRightCollapsed(false)} />
+				) : (
 				<div
 					className={`${
-						rightPanelExpanded ? 'absolute right-0 top-0 left-96 z-10' : 'w-96'
+						rightPanelExpanded ? `absolute right-0 top-0 ${leftCollapsed ? 'left-10' : 'left-96'} z-10` : 'w-96 shrink-0'
 					} h-screen bg-sidebar border-l border-sidebar-border overflow-y-auto [scrollbar-gutter:stable] transition-all duration-300 flex flex-col`}>
-					{/* Expand/Collapse Button */}
-					<div className="flex justify-start p-2 border-b border-sidebar-border">
-						<Button
-							variant="ghost"
-							size="sm"
+					{/* Same header as the search panel: widen on the inside, close on the outside */}
+					<div data-panel-header="right" className={`${PANEL_HEADER} sticky top-0 z-10 bg-sidebar`}>
+						<button
+							type="button"
 							onClick={() => setRightPanelExpanded(!rightPanelExpanded)}
-							className="h-6 px-2 text-sidebar-foreground/70 hover:text-sidebar-foreground">
+							aria-label={rightPanelExpanded ? 'Collapse analysis panel' : 'Expand analysis panel'}
+							title={rightPanelExpanded ? 'Narrow' : 'Widen'}
+							className={PANEL_BUTTON}>
 							{rightPanelExpanded ? '»' : '«'}
-						</Button>
+						</button>
+						<span className="ml-auto">
+							<PanelCloseButton side="right" name="analysis" onClick={() => setRightCollapsed(true)} />
+						</span>
 					</div>
 
 					<div className="p-6 flex-1">
@@ -68,6 +79,7 @@ export function GraphPageClient() {
 						</div>
 					</div>
 				</div>
+				)}
 			</div>
 		</NetworkGraphProvider>
 	);

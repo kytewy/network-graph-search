@@ -8,7 +8,7 @@ import FilterPanel from '@/components/filters/FilterPanel';
 import { useAppStore } from '@/lib/stores/app-state';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PANEL_BUTTON, PANEL_HEADER, PanelCloseButton, PanelRail } from '@/components/layout/PanelChrome';
 
 /**
  * SearchPanel - Unified left sidebar for search and filtering
@@ -36,6 +36,10 @@ export function SearchPanel() {
 	// » opens the panel wide over the graph (like the Analysis Workspace's «)
 	const expanded = useAppStore((state) => state.searchPanelExpanded);
 	const setExpanded = useAppStore((state) => state.setSearchPanelExpanded);
+	const collapsed = useAppStore((state) => state.searchPanelCollapsed);
+	const setCollapsed = useAppStore((state) => state.setSearchPanelCollapsed);
+	// The wide view stops at the other panel, which may be folded to its rail
+	const rightCollapsed = useAppStore((state) => state.rightPanelCollapsed);
 
 	useEffect(() => {
 		setIsClient(true);
@@ -47,6 +51,10 @@ export function SearchPanel() {
 			setActiveTab('results');
 		}
 	}, [hasSearched, searchResults]);
+
+	if (isClient && collapsed) {
+		return <PanelRail side="left" name="search" onOpen={() => setCollapsed(false)} />;
+	}
 
 	if (!isClient) {
 		return (
@@ -63,16 +71,17 @@ export function SearchPanel() {
 
 	// » / « toggles between the tabbed sidebar and the wide view
 	const expandButton = (
-		<Button
-			variant="ghost"
-			size="sm"
+		<button
+			type="button"
 			onClick={() => setExpanded(!expanded)}
 			aria-label={expanded ? 'Collapse search panel' : 'Expand search panel'}
-			title={expanded ? 'Collapse' : 'Expand'}
-			className="h-6 px-2 text-sidebar-foreground/70 hover:text-sidebar-foreground">
+			title={expanded ? 'Narrow' : 'Widen'}
+			className={PANEL_BUTTON}>
 			{expanded ? '«' : '»'}
-		</Button>
+		</button>
 	);
+	// Folds the panel to a thin rail on the left edge
+	const closeButton = <PanelCloseButton side="left" name="search" onClick={() => setCollapsed(true)} />;
 
 	// Wide: no tabs. Search box on top, filters column beside the results grid,
 	// so ticking a filter changes the results right next to it.
@@ -80,12 +89,17 @@ export function SearchPanel() {
 		return (
 			<div
 				data-testid="search-panel"
-				className="absolute left-0 top-0 right-96 z-20 shadow-xl bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300">
-				<div className="px-4 py-3 shrink-0 border-b border-sidebar-border flex items-start gap-2">
-					<div className="flex-1">
-						<SearchInput />
-					</div>
-					{expandButton}
+				className={`absolute left-0 top-0 ${rightCollapsed ? 'right-10' : 'right-96'} z-20 shadow-xl bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
+				<div data-panel-header="left" className={PANEL_HEADER}>
+					{closeButton}
+					<span className="flex items-center gap-2 text-sm font-semibold text-primary">
+						<Search className="h-3 w-3" />
+						Search &amp; filters
+					</span>
+					<span className="ml-auto">{expandButton}</span>
+				</div>
+				<div className="px-4 py-3 shrink-0 border-b border-sidebar-border">
+					<SearchInput />
 				</div>
 				{searchCount > 0 ? (
 					<div className="flex flex-1 min-h-0">
@@ -114,9 +128,7 @@ export function SearchPanel() {
 	return (
 		<div
 			data-testid="search-panel"
-			className={`${
-				expanded ? 'absolute left-0 top-0 right-96 z-20 shadow-xl' : 'w-96'
-			} bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
+			className={`w-96 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
 
 			{/* Tabbed Content Area */}
 			<div className="flex-1 overflow-hidden">
@@ -126,7 +138,8 @@ export function SearchPanel() {
 					className="flex h-full flex-col">
 					{/* Tab Headers */}
 					{/* Divider under the tabs, with the same 16px gap as the line above them */}
-					<div className="px-4 py-1 bg-sidebar shrink-0 border-b border-sidebar-border flex items-center gap-2">
+					<div data-panel-header="left" className={`${PANEL_HEADER} bg-sidebar`}>
+						{closeButton}
 						<TabsList className="grid flex-1 grid-cols-2 bg-transparent p-0 h-auto gap-0">
 							<TabsTrigger
 								value="results"

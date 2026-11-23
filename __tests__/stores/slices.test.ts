@@ -94,4 +94,13 @@ describe('wide panels', () => {
 		useAppStore.getState().setSearchPanelExpanded(false);
 		expect(useAppStore.getState().rightPanelExpanded).toBe(true);
 	});
+
+	it('closing a panel to its rail also takes it out of its wide view', () => {
+		useAppStore.getState().setSearchPanelExpanded(true);
+		useAppStore.getState().setSearchPanelCollapsed(true);
+		expect(useAppStore.getState()).toMatchObject({ searchPanelCollapsed: true, searchPanelExpanded: false });
+		useAppStore.getState().setRightPanelExpanded(true);
+		useAppStore.getState().setRightPanelCollapsed(true);
+		expect(useAppStore.getState()).toMatchObject({ rightPanelCollapsed: true, rightPanelExpanded: false });
+	});
 });

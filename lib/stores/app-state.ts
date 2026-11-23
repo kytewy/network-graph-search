@@ -399,6 +399,8 @@ export const useAppStore = create<AppState>()(
 					showLabels: state.showLabels,
 					rightPanelExpanded: state.rightPanelExpanded,
 					searchPanelExpanded: state.searchPanelExpanded,
+					searchPanelCollapsed: state.searchPanelCollapsed,
+					rightPanelCollapsed: state.rightPanelCollapsed,
 					showActiveNodes: state.showActiveNodes,
 					resultsView: state.resultsView,
 					topK: state.topK,

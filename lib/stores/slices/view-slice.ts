@@ -12,6 +12,9 @@ export interface ViewSlice {
 	rightPanelExpanded: boolean;
 	/** The search panel opened wide; only one side panel is wide at a time */
 	searchPanelExpanded: boolean;
+	/** A side panel folded to a thin rail on its edge */
+	searchPanelCollapsed: boolean;
+	rightPanelCollapsed: boolean;
 	/** Context table: show only the documents still on the graph */
 	showActiveNodes: boolean;
 	/** Search results as cards or as a table */
@@ -24,6 +27,8 @@ export interface ViewSlice {
 	setShowLabels: (show: boolean) => void;
 	setRightPanelExpanded: (expanded: boolean) => void;
 	setSearchPanelExpanded: (expanded: boolean) => void;
+	setSearchPanelCollapsed: (collapsed: boolean) => void;
+	setRightPanelCollapsed: (collapsed: boolean) => void;
 	setShowActiveNodes: (show: boolean) => void;
 	setResultsView: (view: 'cards' | 'table') => void;
 }
@@ -36,6 +41,8 @@ export const createViewSlice: StateCreator<AppState, [['zustand/devtools', never
 	showLabels: true,
 	rightPanelExpanded: false,
 	searchPanelExpanded: false,
+	searchPanelCollapsed: false,
+	rightPanelCollapsed: false,
 	showActiveNodes: false,
 	resultsView: 'table', // a table is quicker to scan; cards are one click away
 
@@ -49,6 +56,11 @@ export const createViewSlice: StateCreator<AppState, [['zustand/devtools', never
 		set(rightPanelExpanded ? { rightPanelExpanded, searchPanelExpanded: false } : { rightPanelExpanded }),
 	setSearchPanelExpanded: (searchPanelExpanded) =>
 		set(searchPanelExpanded ? { searchPanelExpanded, rightPanelExpanded: false } : { searchPanelExpanded }),
+	// Closing a panel also takes it out of its wide view
+	setSearchPanelCollapsed: (searchPanelCollapsed) =>
+		set(searchPanelCollapsed ? { searchPanelCollapsed, searchPanelExpanded: false } : { searchPanelCollapsed }),
+	setRightPanelCollapsed: (rightPanelCollapsed) =>
+		set(rightPanelCollapsed ? { rightPanelCollapsed, rightPanelExpanded: false } : { rightPanelCollapsed }),
 	setShowActiveNodes: (showActiveNodes) => set({ showActiveNodes }),
 	setResultsView: (resultsView) => set({ resultsView }),
 });
