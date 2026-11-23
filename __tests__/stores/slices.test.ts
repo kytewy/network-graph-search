@@ -35,6 +35,14 @@ describe('AI clusters in the store', () => {
 		expect(useAppStore.getState().clusterMode).toBe('ai_clusters');
 	});
 
+	it('new clusters bump the version, so the graph re-runs its layout even in AI-cluster mode', () => {
+		useAppStore.getState().applyAiClusters({ a: 'cluster_0' });
+		const before = useAppStore.getState().aiClustersVersion;
+		useAppStore.getState().applyAiClusters({ a: 'cluster_1' });
+		expect(useAppStore.getState().clusterMode).toBe('ai_clusters');
+		expect(useAppStore.getState().aiClustersVersion).toBe(before + 1);
+	});
+
 	it('clearing removes them and turns clustering off', () => {
 		useAppStore.getState().applyAiClusters({ a: 'cluster_0' });
 		useAppStore.getState().clearAiClusters();

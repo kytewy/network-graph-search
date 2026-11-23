@@ -101,6 +101,9 @@ export function SavedPromptsDialog({ open, onOpenChange, onUse, draft, saveText 
 									<span className="block text-sm font-medium">{p.name}</span>
 									<span className="text-xs text-muted-foreground line-clamp-2">{p.text}</span>
 								</button>
+								<Button type="button" size="sm" className="h-7 shrink-0" onClick={() => use(p)} aria-label={`Use ${p.name} now`}>
+									Use
+								</Button>
 								<button type="button" onClick={() => setEditing(duplicatePrompt(p.id))} aria-label={`Duplicate ${p.name}`} title="Duplicate and edit" className="h-7 w-7 shrink-0 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50">
 									<Copy className="h-3.5 w-3.5" />
 								</button>

@@ -10,6 +10,8 @@ export interface SelectionSlice {
 
 	/** AI cluster per node id, kept apart from the nodes (never written onto them) */
 	aiClusters: ClusterAssignments;
+	/** Goes up each time new clusters arrive or are cleared, so the graph re-runs its layout */
+	aiClustersVersion: number;
 	/** Stores clustering's result and switches the graph to cluster by it */
 	applyAiClusters: (assignments: Record<string, string>) => void;
 	clearAiClusters: () => void;
@@ -32,13 +34,14 @@ export const createSelectionSlice: StateCreator<AppState, [['zustand/devtools', 
 	setHighlightedNodes: (highlightedNodes) => set({ highlightedNodes }),
 
 	aiClusters: NO_CLUSTERS,
+	aiClustersVersion: 0,
 	applyAiClusters: (assignments) => {
 		const aiClusters = toAssignments(assignments);
-		set({ aiClusters });
+		set((s) => ({ aiClusters, aiClustersVersion: s.aiClustersVersion + 1 }));
 		if (Object.keys(aiClusters).length > 0) get().setClusterMode('ai_clusters');
 	},
 	clearAiClusters: () => {
-		set({ aiClusters: NO_CLUSTERS });
+		set((s) => ({ aiClusters: NO_CLUSTERS, aiClustersVersion: s.aiClustersVersion + 1 }));
 		get().setClusterMode('none');
 	},
 
