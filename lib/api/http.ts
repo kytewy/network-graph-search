@@ -26,6 +26,8 @@ export const RETRY = { COUNT: 1, DELAY_MS: 300 } as const;
 /** Retry network blips and server errors once, never a request the server rejected. */
 export function shouldRetry(failureCount: number, error: unknown) {
 	if (failureCount >= RETRY.COUNT) return false;
+	// Stopped on purpose (Stop / Esc): never retry
+	if (error instanceof DOMException && error.name === 'AbortError') return false;
 	if (error instanceof ApiError) return (error.status ?? 0) >= 500;
 	return true;
 }

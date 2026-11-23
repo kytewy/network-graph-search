@@ -1,20 +1,18 @@
 'use client';
 import { useMutation } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { ArrowUp, Copy, Download, Pencil, RotateCcw, Square, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import { analyzeNodes } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { RETRY, shouldRetry } from '@/lib/api/http';
-import { debugLog } from '@/lib/utils/debug';
-
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { X, Edit2, Check, XCircle } from 'lucide-react';
-import { useContextStore } from '@/lib/stores/context-store';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { chatMemory, CHAT_LIMITS } from '@/lib/contracts/analysis';
+import { useContextStore, type ChatConversation } from '@/lib/stores/context-store';
 import { getQuickPrompt, CHAT_PLACEHOLDERS } from '@/lib/prompts/analysis-prompts';
 import { reportError } from '@/lib/observability/capture-client';
-import { toAnalysisNode } from '@/lib/utils/llm-tokens';
+import { estimateTokens, toAnalysisNode } from '@/lib/utils/llm-tokens';
+import { debugLog } from '@/lib/utils/debug';
 
 interface ChatInterfaceProps {
 	safeSelectedNodes: string[];
@@ -26,506 +24,241 @@ interface ChatInterfaceProps {
 	contextSummary?: ReactNode;
 }
 
-export default function ChatInterface({
-	safeSelectedNodes,
-	networkState,
-	filterState,
-	rightPanelExpanded,
-	selectedNodesSummary,
-	contextSummary,
-}: ChatInterfaceProps) {
+const QUICK = [
+	['Summary', 'summary'],
+	['Business impact', 'businessImpact'],
+	['Citations', 'citations'],
+] as const;
+
+const STOPPED = '_Stopped._';
+const FAILED = 'Sorry, something went wrong while analysing the documents. Try again.';
+
+/** A plain-text copy of one question and answer, with the filters that were on */
+function downloadTurn(turn: ChatConversation, filterState: any, nodeIds: string[]) {
+	const filters = [
+		filterState?.selectedContinents?.length && `Continents: ${filterState.selectedContinents.join(', ')}`,
+		filterState?.selectedCountries?.length && `Countries: ${filterState.selectedCountries.join(', ')}`,
+		filterState?.selectedPublishers?.length && `Publishers: ${filterState.selectedPublishers.join(', ')}`,
+	].filter(Boolean);
+	const text = [
+		`Export date: ${new Date().toLocaleString()}`,
+		`Prompt: ${turn.prompt}`,
+		`Active filters: ${filters.join(' | ') || 'None'}`,
+		`Documents: ${nodeIds.join(', ') || 'None'}`,
+		'',
+		turn.response,
+	].join('\n\n');
+	const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+	const a = Object.assign(document.createElement('a'), { href: url, download: `network-analysis-${Date.now()}.txt` });
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+/**
+ * The chat: questions about the documents in context. Laid out like a chat
+ * app (newest at the bottom, box underneath); follow-ups remember the last
+ * few turns, and Stop really cancels.
+ */
+export default function ChatInterface({ safeSelectedNodes, filterState, rightPanelExpanded, contextSummary }: ChatInterfaceProps) {
 	const [chatInput, setChatInput] = useState('');
+	const [placeholder, setPlaceholder] = useState<string>(CHAT_PLACEHOLDERS.default);
+	const conversations = useContextStore((s) => s.chatConversations);
+	const contextNodes = useContextStore((s) => s.contextNodes);
+	const addTurn = useContextStore((s) => s.addChatConversation);
+	const updateTurn = useContextStore((s) => s.updateChatConversation);
+	const clearTurns = useContextStore((s) => s.clearChatConversations);
 
-	// Use persistent store for conversations and context nodes
-	const conversations = useContextStore((state) => state.chatConversations);
-	const contextNodes = useContextStore((state) => state.contextNodes);
-	const addChatConversation = useContextStore(
-		(state) => state.addChatConversation
-	);
-	const updateChatConversation = useContextStore(
-		(state) => state.updateChatConversation
-	);
-	const clearChatConversations = useContextStore(
-		(state) => state.clearChatConversations
-	);
+	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const endRef = useRef<HTMLDivElement>(null);
+	const stopRef = useRef<AbortController | null>(null);
+	const [thinking, setThinking] = useState(false);
 
-	const [isAnalyzing, setIsAnalyzing] = useState(false);
-	const [selectedPill, setSelectedPill] = useState<string | null>(null);
-	const [placeholder, setPlaceholder] = useState<string>(
-		CHAT_PLACEHOLDERS.default
-	);
-	const [isThinking, setIsThinking] = useState(false);
-	const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
-	const [editedPrompt, setEditedPrompt] = useState<string>('');
-
-	// Sending, waiting and errors through TanStack Query (questions are never remembered)
+	// A network blip is retried once; a stopped request never is
 	const analyze = useMutation({ mutationFn: analyzeNodes, retry: shouldRetry, retryDelay: RETRY.DELAY_MS }, queryClient);
 
-	const handleSendMessage = useCallback(
-		async (message?: string, conversationIdToUpdate?: string) => {
-			const promptToSend = message || chatInput;
-			if (!promptToSend.trim()) return;
+	// Only finished answers are remembered for follow-ups
+	const finished = conversations.filter((c) => (c.status ?? 'done') === 'done');
+	const memory = chatMemory(finished);
+	const memoryTokens = memory.reduce((sum, m) => sum + estimateTokens(m.content), 0);
 
-			setIsAnalyzing(true);
-			setIsThinking(true);
-			
-			// If updating an existing conversation, update it; otherwise create new
-			if (conversationIdToUpdate) {
-				updateChatConversation(conversationIdToUpdate, {
-					prompt: promptToSend,
-					response: 'Thinking...',
-					timestamp: new Date(),
-				});
-			} else {
-				const newConversation = {
-					id: Date.now().toString(),
-					prompt: promptToSend,
-					response: 'Thinking...',
-					timestamp: new Date(),
-				};
-				addChatConversation(newConversation);
-				conversationIdToUpdate = newConversation.id;
-			}
-
+	const send = useCallback(
+		async (text?: string) => {
+			const prompt = (text ?? chatInput).trim();
+			if (!prompt || thinking) return;
+			const id = Date.now().toString();
+			addTurn({ id, prompt, response: '', timestamp: new Date(), status: 'thinking' });
+			setChatInput('');
+			setThinking(true);
+			const controller = new AbortController();
+			stopRef.current = controller;
 			try {
-				// Prepare node data for analysis using context store nodes
-				const nodeData = contextNodes.length > 0 
-					? contextNodes.map(toAnalysisNode) // Same shape the token counter measures
-					: []; // No fallback to sample nodes - use actual context
-
-				// Every question goes to the AI; a network blip is retried once
 				const { summary } = await analyze.mutateAsync({
-					nodes: nodeData,
-					analysisType: 'summary',
-					customPrompt: promptToSend,
+					nodes: contextNodes.map(toAnalysisNode),
+					customPrompt: prompt,
+					history: memory,
+					signal: controller.signal,
 				});
-				updateChatConversation(conversationIdToUpdate, { response: summary });
+				updateTurn(id, { response: summary, status: 'done' });
 			} catch (error) {
-				reportError('chat', error);
-				updateChatConversation(conversationIdToUpdate, {
-					response:
-						'Sorry, I encountered an error while analyzing the network data. Please try again.',
-				});
+				if (controller.signal.aborted) {
+					updateTurn(id, { response: STOPPED, status: 'stopped' });
+				} else {
+					reportError('chat', error);
+					updateTurn(id, { response: FAILED, status: 'failed' });
+				}
 			} finally {
-				setIsAnalyzing(false);
-				setIsThinking(false);
-				setChatInput('');
-				setEditingConversationId(null);
-				setEditedPrompt('');
+				stopRef.current = null;
+				setThinking(false);
 			}
 		},
-		[
-			chatInput,
-			contextNodes,
-			addChatConversation,
-			updateChatConversation,
-			analyze.mutateAsync,
-		]
+		[chatInput, thinking, contextNodes, memory, addTurn, updateTurn, analyze]
 	);
 
-	// Listen for cluster analysis events from ClusteringInterface
+	const stop = () => stopRef.current?.abort();
+
+	// The newest message stays in view
 	useEffect(() => {
-		const handleChatSend = (e: CustomEvent) => {
-			const { message, nodes } = e.detail;
+		endRef.current?.scrollIntoView?.({ block: 'end' });
+	}, [conversations.length, thinking]);
 
-			// Auto-send the message
-			handleSendMessage(message);
-
-			debugLog('[ChatInterface] Received cluster analysis request:', {
-				nodeCount: nodes?.length || 0,
-			});
+	// Clustering can ask the chat a question ("Analyze this cluster")
+	useEffect(() => {
+		const onSend = (e: Event) => {
+			const { message, nodes } = (e as CustomEvent).detail;
+			debugLog('[Chat] cluster question for', nodes?.length || 0, 'documents');
+			send(message);
 		};
+		window.addEventListener('chat:send', onSend);
+		return () => window.removeEventListener('chat:send', onSend);
+	}, [send]);
 
-		window.addEventListener('chat:send', handleChatSend as EventListener);
-		return () => {
-			window.removeEventListener('chat:send', handleChatSend as EventListener);
-		};
-	}, [handleSendMessage]);
-
-	const handleFeedback = (conversationId: string, feedback: 'up' | 'down') => {
-		updateChatConversation(conversationId, { feedback });
+	const removeTurn = (id: string) => {
+		const keep = conversations.filter((c) => c.id !== id);
+		clearTurns();
+		keep.forEach(addTurn);
 	};
 
-	const handleDeleteConversation = (conversationId: string) => {
-		// We'll need to add this to the store
-		const remainingConversations = conversations.filter(
-			(c) => c.id !== conversationId
-		);
-		clearChatConversations();
-		remainingConversations.forEach((conv) => addChatConversation(conv));
-	};
-
-	const handleEditConversation = (conversationId: string, currentPrompt: string) => {
-		setEditingConversationId(conversationId);
-		setEditedPrompt(currentPrompt);
-	};
-
-	const handleSaveEdit = async (conversationId: string) => {
-		if (!editedPrompt.trim()) return;
-		await handleSendMessage(editedPrompt, conversationId);
-	};
-
-	const handleCancelEdit = () => {
-		setEditingConversationId(null);
-		setEditedPrompt('');
-	};
-
-	const handleCategoryClick = async (category: string) => {
-		let prompt = '';
-		const hasSelection = safeSelectedNodes.length > 0;
-		
-		switch (category) {
-			case 'Summary':
-				prompt = getQuickPrompt('summary', hasSelection);
-				break;
-			case 'Business Impact':
-				prompt = getQuickPrompt('businessImpact', hasSelection);
-				break;
-		}
-		setChatInput(prompt);
-		await handleSendMessage(prompt);
-	};
+	const tool = 'h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50';
 
 	return (
-		<div className="space-y-6">
-			<div>
-				<div className="flex flex-wrap gap-3 mb-6">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => {
-							setSelectedPill('Summary');
-							const hasSelection = safeSelectedNodes.length > 0;
-							const prompt = getQuickPrompt('summary', hasSelection);
-							setChatInput(prompt);
-							setPlaceholder(CHAT_PLACEHOLDERS.summary);
-						}}
-						className={`rounded-lg px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-							selectedPill === 'Summary'
-								? 'bg-primary text-primary-foreground border-primary shadow-lg'
-								: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
-						}`}
-						disabled={isThinking}>
-						Summary
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => {
-							setSelectedPill('Business Impact');
-							const hasSelection = safeSelectedNodes.length > 0;
-							const prompt = getQuickPrompt('businessImpact', hasSelection);
-							setChatInput(prompt);
-							setPlaceholder(CHAT_PLACEHOLDERS.businessImpact);
-						}}
-						className={`rounded-lg px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-							selectedPill === 'Business Impact'
-								? 'bg-primary text-primary-foreground border-primary shadow-lg'
-								: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
-						}`}
-						disabled={isThinking}>
-						Business Impact
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => {
-							setSelectedPill('Citations');
-							const hasSelection = safeSelectedNodes.length > 0;
-							const prompt = getQuickPrompt('citations', hasSelection);
-							setChatInput(prompt);
-							setPlaceholder(CHAT_PLACEHOLDERS.citations);
-						}}
-						className={`rounded-lg px-6 py-3 text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-							selectedPill === 'Citations'
-								? 'bg-primary text-primary-foreground border-primary shadow-lg'
-								: 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
-						}`}
-						disabled={isThinking}>
-						Citations
-					</Button>
+		<div className="flex flex-col min-h-[calc(100vh-5rem)]" data-testid="chat">
+			{/* Messages, oldest first */}
+			<div className="flex-1 space-y-4 pb-4">
+				{conversations.length === 0 && (
+					<p className="pt-8 text-center text-sm text-muted-foreground">
+						Ask about the documents in context. Follow-up questions remember the last {CHAT_LIMITS.MEMORY_TURNS} answers.
+					</p>
+				)}
+				{conversations.map((turn) => (
+					<div key={turn.id} className="space-y-2" data-chat-turn>
+						<div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-primary/10 px-4 py-2 text-sm whitespace-pre-wrap" data-role="user">
+							{turn.prompt}
+						</div>
+						{turn.status === 'thinking' ? (
+							<div className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+								Thinking
+								<span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+							</div>
+						) : (
+							<div data-role="assistant" className={turn.status === 'failed' ? 'text-destructive text-sm' : ''}>
+								<div className="prose prose-sm max-w-none text-gray-800 leading-relaxed">
+									<ReactMarkdown remarkPlugins={[remarkGfm]}>{turn.response}</ReactMarkdown>
+								</div>
+								<div className="mt-1 flex items-center gap-0.5">
+									<button type="button" className={tool} title="Copy" aria-label="Copy answer" onClick={() => navigator.clipboard?.writeText(turn.response)}>
+										<Copy className="h-3.5 w-3.5" />
+									</button>
+									<button type="button" className={tool} title="Ask again" aria-label="Retry" disabled={thinking} onClick={() => send(turn.prompt)}>
+										<RotateCcw className="h-3.5 w-3.5" />
+									</button>
+									<button
+										type="button"
+										className={tool}
+										title="Edit the question"
+										aria-label="Edit question"
+										onClick={() => {
+											setChatInput(turn.prompt);
+											inputRef.current?.focus();
+										}}>
+										<Pencil className="h-3.5 w-3.5" />
+									</button>
+									<button type="button" className={tool} title="Download" aria-label="Download answer" onClick={() => downloadTurn(turn, filterState, safeSelectedNodes)}>
+										<Download className="h-3.5 w-3.5" />
+									</button>
+									<button type="button" className={`${tool} ${turn.feedback === 'up' ? 'text-green-600' : ''}`} title="Good answer" aria-label="Good answer" aria-pressed={turn.feedback === 'up'} onClick={() => updateTurn(turn.id, { feedback: 'up' })}>
+										<ThumbsUp className="h-3.5 w-3.5" />
+									</button>
+									<button type="button" className={`${tool} ${turn.feedback === 'down' ? 'text-red-600' : ''}`} title="Bad answer" aria-label="Bad answer" aria-pressed={turn.feedback === 'down'} onClick={() => updateTurn(turn.id, { feedback: 'down' })}>
+										<ThumbsDown className="h-3.5 w-3.5" />
+									</button>
+									<button type="button" className={`${tool} ml-auto`} title="Delete" aria-label="Delete this question" onClick={() => removeTurn(turn.id)}>
+										<X className="h-3.5 w-3.5" />
+									</button>
+								</div>
+							</div>
+						)}
+					</div>
+				))}
+				<div ref={endRef} />
+			</div>
+
+			{/* The box stays at the bottom while the conversation scrolls above it */}
+			<div className="sticky bottom-0 -mx-4 px-4 pt-2 pb-3 bg-sidebar border-t border-sidebar-border space-y-1.5">
+				<div className="flex flex-wrap items-center gap-1.5">
+					{QUICK.map(([label, key]) => (
+						<button
+							key={key}
+							type="button"
+							disabled={thinking}
+							onClick={() => {
+								setChatInput(getQuickPrompt(key, safeSelectedNodes.length > 0));
+								setPlaceholder(CHAT_PLACEHOLDERS[key]);
+								inputRef.current?.focus();
+							}}
+							className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50">
+							{label}
+						</button>
+					))}
+					{conversations.length > 0 && (
+						<button type="button" onClick={clearTurns} disabled={thinking} className="ml-auto text-xs text-muted-foreground hover:text-foreground">
+							New chat
+						</button>
+					)}
 				</div>
 				{contextSummary}
-				<div className="relative mb-6 mt-1">
-					<Textarea
+				{memory.length > 0 && (
+					<p className="text-xs text-muted-foreground" data-testid="chat-memory">
+						+ remembers the last {memory.length / 2} {memory.length === 2 ? 'answer' : 'answers'} (~{memoryTokens.toLocaleString()} tokens)
+					</p>
+				)}
+				<div className="relative">
+					<textarea
+						ref={inputRef}
 						value={chatInput}
 						onChange={(e) => setChatInput(e.target.value)}
 						placeholder={placeholder}
-						className="w-full bg-white border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 pr-16 min-h-[120px] resize-none rounded-xl text-base leading-relaxed transition-all duration-200 focus:border-primary focus:ring-4 focus:ring-primary/10"
+						aria-label="Ask about the documents"
+						rows={rightPanelExpanded ? 3 : 2}
+						className="w-full resize-none rounded-xl border-2 border-gray-200 bg-white px-3 py-2 pr-12 text-sm leading-relaxed placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
 						onKeyDown={(e) => {
-							if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-								handleSendMessage();
+							// Enter sends, Shift+Enter is a new line (not while an accent/IME is composing)
+							if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+								e.preventDefault();
+								send();
 							}
-							if (e.key === 'Escape' && isThinking) {
-								setIsThinking(false);
-							}
+							if (e.key === 'Escape' && thinking) stop();
 						}}
 					/>
-					<Button
-						size="sm"
-						className={`absolute right-3 bottom-3 h-10 w-10 p-0 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-							isThinking ? 'animate-spin' : 'hover:rotate-12'
-						}`}
-						onClick={() => handleSendMessage()}
-						disabled={!chatInput.trim()}>
-						{isThinking ? (
-							<div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-						) : (
-							'→'
-						)}
-					</Button>
+					{thinking ? (
+						<button type="button" onClick={stop} aria-label="Stop" title="Stop (Esc)" className="absolute right-2 bottom-3 h-8 w-8 rounded-full bg-gray-900 text-white flex items-center justify-center">
+							<Square className="h-3 w-3 fill-current" />
+						</button>
+					) : (
+						<button type="button" onClick={() => send()} disabled={!chatInput.trim()} aria-label="Send" title="Send (Enter)" className="absolute right-2 bottom-3 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-40">
+							<ArrowUp className="h-4 w-4" />
+						</button>
+					)}
 				</div>
-				{isThinking && (
-				<div className="flex justify-start mb-4">
-					<div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200 shadow-sm px-4 py-3 max-w-xs">
-						<div className="flex items-center gap-2">
-							<span className="text-gray-700 text-sm font-medium">
-								Thinking
-							</span>
-							<div className="flex gap-1">
-								<span className="w-1.5 h-1.5 bg-primary rounded-full animate-[ping_1s_ease-in-out_infinite]" style={{ animationDelay: '0ms' }}></span>
-								<span className="w-1.5 h-1.5 bg-primary rounded-full animate-[ping_1s_ease-in-out_infinite]" style={{ animationDelay: '200ms' }}></span>
-								<span className="w-1.5 h-1.5 bg-primary rounded-full animate-[ping_1s_ease-in-out_infinite]" style={{ animationDelay: '400ms' }}></span>
-							</div>
-						</div>
-					</div>
-				</div>
-			)}
-				{conversations.length > 0 && (
-					<div className="space-y-6">
-						{conversations
-							.slice()
-							.reverse()
-							.map((conversation) => (
-								<div key={conversation.id} className="space-y-4">
-									<div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 relative">
-										<button
-											onClick={() => handleDeleteConversation(conversation.id)}
-											className="absolute top-3 right-3 p-1 text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/20 rounded transition-colors">
-											<X className="h-4 w-4" />
-										</button>
-
-										{/* Time */}
-									<div className="mb-4">
-										<span className="text-xs text-gray-500 font-medium">
-											Time: {conversation.timestamp.toLocaleTimeString()}
-										</span>
-									</div>
-
-									{/* Prompt Section */}
-									<div className="mb-4">
-										{editingConversationId === conversation.id ? (
-											<div className="space-y-2">
-												<Textarea
-													value={editedPrompt}
-													onChange={(e) => setEditedPrompt(e.target.value)}
-													className="w-full bg-white border-2 border-primary text-gray-900 min-h-[100px] resize-none rounded-lg text-sm leading-relaxed focus:border-primary focus:ring-2 focus:ring-primary/20"
-													placeholder="Edit your prompt..."
-													onKeyDown={(e) => {
-														if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-															handleSaveEdit(conversation.id);
-														}
-														if (e.key === 'Escape') {
-															handleCancelEdit();
-														}
-													}}
-												/>
-												<div className="flex gap-2">
-													<Button
-														size="sm"
-														onClick={() => handleSaveEdit(conversation.id)}
-														disabled={!editedPrompt.trim() || isAnalyzing}
-														className="bg-primary hover:bg-primary/90 text-primary-foreground">
-														<Check className="h-4 w-4 mr-1" />
-														Save & Re-run
-													</Button>
-													<Button
-														size="sm"
-														variant="outline"
-														onClick={handleCancelEdit}
-														disabled={isAnalyzing}>
-														<XCircle className="h-4 w-4 mr-1" />
-														Cancel
-													</Button>
-												</div>
-											</div>
-										) : (
-											<div className="prose prose-sm max-w-none text-gray-800 leading-relaxed rounded-lg p-4 bg-slate-50 border border-slate-200">
-												<ReactMarkdown remarkPlugins={[remarkGfm]}>
-													{conversation.prompt}
-												</ReactMarkdown>
-											</div>
-										)}
-									</div>
-
-									{/* Analysis Section with Markdown */}
-									<div className="mb-4">
-										<div className="prose prose-sm max-w-none text-gray-800 leading-relaxed">
-											<ReactMarkdown remarkPlugins={[remarkGfm]}>
-												{conversation.response}
-											</ReactMarkdown>
-										</div>
-									</div>
-
-									{/* Action Toolbar */}
-									<div className="flex items-center gap-2 pt-4 border-t border-gray-100">
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() => handleEditConversation(conversation.id, conversation.prompt)}
-											disabled={isAnalyzing || editingConversationId !== null}
-											className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors">
-											<Edit2 className="w-4 h-4 mr-1" />
-											{rightPanelExpanded && 'Edit & Re-run'}
-										</Button>
-
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() => {
-												navigator.clipboard.writeText(
-													`Prompt: ${conversation.prompt}\n\nAnalysis: ${conversation.response}`
-												);
-											}}
-											className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors">
-											<svg
-												className="w-4 h-4 mr-1"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24">
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													strokeWidth={2}
-													d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 002 2v8a2 2 0 002 2z"
-												/>
-											</svg>
-											{rightPanelExpanded && 'Copy'}
-										</Button>
-
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() => {
-												const timestamp = new Date().toLocaleString();
-												const filterBreadcrumb = [
-													filterState.selectedContinents?.length > 0 &&
-														`Continents: ${filterState.selectedContinents.join(
-															', '
-														)}`,
-													filterState.selectedCountries?.length > 0 &&
-														`Countries: ${filterState.selectedCountries.join(
-															', '
-														)}`,
-													filterState.selectedPublishers?.length > 0 &&
-														`Publishers: ${filterState.selectedPublishers.join(
-															', '
-														)}`,
-													filterState.searchTerm &&
-														`Search: "${filterState.searchTerm}"`,
-													filterState.selectedSimilarityRange?.length > 0 &&
-														`Similarity Range: ${filterState.selectedSimilarityRange[0]}% - ${filterState.selectedSimilarityRange[1]}%`,
-												]
-													.filter(Boolean)
-													.join(' | ');
-
-												const selectedNodeIds = safeSelectedNodes.join(', ');
-
-												const exportContent = [
-													`Export Date: ${timestamp}`,
-													``,
-													`Prompt: ${conversation.prompt}`,
-													``,
-													`Active Filters: ${filterBreadcrumb || 'None'}`,
-													``,
-													`Selected Node IDs: ${selectedNodeIds || 'None'}`,
-													``,
-													`Analysis:`,
-													conversation.response,
-												].join('\n');
-
-												const blob = new Blob([exportContent], {
-													type: 'text/plain',
-												});
-												const url = URL.createObjectURL(blob);
-												const a = document.createElement('a');
-												a.href = url;
-												a.download = `network-analysis-${Date.now()}.txt`;
-												document.body.appendChild(a);
-												a.click();
-												document.body.removeChild(a);
-												URL.revokeObjectURL(url);
-											}}
-											className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors">
-											<svg
-												className="w-4 h-4 mr-1"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24">
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													strokeWidth={2}
-													d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-												/>
-											</svg>
-											{rightPanelExpanded && 'Download'}
-										</Button>
-
-										<div className="flex items-center gap-1 ml-2">
-											<Button
-												variant="ghost"
-												size="sm"
-												onClick={() => handleFeedback(conversation.id, 'up')}
-												className={
-													conversation.feedback === 'up'
-														? 'text-green-600 bg-green-50 hover:bg-green-100'
-														: 'text-gray-600 hover:text-green-600 hover:bg-green-50'
-												}>
-												<svg
-													className="w-4 h-4"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24">
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={2}
-														d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-													/>
-												</svg>
-											</Button>
-											<Button
-												variant="ghost"
-												size="sm"
-												onClick={() =>
-													handleFeedback(conversation.id, 'down')
-												}
-												className={
-													conversation.feedback === 'down'
-														? 'text-red-600 bg-red-50 hover:bg-red-100'
-														: 'text-gray-600 hover:text-red-600 hover:bg-red-50'
-												}>
-												<svg
-													className="w-4 h-4"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24">
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={2}
-														d="M10 14H5.764a2 2 0 01-1.789-2.894l3.5-7A2 2 0 019.263 3h4.017c.163 0 .326.02.485.06L17 4m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 11V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
-													/>
-												</svg>
-											</Button>
-										</div>
-									</div>
-									</div>
-								</div>
-							))}
-					</div>
-				)}
 			</div>
 		</div>
 	);

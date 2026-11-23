@@ -20,12 +20,14 @@ interface ClusterSuggestion {
 	tags?: string[]; // Optional, for future use
 }
 
-interface ChatConversation {
+export interface ChatConversation {
 	id: string;
 	prompt: string;
 	response: string;
 	timestamp: Date;
 	feedback?: 'up' | 'down';
+	/** Waiting, stopped or failed turns are shown but not remembered for follow-ups */
+	status?: 'thinking' | 'done' | 'stopped' | 'failed';
 }
 
 interface ContextState {
