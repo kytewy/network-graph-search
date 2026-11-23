@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/lib/stores/app-state';
 import { contentPreview } from '@/lib/utils/text-preview';
-import { BookOpen, ArrowUpDown } from 'lucide-react';
+import { BookOpen, ArrowUpDown, LayoutGrid, Rows3 } from 'lucide-react';
+import { ResultsTable } from './ResultsTable';
 import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
 import { useContextStore } from '@/lib/stores/context-store';
 import type { Node } from '@/lib/config/types';
@@ -43,6 +44,8 @@ export function SearchResults() {
 	const searchResults = useAppStore((state) => state.searchResults);
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	const wide = useAppStore((state) => state.searchPanelExpanded);
+	const view = useAppStore((state) => state.resultsView);
+	const setView = useAppStore((state) => state.setResultsView);
 	
 	// Get context store methods
 	const contextNodes = useContextStore((state) => state.contextNodes);
@@ -118,6 +121,8 @@ export function SearchResults() {
 					<h3 className="text-base font-semibold">
 						Results ({processedResults.length})
 					</h3>
+					<div className="flex items-center gap-1">
+					{view === 'cards' && (
 					<Button
 						variant="ghost"
 						size="sm"
@@ -133,9 +138,35 @@ export function SearchResults() {
 							{sortDirection === 'desc' ? 'High → Low' : 'Low → High'}
 						</span>
 					</Button>
+					)}
+					{/* Cards or table; the choice is remembered */}
+					<div className="flex rounded-md border p-0.5" role="group" aria-label="Results view">
+						{([['cards', LayoutGrid, 'Show as cards'], ['table', Rows3, 'Show as table']] as const).map(([value, Icon, label]) => (
+							<button
+								key={value}
+								type="button"
+								aria-label={label}
+								aria-pressed={view === value}
+								title={label}
+								onClick={() => setView(value)}
+								className={`h-6 w-6 rounded flex items-center justify-center ${view === value ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}>
+								<Icon className="h-3.5 w-3.5" />
+							</button>
+						))}
+					</div>
+					</div>
 			</div>
 
-			{/* One column, or 2–3 when the search panel is open wide */}
+			{view === 'table' ? (
+				<ResultsTable
+					results={processedResults as Node[]}
+					wide={wide}
+					scoreColor={getScoreColor}
+					onToggleContext={handleToggleContext}
+					onOpen={openReadingMode}
+				/>
+			) : (
+			/* One column, or 2–3 when the search panel is open wide */
 			<div
 				className={`${
 					wide ? 'grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-start' : 'space-y-2'
@@ -217,6 +248,7 @@ export function SearchResults() {
 					</div>
 				)}
 			</div>
+			)}
 		</div>
 		{/* Document Overlay */}
 		{showDocumentOverlay && selectedNode && (

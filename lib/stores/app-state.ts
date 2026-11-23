@@ -400,6 +400,7 @@ export const useAppStore = create<AppState>()(
 					rightPanelExpanded: state.rightPanelExpanded,
 					searchPanelExpanded: state.searchPanelExpanded,
 					showActiveNodes: state.showActiveNodes,
+					resultsView: state.resultsView,
 					topK: state.topK,
 				}),
 			}

@@ -14,6 +14,8 @@ export interface ViewSlice {
 	searchPanelExpanded: boolean;
 	/** Context table: show only the documents still on the graph */
 	showActiveNodes: boolean;
+	/** Search results as cards or as a table */
+	resultsView: 'cards' | 'table';
 
 	setColorMode: (mode: ColorMode) => void;
 	setNodeSizeMode: (mode: NodeSizeMode) => void;
@@ -23,6 +25,7 @@ export interface ViewSlice {
 	setRightPanelExpanded: (expanded: boolean) => void;
 	setSearchPanelExpanded: (expanded: boolean) => void;
 	setShowActiveNodes: (show: boolean) => void;
+	setResultsView: (view: 'cards' | 'table') => void;
 }
 
 export const createViewSlice: StateCreator<AppState, [['zustand/devtools', never], ['zustand/persist', unknown]], [], ViewSlice> = (set) => ({
@@ -34,6 +37,7 @@ export const createViewSlice: StateCreator<AppState, [['zustand/devtools', never
 	rightPanelExpanded: false,
 	searchPanelExpanded: false,
 	showActiveNodes: false,
+	resultsView: 'cards',
 
 	setColorMode: (colorMode) => set({ colorMode }),
 	setNodeSizeMode: (nodeSizeMode) => set({ nodeSizeMode }),
@@ -46,4 +50,5 @@ export const createViewSlice: StateCreator<AppState, [['zustand/devtools', never
 	setSearchPanelExpanded: (searchPanelExpanded) =>
 		set(searchPanelExpanded ? { searchPanelExpanded, rightPanelExpanded: false } : { searchPanelExpanded }),
 	setShowActiveNodes: (showActiveNodes) => set({ showActiveNodes }),
+	setResultsView: (resultsView) => set({ resultsView }),
 });
