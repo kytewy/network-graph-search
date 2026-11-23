@@ -61,8 +61,64 @@ export function SearchPanel() {
 		? filteredResults.length
 		: 0;
 
+	// » / « toggles between the tabbed sidebar and the wide view
+	const expandButton = (
+		<Button
+			variant="ghost"
+			size="sm"
+			onClick={() => setExpanded(!expanded)}
+			aria-label={expanded ? 'Collapse search panel' : 'Expand search panel'}
+			title={expanded ? 'Collapse' : 'Expand'}
+			className="h-6 px-2 text-sidebar-foreground/70 hover:text-sidebar-foreground">
+			{expanded ? '«' : '»'}
+		</Button>
+	);
+
+	// Wide: no tabs. Search box on top, filters column beside the results grid,
+	// so ticking a filter changes the results right next to it.
+	if (expanded) {
+		return (
+			<div
+				data-testid="search-panel"
+				className="absolute left-0 top-0 right-96 z-20 shadow-xl bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300">
+				<div className="px-6 py-4 shrink-0 border-b border-sidebar-border flex items-start gap-2">
+					<div className="flex-1">
+						<SearchInput />
+					</div>
+					{expandButton}
+				</div>
+				{searchCount > 0 ? (
+					<div className="flex flex-1 min-h-0">
+						<aside
+							aria-label="Filters"
+							className="w-72 shrink-0 overflow-y-auto border-r border-sidebar-border p-4 space-y-2">
+							{/* FilterPanel has its own title; just say when filters narrow things */}
+							{filteredCount !== searchCount && (
+								<p className="text-xs text-muted-foreground">
+									showing {filteredCount} of {searchCount}
+								</p>
+							)}
+							<FilterPanel />
+						</aside>
+						<div className="flex-1 min-w-0 overflow-y-auto p-4">
+							<SearchResults />
+						</div>
+					</div>
+				) : (
+					<div className="flex flex-1 flex-col items-center justify-center">
+						<Search className="h-12 w-12 text-muted-foreground mb-3" />
+						<p className="text-sm text-muted-foreground">
+							Enter a search query above to see results
+						</p>
+					</div>
+				)}
+			</div>
+		);
+	}
+
 	return (
 		<div
+			data-testid="search-panel"
 			className={`${
 				expanded ? 'absolute left-0 top-0 right-96 z-20 shadow-xl' : 'w-96'
 			} bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
@@ -101,15 +157,7 @@ export function SearchPanel() {
 								)}
 							</TabsTrigger>
 						</TabsList>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setExpanded(!expanded)}
-							aria-label={expanded ? 'Collapse search panel' : 'Expand search panel'}
-							title={expanded ? 'Collapse' : 'Expand'}
-							className="h-6 px-2 text-sidebar-foreground/70 hover:text-sidebar-foreground">
-							{expanded ? '«' : '»'}
-						</Button>
+						{expandButton}
 					</div>
 
 					{/* Results Tab */}
