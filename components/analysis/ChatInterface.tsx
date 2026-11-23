@@ -3,15 +3,18 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowUp, BookmarkPlus, Copy, Download, Pencil, Plus, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ArrowUp, BookmarkPlus, Copy, FileText, Pencil, Plus, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { analyzeNodes } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
 import { chatMemory, CHAT_LIMITS } from '@/lib/contracts/analysis';
-import { useContextStore, type ChatConversation } from '@/lib/stores/context-store';
+import { useContextStore } from '@/lib/stores/context-store';
 import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 import { matchPrompts, recentPrompts, useSavedPrompts, type SavedPrompt } from '@/lib/stores/saved-prompts';
 import { SavedPromptsDialog } from './SavedPromptsDialog';
+import { DocumentView } from './DocumentView';
+import { documentTitle } from '@/lib/chat/citations';
+import { useAppStore } from '@/lib/stores/app-state';
 import { reportError } from '@/lib/observability/capture-client';
 import { toAnalysisNode } from '@/lib/utils/llm-tokens';
 import { debugLog } from '@/lib/utils/debug';
@@ -34,35 +37,18 @@ const STOPPED = '_Stopped._';
 const MAX_BOX_PX = 200;
 const FAILED = 'Sorry, something went wrong while analysing the documents. Try again.';
 
-/** A plain-text copy of one question and answer, with the filters that were on */
-function downloadTurn(turn: ChatConversation, filterState: any, nodeIds: string[]) {
-	const filters = [
-		filterState?.selectedContinents?.length && `Continents: ${filterState.selectedContinents.join(', ')}`,
-		filterState?.selectedCountries?.length && `Countries: ${filterState.selectedCountries.join(', ')}`,
-		filterState?.selectedPublishers?.length && `Publishers: ${filterState.selectedPublishers.join(', ')}`,
-	].filter(Boolean);
-	const text = [
-		`Export date: ${new Date().toLocaleString()}`,
-		`Prompt: ${turn.prompt}`,
-		`Active filters: ${filters.join(' | ') || 'None'}`,
-		`Documents: ${nodeIds.join(', ') || 'None'}`,
-		'',
-		turn.response,
-	].join('\n\n');
-	const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
-	const a = Object.assign(document.createElement('a'), { href: url, download: `network-analysis-${Date.now()}.txt` });
-	a.click();
-	URL.revokeObjectURL(url);
-}
-
 /**
  * The chat: questions about the documents in context. Laid out like a chat
  * app (newest at the bottom, box underneath); follow-ups remember the last
  * few turns, and Stop really cancels.
  */
-export default function ChatInterface({ safeSelectedNodes, filterState, rightPanelExpanded, contextSummary }: ChatInterfaceProps) {
+export default function ChatInterface({ rightPanelExpanded, contextSummary }: ChatInterfaceProps) {
 	const [chatInput, setChatInput] = useState('');
 	const savedPrompts = useSavedPrompts((s) => s.prompts);
+	// An answer opened as a document: beside the chat when the panel is wide, over it when narrow
+	const [openDocId, setOpenDocId] = useState<string | null>(null);
+	const [docFull, setDocFull] = useState(false);
+	const setRightPanelExpanded = useAppStore((s) => s.setRightPanelExpanded);
 	const touchPrompt = useSavedPrompts((s) => s.touchPrompt);
 	// The "/" menu: open while the box starts with "/" (one line), until Esc closes it
 	const [slashIndex, setSlashIndex] = useState(0);
@@ -173,11 +159,14 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 
 	const tool = 'h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50';
 
-	return (
+	const openTurn = conversations.find((c) => c.id === openDocId && c.status === 'done');
+	const split = Boolean(openTurn) && rightPanelExpanded && !docFull;
+
+	const chat = (
 		<div
 			data-testid="chat"
 			// Wide: a comfortable reading column in the middle instead of edge to edge
-			className={`flex flex-col min-h-[calc(100vh-5rem)] ${rightPanelExpanded ? 'w-full max-w-3xl mx-auto px-6' : ''}`}>
+			className={`flex flex-col min-h-[calc(100vh-5rem)] ${rightPanelExpanded && !split ? 'w-full max-w-3xl mx-auto px-6' : ''}`}>
 			{/* Messages, oldest first */}
 			<div className="flex-1 space-y-4 pb-4">
 				{conversations.length === 0 && (
@@ -228,12 +217,22 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 										<ReactMarkdown remarkPlugins={[remarkGfm]}>{turn.response}</ReactMarkdown>
 									</div>
 								</div>
+								{/* Opens the answer as a document */}
+								{turn.status === 'done' && (
+									<button
+										type="button"
+										onClick={() => setOpenDocId(turn.id)}
+										aria-label={`Open ${documentTitle(turn.response, turn.prompt)} as a document`}
+										aria-pressed={openDocId === turn.id}
+										className={`mt-2 flex max-w-full items-center gap-2 rounded-lg border px-3 py-1.5 text-sm hover:border-primary/50 hover:bg-primary/5 ${openDocId === turn.id ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white'}`}>
+										<FileText className="h-4 w-4 shrink-0 text-primary" />
+										<span className="truncate">{documentTitle(turn.response, turn.prompt)}</span>
+										<span aria-hidden className="text-muted-foreground">▸</span>
+									</button>
+								)}
 								<div className="mt-1 flex items-center gap-0.5">
 									<button type="button" className={tool} title="Copy" aria-label="Copy answer" onClick={() => navigator.clipboard?.writeText(turn.response)}>
 										<Copy className="h-3.5 w-3.5" />
-									</button>
-									<button type="button" className={tool} title="Download" aria-label="Download answer" onClick={() => downloadTurn(turn, filterState, safeSelectedNodes)}>
-										<Download className="h-3.5 w-3.5" />
 									</button>
 									<button type="button" className={`${tool} ${turn.feedback === 'up' ? 'text-green-600' : ''}`} title="Good answer" aria-label="Good answer" aria-pressed={turn.feedback === 'up'} onClick={() => updateTurn(turn.id, { feedback: 'up' })}>
 										<ThumbsUp className="h-3.5 w-3.5" />
@@ -369,6 +368,35 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 				draft={chatInput}
 				saveText={saveText}
 			/>
+		</div>
+	);
+
+	if (!openTurn) return chat;
+
+	const doc = (
+		<DocumentView
+			key={openTurn.id}
+			question={openTurn.prompt}
+			answer={openTurn.response}
+			// Only "full" when wide and filling the panel; then ⤢ brings the chat back beside it
+			full={rightPanelExpanded && docFull}
+			// Narrow: widen into the split view. Wide: fill the panel, or go back to the split
+			onExpand={() => (rightPanelExpanded ? setDocFull(!docFull) : setRightPanelExpanded(true))}
+			onClose={() => {
+				setOpenDocId(null);
+				setDocFull(false);
+			}}
+		/>
+	);
+
+	// Narrow panel, or expanded: the document on its own
+	if (!split) return <div className="h-[calc(100vh-5rem)]">{doc}</div>;
+
+	// Wide: the chat on the left, the document on the right (it stays put while the chat scrolls)
+	return (
+		<div className="flex gap-4">
+			<div className="w-2/5 min-w-0">{chat}</div>
+			<div className="sticky top-16 h-[calc(100vh-5rem)] min-w-0 flex-1 self-start">{doc}</div>
 		</div>
 	);
 }

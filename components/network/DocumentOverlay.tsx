@@ -82,6 +82,15 @@ export default function DocumentOverlay({
 	const [tagSuccess, setTagSuccess] = useState(false);
 	const [tagError, setTagError] = useState<string | null>(null);
 
+	// Esc closes reading mode (unless you're typing a tag)
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape' && !(e.target instanceof HTMLInputElement)) onClose();
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, [onClose]);
+
 	useEffect(() => {
 		if (tagsLoadError) reportError('document-tags-load', tagsLoadError);
 	}, [tagsLoadError]);
@@ -180,6 +189,8 @@ export default function DocumentOverlay({
 								variant="ghost"
 								size="sm"
 								onClick={onClose}
+								aria-label="Close reading mode"
+								title="Close (Esc)"
 								className="h-8 w-8 p-0">
 								<X className="h-4 w-4" />
 							</Button>
