@@ -34,7 +34,6 @@ test('chat: Enter sends, follow-ups carry earlier turns, and Stop cancels', asyn
 		{ role: 'user', content: 'Summarize these' },
 		{ role: 'assistant', content: 'Answer 1' },
 	]);
-	await expect(page.getByTestId('chat-memory')).toContainText('last 2 answers');
 
 	// Stop cancels a slow answer, and a stopped turn isn't remembered
 	slow = true;
@@ -42,7 +41,11 @@ test('chat: Enter sends, follow-ups carry earlier turns, and Stop cancels', asyn
 	await box.press('Enter');
 	await page.getByRole('button', { name: 'Stop' }).click();
 	await expect(page.locator('[data-role="assistant"]').last()).toContainText('Stopped');
-	await expect(page.getByTestId('chat-memory')).toContainText('last 2 answers');
+	slow = false;
+	await box.fill('One more');
+	await box.press('Enter');
+	await expect(page.locator('[data-role="assistant"]').last()).toContainText('Answer');
+	expect(bodies.at(-1).history).toHaveLength(4);
 
 	// The box grows with a long question, then stops growing and scrolls
 	const short = (await box.boundingBox())!.height;

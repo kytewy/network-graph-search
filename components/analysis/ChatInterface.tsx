@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowUp, Copy, Download, Pencil, RotateCcw, Square, ThumbsDown, ThumbsUp, X } from 'lucide-react';
+import { ArrowUp, Copy, Download, Pencil, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { analyzeNodes } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { RETRY, shouldRetry } from '@/lib/api/http';
@@ -11,7 +11,7 @@ import { chatMemory, CHAT_LIMITS } from '@/lib/contracts/analysis';
 import { useContextStore, type ChatConversation } from '@/lib/stores/context-store';
 import { getQuickPrompt, CHAT_PLACEHOLDERS } from '@/lib/prompts/analysis-prompts';
 import { reportError } from '@/lib/observability/capture-client';
-import { estimateTokens, toAnalysisNode } from '@/lib/utils/llm-tokens';
+import { toAnalysisNode } from '@/lib/utils/llm-tokens';
 import { debugLog } from '@/lib/utils/debug';
 
 interface ChatInterfaceProps {
@@ -61,14 +61,13 @@ function downloadTurn(turn: ChatConversation, filterState: any, nodeIds: string[
  * app (newest at the bottom, box underneath); follow-ups remember the last
  * few turns, and Stop really cancels.
  */
-export default function ChatInterface({ safeSelectedNodes, filterState, contextSummary }: ChatInterfaceProps) {
+export default function ChatInterface({ safeSelectedNodes, filterState, rightPanelExpanded, contextSummary }: ChatInterfaceProps) {
 	const [chatInput, setChatInput] = useState('');
 	const [placeholder, setPlaceholder] = useState<string>(CHAT_PLACEHOLDERS.default);
 	const conversations = useContextStore((s) => s.chatConversations);
 	const contextNodes = useContextStore((s) => s.contextNodes);
 	const addTurn = useContextStore((s) => s.addChatConversation);
 	const updateTurn = useContextStore((s) => s.updateChatConversation);
-	const clearTurns = useContextStore((s) => s.clearChatConversations);
 
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const endRef = useRef<HTMLDivElement>(null);
@@ -81,7 +80,6 @@ export default function ChatInterface({ safeSelectedNodes, filterState, contextS
 	// Only finished answers are remembered for follow-ups
 	const finished = conversations.filter((c) => (c.status ?? 'done') === 'done');
 	const memory = chatMemory(finished);
-	const memoryTokens = memory.reduce((sum, m) => sum + estimateTokens(m.content), 0);
 
 	const send = useCallback(
 		async (text?: string) => {
@@ -143,16 +141,13 @@ export default function ChatInterface({ safeSelectedNodes, filterState, contextS
 		return () => window.removeEventListener('chat:send', onSend);
 	}, [send]);
 
-	const removeTurn = (id: string) => {
-		const keep = conversations.filter((c) => c.id !== id);
-		clearTurns();
-		keep.forEach(addTurn);
-	};
-
 	const tool = 'h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50';
 
 	return (
-		<div className="flex flex-col min-h-[calc(100vh-5rem)]" data-testid="chat">
+		<div
+			data-testid="chat"
+			// Wide: a comfortable reading column in the middle instead of edge to edge
+			className={`flex flex-col min-h-[calc(100vh-5rem)] ${rightPanelExpanded ? 'w-full max-w-3xl mx-auto px-6' : ''}`}>
 			{/* Messages, oldest first */}
 			<div className="flex-1 space-y-4 pb-4">
 				{conversations.length === 0 && (
@@ -166,9 +161,12 @@ export default function ChatInterface({ safeSelectedNodes, filterState, contextS
 							{turn.prompt}
 						</div>
 						{turn.status === 'thinking' ? (
-							<div className="w-fit flex items-center gap-2 rounded-2xl rounded-bl-sm border border-gray-200 bg-white px-4 py-2 text-sm text-muted-foreground" role="status">
-								Thinking
-								<span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+							<div className="w-fit flex items-center gap-2 rounded-2xl rounded-bl-sm border border-gray-200 bg-white px-4 py-2 text-sm text-muted-foreground" role="status" aria-label="Thinking">
+								<span className="sr-only">Thinking</span>
+								{/* Three dots that light up one after another */}
+								{[0, 0.2, 0.4].map((delay) => (
+									<span key={delay} aria-hidden className="chat-dot h-2 w-2 rounded-full bg-primary" style={{ animationDelay: `${delay}s` }} />
+								))}
 							</div>
 						) : (
 							<div data-role="assistant" className={turn.status === 'failed' ? 'text-destructive text-sm' : ''}>
@@ -205,9 +203,6 @@ export default function ChatInterface({ safeSelectedNodes, filterState, contextS
 									<button type="button" className={`${tool} ${turn.feedback === 'down' ? 'text-red-600' : ''}`} title="Bad answer" aria-label="Bad answer" aria-pressed={turn.feedback === 'down'} onClick={() => updateTurn(turn.id, { feedback: 'down' })}>
 										<ThumbsDown className="h-3.5 w-3.5" />
 									</button>
-									<button type="button" className={`${tool} ml-auto`} title="Delete" aria-label="Delete this question" onClick={() => removeTurn(turn.id)}>
-										<X className="h-3.5 w-3.5" />
-									</button>
 								</div>
 							</div>
 						)}
@@ -219,11 +214,6 @@ export default function ChatInterface({ safeSelectedNodes, filterState, contextS
 			{/* The box stays at the bottom while the conversation scrolls above it */}
 			<div className="sticky bottom-0 -mx-4 px-4 pt-2 pb-3 bg-sidebar space-y-1.5">
 				{contextSummary}
-				{memory.length > 0 && (
-					<p className="text-xs text-muted-foreground" data-testid="chat-memory">
-						+ remembers the last {memory.length / 2} {memory.length === 2 ? 'answer' : 'answers'} (~{memoryTokens.toLocaleString()} tokens)
-					</p>
-				)}
 				{/* Like Claude's box: the text on top, a toolbar row inside along the bottom */}
 				<div
 					className="rounded-2xl border border-gray-300 bg-white shadow-sm transition-shadow focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10"

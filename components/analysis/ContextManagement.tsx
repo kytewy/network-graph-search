@@ -325,7 +325,8 @@ export default function ContextManagement({
 				className="flex flex-col flex-1">
 				<div data-panel-header="right" className={`${PANEL_HEADER} sticky top-0 z-10 bg-sidebar`}>
 					{headerStart}
-					<TabsList className="grid flex-1 grid-cols-3 bg-transparent p-0 h-auto gap-0">
+					{/* Stays a compact group in the middle when the panel is wide */}
+					<TabsList className="grid flex-1 max-w-md mx-auto grid-cols-3 bg-transparent p-0 h-auto gap-0">
 						<TabsTrigger value="nodes" className={PANEL_TAB}>
 							<CheckSquare className="h-3 w-3" />
 							<span>Context</span>

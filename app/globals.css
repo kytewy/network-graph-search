@@ -126,3 +126,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Chat "thinking" dots: each lights up in turn (delays set on the dots), then it starts over */
+@keyframes chat-dot {
+	0%, 40%, 100% { opacity: 0.25; transform: translateY(0); }
+	20% { opacity: 1; transform: translateY(-2px); }
+}
+.chat-dot {
+	animation: chat-dot 1.2s ease-in-out infinite;
+}
