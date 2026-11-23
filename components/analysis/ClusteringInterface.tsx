@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import {
 	ChevronDown,
 	ChevronUp,
-	BarChart4,
 	Tag,
 	Check,
 	Loader2,
@@ -20,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useContextStore } from '@/lib/stores/context-store';
 import { buildClusterAnalysisPrompt } from '@/lib/prompts/analysis-prompts';
+import { ClusterOverview } from './ClusterOverview';
 import { createLatestRequest, isAbortError } from '@/lib/utils/latest-request';
 import { reportError } from '@/lib/observability/capture-client';
 import { useHighlightOnHover } from '@/hooks/use-highlight-on-hover';
@@ -407,51 +407,6 @@ export default function ClusteringInterface({
 		}
 	};
 
-	// Helper function to format the executive summary with better structure
-	const formatSummary = (summary: string) => {
-		// Split by lines and process each line
-		const lines = summary.split('\n').filter((line) => line.trim());
-
-		return lines.map((line, index) => {
-			// Check if line starts with "Found X clusters"
-			if (line.includes('Found') && line.includes('clusters')) {
-				return (
-					<div key={index} className="text-lg font-semibold text-blue-900 mb-3">
-						{line}
-					</div>
-				);
-			}
-
-			// Check if line starts with "- **Cluster"
-			if (line.startsWith('- **Cluster')) {
-				const parts = line.split('): ');
-				if (parts.length === 2) {
-					const clusterPart = parts[0] + '):';
-					const termsPart = parts[1];
-
-					return (
-						<div
-							key={index}
-							className="mb-2 p-2 bg-white rounded border border-blue-100">
-							<div className="font-medium text-blue-800 mb-1">
-								{clusterPart}
-							</div>
-							<div className="text-sm text-gray-700 ml-2">
-								<span className="font-medium">Key terms:</span> {termsPart}
-							</div>
-						</div>
-					);
-				}
-			}
-
-			// Default formatting for other lines
-			return (
-				<div key={index} className="text-sm text-blue-800 mb-1">
-					{line}
-				</div>
-			);
-		});
-	};
 
 	return (
 		<div className="space-y-4">
@@ -486,39 +441,16 @@ export default function ClusteringInterface({
 			{/* Cluster Results */}
 			{clusterResults && (
 				<div className="space-y-4">
-					{/* Executive Summary */}
-					{clusterResults.executive_summary && (
-						<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-							<h5 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-								<BarChart4 className="h-4 w-4" />
-								Cluster Analysis
-							</h5>
-							<div className="space-y-2">
-								{formatSummary(clusterResults.executive_summary)}
-							</div>
-						</div>
-					)}
+					{/* Count, a quick AI summary and one line per cluster */}
+					<ClusterOverview
+						clusters={clusterResults.clusters}
+						suggestions={clusterSuggestions}
+						namesLoading={loadingSuggestions}
+						onJump={(id) => document.getElementById(`cluster-card-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+					/>
 
 					{/* Clusters */}
 					<div className="space-y-3">
-						<div className="flex items-center justify-between flex-wrap gap-2">
-							<div>
-								<h5 className="font-semibold text-gray-900 mb-1">
-									Clusters ({clusterResults.clusters.length})
-								</h5>
-								<p className="text-xs text-gray-600">
-									Total:{' '}
-									{clusterResults.clusters.reduce((sum, c) => sum + c.size, 0)}{' '}
-									nodes across all clusters
-								</p>
-							</div>
-							{loadingSuggestions && (
-								<div className="flex items-center gap-2 text-sm text-muted-foreground">
-									<Loader2 className="w-4 h-4 animate-spin" />
-									Generating names...
-								</div>
-							)}
-						</div>
 						{clusterResults.clusters.map((cluster, index) => {
 							const isExpanded = expandedClusters.has(cluster.cluster_id);
 							const suggestion = clusterSuggestions.get(index);
@@ -528,7 +460,8 @@ export default function ClusteringInterface({
 							return (
 								<div
 									key={cluster.cluster_id}
-									className={`rounded-lg p-4 relative transition-all duration-200 ${
+									id={`cluster-card-${cluster.cluster_id}`}
+									className={`scroll-mt-16 rounded-lg p-4 relative transition-all duration-200 ${
 										inContext
 											? 'bg-primary/5 border-2 border-primary shadow-md'
 											: 'bg-white border border-gray-200 hover:border-gray-300'

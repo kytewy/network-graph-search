@@ -327,6 +327,14 @@ export const QUICK_PROMPTS = {
 } as const;
 
 /**
+ * The quick summary above the clusters. Each "document" sent with it is one
+ * cluster (its name, description and key terms), not a real document.
+ */
+export const CLUSTER_OVERVIEW_PROMPT = `Each item below is a cluster of documents, not a single document: its name, how many documents it holds, a short description and its key terms.
+
+In 2 or 3 plain sentences, give a quick overview: what the clusters cover together, how they relate or differ, and which is largest. No headings, no lists, no citations.`;
+
+/**
  * Get a quick action prompt based on context
  */
 export function getQuickPrompt(

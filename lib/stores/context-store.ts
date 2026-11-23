@@ -1,8 +1,11 @@
 import { create } from 'zustand';
 import { type Node } from '@/lib/stores/app-state';
 
-interface ClusterResult {
+export interface ClusterResult {
 	cluster_id: string;
+	/** "Cluster 0" and a keyword line from the clustering service, before the AI names it */
+	label?: string;
+	description?: string;
 	size: number;
 	top_terms?: string[];
 	node_ids?: string[];
