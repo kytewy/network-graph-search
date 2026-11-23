@@ -40,9 +40,7 @@ export function SearchInput() {
 	// Remembered searches, retries and cancelling: see hooks/use-search.ts
 	const { isLoading } = useSearch();
 	// A search goes into the web address, which then runs it
-	const { submit, clear } = useUrlSearch();
-	const searchResults = useAppStore((state) => state.searchResults);
-	const setSearchResults = useAppStore((state) => state.setSearchResults);
+	const { submit } = useUrlSearch();
 
 	// Metadata filter state
 	const selectedContinents = useAppStore((state) => state.selectedContinents);
@@ -69,10 +67,12 @@ export function SearchInput() {
 	};
 
 	// Handle clear search
-	const handleClear = () => {
+	// Clears only the text, so you can type a new query; the results and the
+	// graph stay until the next search replaces them
+	const handleClear = (event: React.MouseEvent<HTMLButtonElement>) => {
 		setQuery('');
-		setSearchResults([]);
-		clear();
+		// Keep the cursor in the box, ready for the next query
+		event.currentTarget.parentElement?.querySelector('input')?.focus();
 	};
 
 	// Metadata filter data - Always show these 6 continents for pre-search filtering
@@ -99,11 +99,13 @@ export function SearchInput() {
 					onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
 					className="w-full h-12 text-base px-4 font-medium"
 				/>
-				{searchResults.length > 0 && !isLoading && (
+				{query.length > 0 && !isLoading && (
 					<button
+						type="button"
+						aria-label="Clear search text"
 						onClick={handleClear}
 						className="absolute top-1/2 -translate-y-1/2 right-3 h-5 w-5 rounded-full bg-muted-foreground/80 hover:bg-muted-foreground text-white flex items-center justify-center transition-colors"
-						title="Clear search">
+						title="Clear search text">
 						<X className="h-3 w-3" />
 					</button>
 				)}

@@ -14,3 +14,13 @@ test('refreshing the page brings the same search back', async ({ page }) => {
 	await page.reload();
 	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', String(RESULT_COUNT));
 });
+
+test('the search box ✕ clears only the text; the results and graph stay', async ({ page }) => {
+	await search(page, 'AI regulation');
+	await page.getByRole('button', { name: 'Clear search text' }).click();
+
+	await expect(page.getByPlaceholder(/Search across/)).toHaveValue('');
+	await expect(page.getByPlaceholder(/Search across/)).toBeFocused();
+	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', String(RESULT_COUNT));
+	await expect(page).toHaveURL(/[?&]q=AI/);
+});
