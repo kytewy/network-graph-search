@@ -119,7 +119,11 @@ export function NetworkGraphCanvasClient() {
 				<VisualizationControls />
 			</div>
 
-			<div className="flex-1 w-full border rounded bg-gray-50 overflow-hidden relative">
+			{/* data-node-count: how many nodes are drawn, for the browser tests (e2e/) */}
+			<div
+				data-testid="graph"
+				data-node-count={safeGraphNodes.length}
+				className="flex-1 w-full border rounded bg-gray-50 overflow-hidden relative">
 				{/* Instruction for lasso selection */}
 				<div
 					style={{

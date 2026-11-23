@@ -1,0 +1,114 @@
+{
+  "nodes": [
+    {
+      "id": "eu-ai-act",
+      "label": "EU AI Act",
+      "score": 0.92,
+      "similarity": 0.92,
+      "publisher": "Government",
+      "documentType": "Law",
+      "summary": "Summary of EU AI Act.",
+      "content": "Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. Full text of EU AI Act. ",
+      "continent": "Europe",
+      "country": "European Union",
+      "size": 9.200000000000001,
+      "tags": []
+    },
+    {
+      "id": "eu-guidance",
+      "label": "EU AI Office guidance",
+      "score": 0.85,
+      "similarity": 0.85,
+      "publisher": "Regulator",
+      "documentType": "Guidance",
+      "summary": "Summary of EU AI Office guidance.",
+      "content": "Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. Full text of EU AI Office guidance. ",
+      "continent": "Europe",
+      "country": "European Union",
+      "size": 8.5,
+      "tags": []
+    },
+    {
+      "id": "uk-principles",
+      "label": "UK AI regulation principles",
+      "score": 0.74,
+      "similarity": 0.74,
+      "publisher": "Government",
+      "documentType": "Guidance",
+      "summary": "Summary of UK AI regulation principles.",
+      "content": "Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. Full text of UK AI regulation principles. ",
+      "continent": "Europe",
+      "country": "United Kingdom",
+      "size": 7.4,
+      "tags": []
+    },
+    {
+      "id": "osfi-e23",
+      "label": "OSFI Guideline E-23",
+      "score": 0.81,
+      "similarity": 0.81,
+      "publisher": "Regulator",
+      "documentType": "Guidance",
+      "summary": "Summary of OSFI Guideline E-23.",
+      "content": "Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. Full text of OSFI Guideline E-23. ",
+      "continent": "North America",
+      "country": "Canada",
+      "size": 8.100000000000001,
+      "tags": []
+    },
+    {
+      "id": "us-eo",
+      "label": "US Executive Order on AI",
+      "score": 0.68,
+      "similarity": 0.68,
+      "publisher": "Government",
+      "documentType": "Law",
+      "summary": "Summary of US Executive Order on AI.",
+      "content": "Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. Full text of US Executive Order on AI. ",
+      "continent": "North America",
+      "country": "USA",
+      "size": 6.800000000000001,
+      "tags": []
+    },
+    {
+      "id": "sg-framework",
+      "label": "Singapore Model AI Governance Framework",
+      "score": 0.55,
+      "similarity": 0.55,
+      "publisher": "Regulator",
+      "documentType": "Guidance",
+      "summary": "Summary of Singapore Model AI Governance Framework.",
+      "content": "Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. Full text of Singapore Model AI Governance Framework. ",
+      "continent": "Asia",
+      "country": "Singapore",
+      "size": 5.5,
+      "tags": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "eu-ai-act-eu-guidance",
+      "source": "eu-ai-act",
+      "target": "eu-guidance",
+      "label": "EU AI Act \u2192 eu-guidance",
+      "type": "connected",
+      "weight": 1
+    },
+    {
+      "id": "eu-ai-act-uk-principles",
+      "source": "eu-ai-act",
+      "target": "uk-principles",
+      "label": "EU AI Act \u2192 uk-principles",
+      "type": "connected",
+      "weight": 1
+    },
+    {
+      "id": "osfi-e23-us-eo",
+      "source": "osfi-e23",
+      "target": "us-eo",
+      "label": "OSFI Guideline E-23 \u2192 us-eo",
+      "type": "connected",
+      "weight": 1
+    }
+  ]
+}

@@ -446,7 +446,7 @@ export default function ContextManagement({
 					<div className="mt-4">
 						<div className="bg-muted/20 rounded p-2 max-h-[500px] overflow-y-auto">
 							{filteredNodes.length > 0 ? (
-								<table className="w-full text-xs">
+								<table data-testid="context-table" className="w-full text-xs">
 									<thead>
 										<tr className="border-b border-muted-foreground/20">
 											<th className="w-6"></th>
