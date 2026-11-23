@@ -10,7 +10,7 @@ interface SavedPromptsDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	/** Puts a prompt's text in the chat box */
-	onUse: (text: string) => void;
+	onUse: (prompt: SavedPrompt) => void;
 	/** What's in the chat box now, offered as the start of a new prompt */
 	draft: string;
 	/** Open straight into the new-prompt form with this text (Save as prompt on a chat question) */
@@ -55,7 +55,7 @@ export function SavedPromptsDialog({ open, onOpenChange, onUse, draft, saveText 
 	const formOpen = editing === 'new' || (startNew && editing === null);
 
 	const use = (p: SavedPrompt) => {
-		onUse(p.text);
+		onUse(p);
 		onOpenChange(false);
 	};
 

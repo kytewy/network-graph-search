@@ -9,8 +9,8 @@ import { queryClient } from '@/lib/api/query-client';
 import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
 import { chatMemory, CHAT_LIMITS } from '@/lib/contracts/analysis';
 import { useContextStore, type ChatConversation } from '@/lib/stores/context-store';
-import { CHAT_PLACEHOLDERS, PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
-import { useSavedPrompts } from '@/lib/stores/saved-prompts';
+import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
+import { matchPrompts, recentPrompts, useSavedPrompts, type SavedPrompt } from '@/lib/stores/saved-prompts';
 import { SavedPromptsDialog } from './SavedPromptsDialog';
 import { reportError } from '@/lib/observability/capture-client';
 import { toAnalysisNode } from '@/lib/utils/llm-tokens';
@@ -63,6 +63,12 @@ function downloadTurn(turn: ChatConversation, filterState: any, nodeIds: string[
 export default function ChatInterface({ safeSelectedNodes, filterState, rightPanelExpanded, contextSummary }: ChatInterfaceProps) {
 	const [chatInput, setChatInput] = useState('');
 	const savedPrompts = useSavedPrompts((s) => s.prompts);
+	const touchPrompt = useSavedPrompts((s) => s.touchPrompt);
+	// The "/" menu: open while the box starts with "/" (one line), until Esc closes it
+	const [slashIndex, setSlashIndex] = useState(0);
+	const [slashClosed, setSlashClosed] = useState(false);
+	const slashOpen = chatInput.startsWith('/') && !chatInput.includes('\n') && !slashClosed;
+	const slashMatches = slashOpen ? matchPrompts(savedPrompts, chatInput.slice(1)).slice(0, 8) : [];
 	const [promptsOpen, setPromptsOpen] = useState(false);
 	// A chat question being saved as a prompt (opens the window on its form)
 	const [saveText, setSaveText] = useState<string | null>(null);
@@ -128,8 +134,9 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 	const stop = () => stopRef.current?.abort();
 
 	/** Puts a saved prompt in the box, ready to edit or send */
-	const fillBox = (text: string) => {
-		setChatInput(text);
+	const fillBox = (prompt: SavedPrompt) => {
+		touchPrompt(prompt.id);
+		setChatInput(prompt.text);
 		requestAnimationFrame(() => inputRef.current?.focus());
 	};
 
@@ -239,6 +246,34 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 			{/* The box stays at the bottom while the conversation scrolls above it */}
 			<div className="sticky bottom-0 -mx-4 px-4 pt-2 pb-3 bg-sidebar space-y-1.5">
 				{contextSummary}
+				{/* The "/" menu, just above the box */}
+				{slashOpen && (
+					<ul
+						id="slash-menu"
+						role="listbox"
+						aria-label="Saved prompts matching"
+						className="max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg">
+						{slashMatches.length === 0 ? (
+							<li className="px-3 py-2 text-xs text-muted-foreground">No saved prompt matches. Enter sends it as a question.</li>
+						) : (
+							slashMatches.map((p, i) => (
+								<li
+									key={p.id}
+									role="option"
+									aria-selected={i === slashIndex}
+									onMouseDown={(e) => {
+										e.preventDefault();
+										fillBox(p);
+									}}
+									onMouseEnter={() => setSlashIndex(i)}
+									className={`cursor-pointer rounded-lg px-3 py-1.5 ${i === slashIndex ? 'bg-primary/10' : ''}`}>
+									<span className="block text-sm font-medium">{p.name}</span>
+									<span className="text-xs text-muted-foreground line-clamp-1">{p.text}</span>
+								</li>
+							))
+						)}
+					</ul>
+				)}
 				{/* Like Claude's box: the text on top, a toolbar row inside along the bottom */}
 				<div
 					className="rounded-2xl border border-gray-300 bg-white shadow-sm transition-shadow focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10"
@@ -246,12 +281,35 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 					<textarea
 						ref={inputRef}
 						value={chatInput}
-						onChange={(e) => setChatInput(e.target.value)}
-						placeholder={CHAT_PLACEHOLDERS.default}
+						onChange={(e) => {
+							setChatInput(e.target.value);
+							setSlashIndex(0);
+							if (!e.target.value.startsWith('/')) setSlashClosed(false);
+						}}
+						placeholder="Ask about the documents, or type / for saved prompts"
+						aria-controls={slashOpen ? 'slash-menu' : undefined}
 						aria-label="Ask about the documents"
 						rows={1}
 						className="block w-full resize-none bg-transparent px-4 pt-3 pb-1 text-sm leading-relaxed placeholder:text-gray-400 focus:outline-none"
 						onKeyDown={(e) => {
+							// The "/" menu takes the arrow keys, Enter/Tab to pick, Esc to close
+							if (slashOpen && slashMatches.length > 0) {
+								const pick = { ArrowDown: 1, ArrowUp: -1 }[e.key as 'ArrowDown' | 'ArrowUp'];
+								if (pick) {
+									e.preventDefault();
+									setSlashIndex((i) => (i + pick + slashMatches.length) % slashMatches.length);
+									return;
+								}
+								if ((e.key === 'Enter' && !e.shiftKey) || e.key === 'Tab') {
+									e.preventDefault();
+									fillBox(slashMatches[Math.min(slashIndex, slashMatches.length - 1)]);
+									return;
+								}
+							}
+							if (e.key === 'Escape' && slashOpen) {
+								setSlashClosed(true);
+								return;
+							}
 							// Enter sends, Shift+Enter is a new line (not while an accent/IME is composing)
 							if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
 								e.preventDefault();
@@ -270,13 +328,14 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 							className="h-7 w-7 shrink-0 rounded-full border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50">
 							<Plus className="h-4 w-4" />
 						</button>
-						{savedPrompts.slice(0, CHIPS_SHOWN).map((p) => (
+						{/* Your most recently used or saved prompts */}
+						{recentPrompts(savedPrompts, CHIPS_SHOWN).map((p) => (
 							<button
 								key={p.id}
 								type="button"
 								disabled={thinking}
 								title={p.text}
-								onClick={() => fillBox(p.text)}
+								onClick={() => fillBox(p)}
 								className="max-w-32 truncate rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50">
 								{p.name}
 							</button>

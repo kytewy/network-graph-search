@@ -67,3 +67,35 @@ test('a question from the chat can be saved as a prompt', async ({ page }) => {
 	await page.getByRole('button', { name: 'Saved prompts' }).click();
 	await expect(dialog.getByRole('button', { name: 'Use Penalties', exact: true })).toBeVisible();
 });
+
+test('typing / lists saved prompts, filters as you type, and Enter picks one; recent ones become chips', async ({ page }) => {
+	await search(page);
+	await page.locator('[data-panel-header="right"]').getByRole('tab', { name: 'Chat' }).click();
+	const box = page.getByRole('textbox', { name: 'Ask about the documents' });
+	const menu = page.getByRole('listbox', { name: 'Saved prompts matching' });
+
+	// "/" shows every saved prompt
+	await box.fill('/');
+	await expect(menu.getByRole('option')).toHaveCount(3);
+
+	// Typing filters; the arrow keys move; Enter puts the prompt in the box (and doesn't send)
+	await box.fill('/i');
+	await box.press('ArrowDown');
+	await expect(menu.getByRole('option', { selected: true })).toContainText(/./);
+	await box.fill('/impact');
+	await expect(menu.getByRole('option')).toHaveText([/Business impact/]);
+	await box.press('Enter');
+	await expect(menu).toBeHidden();
+	await expect(box).toHaveValue(/strategic implications/);
+
+	// Esc closes the menu and keeps what you typed
+	await box.fill('/sum');
+	await expect(menu).toBeVisible();
+	await box.press('Escape');
+	await expect(menu).toBeHidden();
+	await expect(box).toHaveValue('/sum');
+
+	// The prompt you just used is now the first chip
+	const chips = page.locator('button[title]').filter({ hasText: /^(Summary|Business impact|Citations)$/ });
+	await expect(chips.first()).toHaveText('Business impact');
+});
