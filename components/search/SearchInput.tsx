@@ -1,5 +1,6 @@
 'use client';
 
+import { SearchError } from './SearchError';
 import { useSearch } from '@/hooks/use-search';
 import { useUrlSearch } from '@/hooks/use-url-search';
 import { useState, useEffect } from 'react';
@@ -214,6 +215,9 @@ export function SearchInput() {
 					</Button>
 				</div>
 			</div>
+
+			{/* Why the last search failed, with Try again */}
+			<SearchError />
 		</Card>
 	);
 }
