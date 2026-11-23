@@ -44,7 +44,10 @@ test('chat: Enter sends, follow-ups carry earlier turns, and Stop cancels', asyn
 	await expect(page.locator('[data-role="assistant"]').last()).toContainText('Stopped');
 	await expect(page.getByTestId('chat-memory')).toContainText('last 2 answers');
 
-	// New chat clears the conversation
-	await page.getByRole('button', { name: 'New chat' }).click();
-	await expect(page.locator('[data-chat-turn]')).toHaveCount(0);
+	// The box grows with a long question, then stops growing and scrolls
+	const short = (await box.boundingBox())!.height;
+	await box.fill('line\n'.repeat(4));
+	await expect.poll(async () => (await box.boundingBox())!.height).toBeGreaterThan(short + 30);
+	await box.fill('line\n'.repeat(40));
+	await expect.poll(async () => (await box.boundingBox())!.height).toBeLessThanOrEqual(201);
 });

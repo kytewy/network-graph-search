@@ -31,6 +31,8 @@ const QUICK = [
 ] as const;
 
 const STOPPED = '_Stopped._';
+/** Tallest the question box grows before it scrolls */
+const MAX_BOX_PX = 200;
 const FAILED = 'Sorry, something went wrong while analysing the documents. Try again.';
 
 /** A plain-text copy of one question and answer, with the filters that were on */
@@ -59,7 +61,7 @@ function downloadTurn(turn: ChatConversation, filterState: any, nodeIds: string[
  * app (newest at the bottom, box underneath); follow-ups remember the last
  * few turns, and Stop really cancels.
  */
-export default function ChatInterface({ safeSelectedNodes, filterState, rightPanelExpanded, contextSummary }: ChatInterfaceProps) {
+export default function ChatInterface({ safeSelectedNodes, filterState, contextSummary }: ChatInterfaceProps) {
 	const [chatInput, setChatInput] = useState('');
 	const [placeholder, setPlaceholder] = useState<string>(CHAT_PLACEHOLDERS.default);
 	const conversations = useContextStore((s) => s.chatConversations);
@@ -116,6 +118,15 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 
 	const stop = () => stopRef.current?.abort();
 
+	// The box grows upward with what you type, up to about 8 lines, then scrolls inside
+	useEffect(() => {
+		const box = inputRef.current;
+		if (!box) return;
+		box.style.height = 'auto';
+		box.style.height = `${Math.min(box.scrollHeight, MAX_BOX_PX)}px`;
+		box.style.overflowY = box.scrollHeight > MAX_BOX_PX ? 'auto' : 'hidden';
+	}, [chatInput]);
+
 	// The newest message stays in view
 	useEffect(() => {
 		endRef.current?.scrollIntoView?.({ block: 'end' });
@@ -155,14 +166,17 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 							{turn.prompt}
 						</div>
 						{turn.status === 'thinking' ? (
-							<div className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+							<div className="w-fit flex items-center gap-2 rounded-2xl rounded-bl-sm border border-gray-200 bg-white px-4 py-2 text-sm text-muted-foreground" role="status">
 								Thinking
 								<span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
 							</div>
 						) : (
 							<div data-role="assistant" className={turn.status === 'failed' ? 'text-destructive text-sm' : ''}>
-								<div className="prose prose-sm max-w-none text-gray-800 leading-relaxed">
-									<ReactMarkdown remarkPlugins={[remarkGfm]}>{turn.response}</ReactMarkdown>
+								{/* The AI's own bubble, on the left */}
+								<div className="mr-4 w-fit max-w-full rounded-2xl rounded-bl-sm border border-gray-200 bg-white px-4 py-3 shadow-sm">
+									<div className="prose prose-sm max-w-none text-gray-800 leading-relaxed">
+										<ReactMarkdown remarkPlugins={[remarkGfm]}>{turn.response}</ReactMarkdown>
+									</div>
 								</div>
 								<div className="mt-1 flex items-center gap-0.5">
 									<button type="button" className={tool} title="Copy" aria-label="Copy answer" onClick={() => navigator.clipboard?.writeText(turn.response)}>
@@ -203,43 +217,25 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 			</div>
 
 			{/* The box stays at the bottom while the conversation scrolls above it */}
-			<div className="sticky bottom-0 -mx-4 px-4 pt-2 pb-3 bg-sidebar border-t border-sidebar-border space-y-1.5">
-				<div className="flex flex-wrap items-center gap-1.5">
-					{QUICK.map(([label, key]) => (
-						<button
-							key={key}
-							type="button"
-							disabled={thinking}
-							onClick={() => {
-								setChatInput(getQuickPrompt(key, safeSelectedNodes.length > 0));
-								setPlaceholder(CHAT_PLACEHOLDERS[key]);
-								inputRef.current?.focus();
-							}}
-							className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50">
-							{label}
-						</button>
-					))}
-					{conversations.length > 0 && (
-						<button type="button" onClick={clearTurns} disabled={thinking} className="ml-auto text-xs text-muted-foreground hover:text-foreground">
-							New chat
-						</button>
-					)}
-				</div>
+			<div className="sticky bottom-0 -mx-4 px-4 pt-2 pb-3 bg-sidebar space-y-1.5">
 				{contextSummary}
 				{memory.length > 0 && (
 					<p className="text-xs text-muted-foreground" data-testid="chat-memory">
 						+ remembers the last {memory.length / 2} {memory.length === 2 ? 'answer' : 'answers'} (~{memoryTokens.toLocaleString()} tokens)
 					</p>
 				)}
-				<div className="relative">
+				{/* Like Claude's box: the text on top, a toolbar row inside along the bottom */}
+				<div
+					className="rounded-2xl border border-gray-300 bg-white shadow-sm transition-shadow focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10"
+					onClick={() => inputRef.current?.focus()}>
 					<textarea
 						ref={inputRef}
 						value={chatInput}
 						onChange={(e) => setChatInput(e.target.value)}
 						placeholder={placeholder}
 						aria-label="Ask about the documents"
-						rows={rightPanelExpanded ? 3 : 2}
-						className="w-full resize-none rounded-xl border-2 border-gray-200 bg-white px-3 py-2 pr-12 text-sm leading-relaxed placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+						rows={1}
+						className="block w-full resize-none bg-transparent px-4 pt-3 pb-1 text-sm leading-relaxed placeholder:text-gray-400 focus:outline-none"
 						onKeyDown={(e) => {
 							// Enter sends, Shift+Enter is a new line (not while an accent/IME is composing)
 							if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -249,15 +245,31 @@ export default function ChatInterface({ safeSelectedNodes, filterState, rightPan
 							if (e.key === 'Escape' && thinking) stop();
 						}}
 					/>
-					{thinking ? (
-						<button type="button" onClick={stop} aria-label="Stop" title="Stop (Esc)" className="absolute right-2 bottom-3 h-8 w-8 rounded-full bg-gray-900 text-white flex items-center justify-center">
-							<Square className="h-3 w-3 fill-current" />
-						</button>
-					) : (
-						<button type="button" onClick={() => send()} disabled={!chatInput.trim()} aria-label="Send" title="Send (Enter)" className="absolute right-2 bottom-3 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-40">
-							<ArrowUp className="h-4 w-4" />
-						</button>
-					)}
+					<div className="flex items-center gap-1.5 px-2 pb-2">
+						{QUICK.map(([label, key]) => (
+							<button
+								key={key}
+								type="button"
+								disabled={thinking}
+								onClick={() => {
+									setChatInput(getQuickPrompt(key, safeSelectedNodes.length > 0));
+									setPlaceholder(CHAT_PLACEHOLDERS[key]);
+									inputRef.current?.focus();
+								}}
+								className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50">
+								{label}
+							</button>
+						))}
+						{thinking ? (
+							<button type="button" onClick={stop} aria-label="Stop" title="Stop (Esc)" className="ml-auto h-8 w-8 shrink-0 rounded-lg bg-gray-900 text-white flex items-center justify-center">
+								<Square className="h-3 w-3 fill-current" />
+							</button>
+						) : (
+							<button type="button" onClick={() => send()} disabled={!chatInput.trim()} aria-label="Send" title="Send (Enter)" className="ml-auto h-8 w-8 shrink-0 rounded-lg bg-primary text-white flex items-center justify-center disabled:opacity-40">
+								<ArrowUp className="h-4 w-4" />
+							</button>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>
