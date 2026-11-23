@@ -1,10 +1,10 @@
-import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 // Unit tests (P1-12 moved them from Jest). Browser tests come with P1-13.
 export default defineConfig({
-	esbuild: { jsx: 'automatic' },
-	resolve: { alias: { '@': path.resolve(__dirname, '.') } },
+	oxc: { jsx: { runtime: 'automatic' } },
+	resolve: { alias: { '@': fileURLToPath(new URL('.', import.meta.url)) } },
 	test: {
 		globals: true,
 		environment: 'jsdom',
