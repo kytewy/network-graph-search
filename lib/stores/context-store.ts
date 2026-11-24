@@ -39,7 +39,23 @@ export interface ChatConversation {
 	receipt?: Receipt;
 	/** Documents the AI is opening to read in full, while it thinks */
 	reading?: { title: string; round: number }[];
+	/** Which chat this question belongs to (none = the main chat, as before) */
+	chatId?: string;
 }
+
+/** One conversation; the workspace can have several and flip between them */
+export interface Chat {
+	id: string;
+	name: string;
+	createdAt: number;
+}
+
+export const MAIN_CHAT: Chat = { id: 'main', name: 'Main chat', createdAt: 0 };
+const NEW_CHAT_NAME = 'New chat';
+const NAME_FROM_QUESTION = 40;
+
+/** The questions of one chat, oldest first */
+export const chatTurns = (turns: readonly ChatConversation[], chatId: string) => turns.filter((t) => (t.chatId ?? MAIN_CHAT.id) === chatId);
 
 interface ContextState {
 	// Selected nodes for context
@@ -54,8 +70,10 @@ interface ContextState {
 	/** The Clusters tab's quick summary, with the clusters it was written for (kept with the workspace) */
 	clusterOverview: { key: string; summary: string } | null;
 	
-	// Chat conversations
+	// Chat conversations (every chat's questions; each knows its chat)
 	chatConversations: ChatConversation[];
+	chats: Chat[];
+	activeChatId: string;
 
 	// Actions
 	addNodesToContext: (nodes: Node[]) => void;
@@ -75,6 +93,11 @@ interface ContextState {
 	addChatConversation: (conversation: ChatConversation) => void;
 	updateChatConversation: (id: string, updates: Partial<ChatConversation>) => void;
 	clearChatConversations: () => void;
+	/** Starts an empty chat and opens it; returns its id */
+	newChat: (name?: string) => string;
+	selectChat: (id: string) => void;
+	/** Removes a chat and its questions; the main chat can only be emptied */
+	deleteChat: (id: string) => void;
 }
 
 export const useContextStore = create<ContextState>((set) => ({
@@ -84,6 +107,8 @@ export const useContextStore = create<ContextState>((set) => ({
 	clusterSuggestions: new Map(),
 	clusterOverview: null,
 	chatConversations: [],
+	chats: [MAIN_CHAT],
+	activeChatId: MAIN_CHAT.id,
 
 	addNodesToContext: (nodes) =>
 		set((state) => {
@@ -141,9 +166,17 @@ export const useContextStore = create<ContextState>((set) => ({
 		set({ clusterSuggestions: new Map() }),
 	
 	addChatConversation: (conversation) =>
-		set((state) => ({
-			chatConversations: [...state.chatConversations, conversation],
-		})),
+		set((state) => {
+			const chatId = conversation.chatId ?? state.activeChatId;
+			// A new chat takes its name from its first question
+			const first = chatTurns(state.chatConversations, chatId).length === 0;
+			const named = conversation.prompt.trim().replace(/\s+/g, ' ');
+			const name = named.length > NAME_FROM_QUESTION ? `${named.slice(0, NAME_FROM_QUESTION - 1)}…` : named;
+			return {
+				chatConversations: [...state.chatConversations, { ...conversation, chatId }],
+				chats: state.chats.map((c) => (c.id === chatId && first && c.name === NEW_CHAT_NAME && name ? { ...c, name } : c)),
+			};
+		}),
 	
 	updateChatConversation: (id, updates) =>
 		set((state) => ({
@@ -153,5 +186,24 @@ export const useContextStore = create<ContextState>((set) => ({
 		})),
 	
 	clearChatConversations: () =>
-		set({ chatConversations: [] }),
+		set({ chatConversations: [], chats: [MAIN_CHAT], activeChatId: MAIN_CHAT.id }),
+
+	newChat: (name = NEW_CHAT_NAME) => {
+		const chat = { id: `chat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, name, createdAt: Date.now() };
+		set((state) => ({ chats: [...state.chats, chat], activeChatId: chat.id }));
+		return chat.id;
+	},
+
+	selectChat: (id) => set((state) => (state.chats.some((c) => c.id === id) ? { activeChatId: id } : {})),
+
+	deleteChat: (id) =>
+		set((state) => {
+			const chatConversations = state.chatConversations.filter((t) => (t.chatId ?? MAIN_CHAT.id) !== id);
+			if (id === MAIN_CHAT.id) return { chatConversations };
+			const index = state.chats.findIndex((c) => c.id === id);
+			const chats = state.chats.filter((c) => c.id !== id);
+			// Open the chat before it (or the main chat)
+			const activeChatId = state.activeChatId === id ? (chats[Math.max(0, index - 1)] ?? MAIN_CHAT).id : state.activeChatId;
+			return { chatConversations, chats, activeChatId };
+		}),
 }));

@@ -5,7 +5,7 @@
  */
 import { create } from 'zustand';
 import { useAppStore } from '@/lib/stores/app-state';
-import { useContextStore, type ChatConversation } from '@/lib/stores/context-store';
+import { MAIN_CHAT, useContextStore, type Chat, type ChatConversation } from '@/lib/stores/context-store';
 import type { Link, Node } from '@/lib/config/types';
 import type { SearchRound } from './collect';
 import type { ClusterAssignments } from '@/lib/clustering/assignments';
@@ -28,6 +28,9 @@ export interface Snapshot {
 	selectedSearches: string[];
 	context: Node[];
 	chat: ChatConversation[];
+	/** The chats and which one is open (older saves have only the main chat) */
+	chats?: Chat[];
+	activeChatId?: string;
 	/** AI clusters: which cluster each document is in, the results, names and quick summary */
 	clusters?: {
 		assignments: ClusterAssignments;
@@ -52,6 +55,8 @@ export function takeSnapshot(): Snapshot {
 		selectedSearches: app.selectedSearches,
 		context: ctx.contextNodes,
 		chat: ctx.chatConversations.filter((c) => c.status !== 'thinking'),
+		chats: ctx.chats,
+		activeChatId: ctx.activeChatId,
 		clusters: ctx.clusterResults
 			? { assignments: app.aiClusters, results: ctx.clusterResults, suggestions: [...ctx.clusterSuggestions], overview: ctx.clusterOverview }
 			: undefined,
@@ -88,6 +93,8 @@ export function restoreSnapshot(s: Snapshot) {
 	useContextStore.setState({
 		contextNodes: s.context,
 		chatConversations: s.chat.map((c) => ({ ...c, timestamp: new Date(c.timestamp) })),
+		chats: s.chats?.length ? s.chats : [MAIN_CHAT],
+		activeChatId: s.chats?.some((c) => c.id === s.activeChatId) ? s.activeChatId! : MAIN_CHAT.id,
 	});
 	if (s.clusters) {
 		// The graph re-groups (a new version re-runs its layout); the Clusters tab shows its cards

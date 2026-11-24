@@ -38,6 +38,8 @@ describe('keeping the workspace', () => {
 				{ id: '1', prompt: 'q', response: 'answer', timestamp: new Date(0), status: 'done' },
 				{ id: '2', prompt: 'q2', response: '', timestamp: new Date(0), status: 'thinking' },
 			],
+			chats: [{ id: 'main', name: 'Main chat', createdAt: 0 }, { id: 'chat-x', name: 'High-risk', createdAt: 1 }],
+			activeChatId: 'chat-x',
 		});
 		vi.advanceTimersByTime(20);
 		stop();
@@ -56,6 +58,9 @@ describe('keeping the workspace', () => {
 		expect(useAppStore.getState().rounds.map((r) => r.query)).toEqual(['AI regulation', 'compliance']);
 		expect(useContextStore.getState().contextNodes.map((n) => n.id)).toEqual(['a']);
 		expect(useContextStore.getState().chatConversations[0].timestamp).toBeInstanceOf(Date);
+		// Every chat comes back, and the one that was open
+		expect(useContextStore.getState().chats.map((c) => c.name)).toEqual(['Main chat', 'High-risk']);
+		expect(useContextStore.getState().activeChatId).toBe('chat-x');
 	});
 
 	it('keeps AI clusters: assignments, results, names and the quick summary', () => {

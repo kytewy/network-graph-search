@@ -8,12 +8,13 @@ import { analyzeNodesLive } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
 import { chatMemory, CHAT_LIMITS } from '@/lib/contracts/analysis';
-import { useContextStore } from '@/lib/stores/context-store';
+import { chatTurns, useContextStore } from '@/lib/stores/context-store';
 import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 import { matchPrompts, recentPrompts, useSavedPrompts, type SavedPrompt } from '@/lib/stores/saved-prompts';
 import { SavedPromptsDialog } from './SavedPromptsDialog';
 import { ReceiptDialog } from './ReceiptDialog';
 import { CoverageLink } from './CoverageLink';
+import { ChatSwitcher } from './ChatSwitcher';
 import { ReadFolded, ReadingNow } from './ReadingNote';
 import { DocumentView } from './DocumentView';
 import { documentTitle } from '@/lib/chat/citations';
@@ -76,7 +77,10 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 		setSaveText(text);
 		setPromptsOpen(true);
 	};
-	const conversations = useContextStore((s) => s.chatConversations);
+	// The open chat's questions; other chats keep theirs
+	const allTurns = useContextStore((s) => s.chatConversations);
+	const activeChatId = useContextStore((s) => s.activeChatId);
+	const conversations = chatTurns(allTurns, activeChatId);
 	const contextNodes = useContextStore((s) => s.contextNodes);
 	const addTurn = useContextStore((s) => s.addChatConversation);
 	const updateTurn = useContextStore((s) => s.updateChatConversation);
@@ -191,8 +195,17 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 			data-testid="chat"
 			// Wide: a comfortable reading column in the middle instead of edge to edge
 			className={`flex flex-col min-h-[calc(100vh-5rem)] ${rightPanelExpanded && !split ? 'w-full max-w-3xl mx-auto px-6' : ''}`}>
+			{/* Flip between chats, start one, delete one */}
+			<div className="sticky top-0 z-10 -mx-4 bg-sidebar px-4">
+				<ChatSwitcher
+					onSwitch={() => {
+						setOpenDocId(null);
+						setReceiptId(null);
+					}}
+				/>
+			</div>
 			{/* Messages, oldest first */}
-			<div className="flex-1 space-y-4 pb-4">
+			<div className="flex-1 space-y-4 pb-4 pt-3">
 				{conversations.length === 0 && (
 					<p className="pt-8 text-center text-sm text-muted-foreground">
 						Ask about the documents in context. Follow-up questions remember the last {CHAT_LIMITS.MEMORY_TURNS} answers.
