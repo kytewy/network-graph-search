@@ -1,4 +1,4 @@
-import { foundBy, hasRound, makeRound, mergeResults } from '@/lib/workspace/collect';
+import { foundBy, hasRound, makeRound, mergeResults, stampRounds } from '@/lib/workspace/collect';
 import type { Link, Node } from '@/lib/config/types';
 
 const doc = (id: string, score: number) => ({ id, label: id, score }) as Node;
@@ -44,5 +44,19 @@ describe('rounds', () => {
 	it('spots a search that is already a round', () => {
 		expect(hasRound([r1], '  ai REGULATION ', 50)).toBe(true);
 		expect(hasRound([r1], 'AI regulation', 20)).toBe(false);
+	});
+
+	it('stamps found-by on each document and takes its best score; drops what no search found', () => {
+		const nodes = [doc('a', 0), doc('b', 0), doc('c', 0), doc('gone', 0)];
+		expect(stampRounds(nodes, [r1, r2]).map((d) => [d.id, d.foundBy, d.score])).toEqual([
+			['a', [1], 0.9],
+			['b', [1, 2], 0.7],
+			['c', [2], 0.6],
+		]);
+		// Without search #2, b falls back to #1's score and c goes
+		expect(stampRounds(nodes, [r1]).map((d) => [d.id, d.score])).toEqual([
+			['a', 0.9],
+			['b', 0.5],
+		]);
 	});
 });

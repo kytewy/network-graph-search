@@ -40,6 +40,11 @@ const SIMILARITY: (LegendEntry & { min: number })[] = [
 	{ min: 0, label: 'Very low (0-19%)', color: '#ef4444' },
 ];
 
+/** One colour per search in the workspace (#1, #2, …), and one for documents more than one found */
+export const SEARCH_COLORS = ['#7c3aed', '#14b8a6', '#f97316', '#3b82f6', '#ec4899', '#84cc16', '#64748b'];
+export const FOUND_BY_MANY_COLOR = '#eab308';
+export const searchColor = (n: number) => SEARCH_COLORS[(n - 1) % SEARCH_COLORS.length];
+
 const continentColor = lookup(CONTINENTS);
 const countryColor = lookup(COUNTRIES);
 
@@ -85,6 +90,24 @@ export const COLOR_MODES = [
 			return (SIMILARITY.find((b) => percent >= b.min) ?? SIMILARITY[SIMILARITY.length - 1]).color;
 		},
 		legend: () => SIMILARITY.map(({ label, color }) => ({ label, color })),
+	},
+	{
+		id: 'search',
+		label: 'Search',
+		colorOf: (n) => {
+			const by = n.foundBy ?? [];
+			if (by.length > 1) return FOUND_BY_MANY_COLOR;
+			return by.length ? searchColor(by[0]) : UNKNOWN_COLOR;
+		},
+		legend: (onScreen) => {
+			const firsts = [...new Set(onScreen.filter((n) => n.foundBy?.length === 1).map((n) => n.foundBy![0]))].sort((a, b) => a - b);
+			const many = onScreen.some((n) => (n.foundBy?.length ?? 0) > 1);
+			return [
+				...firsts.map((n) => ({ label: `Search #${n}`, color: searchColor(n) })),
+				...(many ? [{ label: '★ Found by 2+ searches', color: FOUND_BY_MANY_COLOR }] : []),
+				...(onScreen.some((n) => !n.foundBy?.length) ? [{ label: 'Other', color: UNKNOWN_COLOR }] : []),
+			];
+		},
 	},
 ] as const satisfies readonly ColorModeDef[];
 

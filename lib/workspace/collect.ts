@@ -47,6 +47,17 @@ export function mergeResults(
 	return { nodes: [...byId.values()], links: [...links.values()] };
 }
 
+/**
+ * The documents with `foundBy` set from the rounds, and each score the best
+ * any remaining round gave it. Documents no round found are dropped.
+ */
+export function stampRounds(nodes: readonly Node[], rounds: readonly SearchRound[]): Node[] {
+	const by = foundBy(rounds);
+	return nodes
+		.filter((d) => by[d.id])
+		.map((d) => ({ ...d, foundBy: by[d.id], score: Math.max(...rounds.filter((r) => d.id in r.scores).map((r) => r.scores[d.id])) }));
+}
+
 /** For each document, the rounds that found it, in order (e.g. [1, 3]) */
 export function foundBy(rounds: readonly SearchRound[]): Record<string, number[]> {
 	const out: Record<string, number[]> = {};

@@ -26,6 +26,8 @@ export interface Node {
   // Scoring properties
   score: number;
   similarity?: number;
+  /** Which searches in the workspace found it (#1, #2, …), set when results merge */
+  foundBy?: number[];
   
   // Visual properties (added for display)
   size: number;

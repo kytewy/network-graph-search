@@ -25,7 +25,12 @@ interface FilterDef {
 	pineconeField?: string;
 	/** Values a link may contain; anything else is dropped (none = free text) */
 	knownValues?: () => readonly string[];
+	/** false: not kept in the web address (the workspace's searches aren't in it yet) */
+	inUrl?: boolean;
 }
+
+/** The "found by 2+ searches" choice in the searches filter */
+export const FOUND_BY_MANY = '2+';
 
 const percentOf = (node: Node) => Math.round((node.score || 0) * 100);
 
@@ -80,7 +85,21 @@ export const FILTERS = [
 		inPinecone: false,
 		knownValues: () => SEARCH_CONFIG.SIMILARITY_RANGES.map((r) => r.range),
 	},
+	{
+		// Which searches in the workspace found it; "2+" = found by more than one
+		id: 'searches',
+		urlKey: 'search',
+		storeKey: 'selectedSearches',
+		group: 'searches',
+		matches: (n, s) => s.some((v) => (v === FOUND_BY_MANY ? (n.foundBy?.length ?? 0) > 1 : (n.foundBy ?? []).includes(Number(v)))),
+		inPinecone: false,
+		inUrl: false,
+	},
 ] as const satisfies readonly FilterDef[];
+
+/** Filters the web address keeps (not the workspace's searches, which aren't in it yet) */
+type UrlFilter = Exclude<(typeof FILTERS)[number], { inUrl: false }>;
+export const URL_FILTERS = FILTERS.filter((f): f is UrlFilter => !('inUrl' in f) || f.inUrl !== false);
 
 export type FilterId = (typeof FILTERS)[number]['id'];
 export type FilterSelections = Record<FilterId, string[]>;

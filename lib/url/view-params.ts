@@ -4,14 +4,14 @@
  * Only settings changed from their defaults appear.
  */
 import { parseAsArrayOf, parseAsString, parseAsStringLiteral, type inferParserType } from 'nuqs';
-import { FILTERS } from '@/lib/config/filters';
+import { URL_FILTERS } from '@/lib/config/filters';
 import { CLUSTER_MODES, COLOR_MODES, LAYOUT_IDS, SIZE_MODES, ids } from '@/lib/config/view-modes';
 
 const list = parseAsArrayOf(parseAsString).withDefault([]);
 
 // One list per filter, named by its urlKey (lib/config/filters.ts)
-const filterParams = Object.fromEntries(FILTERS.map((f) => [f.urlKey, list])) as Record<
-	(typeof FILTERS)[number]['urlKey'],
+const filterParams = Object.fromEntries(URL_FILTERS.map((f) => [f.urlKey, list])) as Record<
+	(typeof URL_FILTERS)[number]['urlKey'],
 	typeof list
 >;
 
@@ -29,7 +29,7 @@ export type UrlView = inferParserType<typeof viewUrlParams>;
 /** Drops filter values a link might contain that the app doesn't know. Tags are free text. */
 export function cleanView(view: UrlView): UrlView {
 	const cleaned = { ...view };
-	for (const f of FILTERS) {
+	for (const f of URL_FILTERS) {
 		const known = 'knownValues' in f ? new Set<string>(f.knownValues()) : null;
 		if (known) cleaned[f.urlKey] = view[f.urlKey].filter((v) => known.has(v));
 	}

@@ -3,9 +3,9 @@
 import { useEffect, useRef } from 'react';
 import { useQueryStates } from 'nuqs';
 import { cleanView, viewUrlParams, type UrlView } from '@/lib/url/view-params';
-import { FILTERS } from '@/lib/config/filters';
+import { URL_FILTERS } from '@/lib/config/filters';
 
-type FilterUrlKey = (typeof FILTERS)[number]['urlKey'];
+type FilterUrlKey = (typeof URL_FILTERS)[number]['urlKey'];
 import { useAppStore } from '@/lib/stores/app-state';
 
 const sameList = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
@@ -15,7 +15,7 @@ function viewFromStores(): UrlView {
 	const app = useAppStore.getState();
 	const store = app as unknown as Record<string, string[]>;
 	return {
-		...(Object.fromEntries(FILTERS.map((f) => [f.urlKey, store[f.storeKey]])) as Pick<UrlView, FilterUrlKey>),
+		...(Object.fromEntries(URL_FILTERS.map((f) => [f.urlKey, store[f.storeKey]])) as Pick<UrlView, FilterUrlKey>),
 		color: app.colorMode,
 		size: app.nodeSizeMode,
 		cluster: app.clusterMode,
@@ -27,8 +27,8 @@ function viewFromStores(): UrlView {
 function applyView(view: UrlView) {
 	const app = useAppStore.getState();
 	const store = app as unknown as Record<string, string[]>;
-	const filters = Object.fromEntries(FILTERS.map((f) => [f.storeKey, view[f.urlKey]]));
-	const changed = FILTERS.some((f) => !sameList(store[f.storeKey] ?? [], view[f.urlKey]));
+	const filters = Object.fromEntries(URL_FILTERS.map((f) => [f.storeKey, view[f.urlKey]]));
+	const changed = URL_FILTERS.some((f) => !sameList(store[f.storeKey] ?? [], view[f.urlKey]));
 	if (changed) {
 		useAppStore.setState(filters);
 		useAppStore.getState().applyFilters();

@@ -30,6 +30,15 @@ describe('view mode registry', () => {
 		expect(colorOfNode(node({ publisher: 'Regulator' }), 'publisher')).toBe(publisherColor('Regulator'));
 	});
 
+	it('colours by search: each search its colour, more than one search gold', () => {
+		const one = node({ foundBy: [2] });
+		const both = node({ foundBy: [1, 2] });
+		const legend = colorLegend('search', [one, both]);
+		expect(legend.map((e) => e.label)).toEqual(['Search #2', '★ Found by 2+ searches']);
+		expect(colorOfNode(one, 'search')).toBe(legend[0].color);
+		expect(colorOfNode(both, 'search')).toBe(legend[1].color);
+	});
+
 	it('spells European Union the way the data does (the legend had a typo)', () => {
 		const eu = colorLegend('country', []).find((e) => e.label === 'European Union');
 		expect(eu?.color).toBe(colorOfNode(node({ country: 'European Union' }), 'country'));

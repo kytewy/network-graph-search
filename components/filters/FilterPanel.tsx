@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter, Target, Globe, Tag, Building2, Info, type LucideIcon } from 'lucide-react';
+import { Filter, Target, Globe, Tag, Building2, Info, Search, type LucideIcon } from 'lucide-react';
+import { SearchesFilter } from './SearchesFilter';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppStore } from '@/lib/stores/app-state';
 import { useShallow } from 'zustand/react/shallow';
@@ -113,6 +114,10 @@ const FilterPanel = () => {
 		setIsClient(true);
 	}, []);
 
+	// The workspace's searches (the Searches filter shows once there are two or more)
+	const rounds = useAppStore((s) => s.rounds.length);
+	const selectedSearches = useAppStore((s) => s.selectedSearches);
+
 	if (!isClient) {
 		return (
 			<div className="space-y-4">
@@ -132,6 +137,7 @@ const FilterPanel = () => {
 	};
 
 	const clearAllFilters = () => {
+		useAppStore.setState({ selectedSearches: [] });
 		clearLocationFilters();
 		clearTagFilters();
 		clearSimilarityRanges();
@@ -148,7 +154,8 @@ const FilterPanel = () => {
 		selectedCountries.length +
 		selectedTags.length +
 		selectedPublishers.length +
-		selectedSimilarityRanges.length;
+		selectedSimilarityRanges.length +
+		selectedSearches.length;
 
 	return (
 		<div className="space-y-3">
@@ -173,6 +180,11 @@ const FilterPanel = () => {
 			</div>
 
 			{/* Similarity Score Card */}
+			{rounds > 1 && (
+				<FilterSection icon={Search} title="Searches" about="Which searches in the workspace found each document. Tick to show only theirs; ★ shows documents more than one search found; ✕ removes a search.">
+					<SearchesFilter />
+				</FilterSection>
+			)}
 			<FilterSection icon={Target} title="Similarity Score" about="How closely each result matches your search. Tick a band to keep only those results.">
 				<SimilarityHistogram />
 			</FilterSection>

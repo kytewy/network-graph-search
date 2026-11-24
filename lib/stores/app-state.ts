@@ -7,7 +7,7 @@ import { filterNodes } from '@/lib/filters/filter-nodes';
 import { selectionsFromStore } from '@/lib/config/filters';
 import { create } from 'zustand';
 import type { Node, Link } from '@/lib/config/types';
-import { hasRound, makeRound, mergeResults, type SearchRound } from '@/lib/workspace/collect';
+import { hasRound, makeRound, mergeResults, stampRounds, type SearchRound } from '@/lib/workspace/collect';
 import { createViewSlice, type ViewSlice } from './slices/view-slice';
 import { createSelectionSlice, type SelectionSlice } from './slices/selection-slice';
 
@@ -39,6 +39,11 @@ interface SearchState {
 	filteredLinks: Link[];
 	/** The searches collected in the workspace (#1, #2, …); one after a normal search */
 	rounds: SearchRound[];
+	/** Searches filter: round numbers ("1", "2") and/or "2+" */
+	selectedSearches: string[];
+	toggleSearchFilter: (value: string) => void;
+	/** Takes a search out of the workspace (documents another search found stay) */
+	removeRound: (n: number) => void;
 
 	// Similarity histogram state
 	selectedSimilarityRanges: string[];
@@ -115,6 +120,23 @@ export const useAppStore = create<AppState>()(
 		links: [],
 		filteredLinks: [],
 		rounds: [],
+		selectedSearches: [],
+		toggleSearchFilter: (value) => {
+			set((s) => ({
+				selectedSearches: s.selectedSearches.includes(value) ? s.selectedSearches.filter((v) => v !== value) : [...s.selectedSearches, value],
+			}));
+			get().applyFilters();
+		},
+		removeRound: (n) => {
+			const now = get();
+			const rounds = now.rounds.filter((r) => r.n !== n);
+			if (rounds.length === 0 || rounds.length === now.rounds.length) return;
+			const nodes = stampRounds(now.searchResults, rounds);
+			const kept = new Set(nodes.map((d) => d.id));
+			set({ rounds, selectedSearches: now.selectedSearches.filter((v) => v !== String(n)) });
+			now.setSearchResults(nodes);
+			now.setLinks(now.links.filter((l) => kept.has(l.source) && kept.has(l.target)));
+		},
 		selectedSimilarityRanges: [],
 
 		// Location filtering state
@@ -218,8 +240,10 @@ export const useAppStore = create<AppState>()(
 				// Adding merges into what's there (each document once); replacing starts over
 				const { nodes, links } = adding ? mergeResults({ nodes: now.searchResults, links: now.links }, found) : found;
 				const round = makeRound(adding ? Math.max(...now.rounds.map((r) => r.n)) + 1 : 1, query, topK, found.nodes);
-				set({ rounds: adding ? [...now.rounds, round] : [round] });
-				state.setSearchResults(nodes);
+				const rounds = adding ? [...now.rounds, round] : [round];
+				// A new workspace starts with no searches filter
+				set({ rounds, ...(adding ? {} : { selectedSearches: [] }) });
+				state.setSearchResults(stampRounds(nodes, rounds));
 				state.setLinks(links);
 				state.setHasSearched(true);
 			} catch (err: any) {
