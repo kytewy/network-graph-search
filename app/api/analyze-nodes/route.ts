@@ -3,6 +3,7 @@ import { llmError, openai } from '@/lib/utils/openai-client';
 import { buildAnalyzeNodesPrompt, PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 import { LIMITS, badRequest, rateLimit } from '@/lib/utils/api-guard';
 import { actionsInstruction, analyzeRequestSchema, extractActions } from '@/lib/contracts/analysis';
+import { buildReceipt } from '@/lib/chat/receipt';
 
 export async function POST(request: NextRequest) {
 	const limited = rateLimit(request, 'llm');
@@ -24,18 +25,21 @@ export async function POST(request: NextRequest) {
 			charLimitPerDoc: PROMPT_CONFIG.CHAR_LIMIT_GENERAL_ANALYSIS,
 		});
 
-		// Call GPT-4o-mini
+		// Earlier turns first, so follow-ups make sense; the documents ride
+		// with the newest question, so they're always the current context
+		const messages = [
+			...(goal?.trim() ? [{ role: 'system' as const, content: `The user's research goal: ${goal.trim()}\nKeep every answer aimed at this goal.` }] : []),
+			...history,
+			// What the answer may suggest changing, as buttons the user can click
+			...(actionOptions ? [{ role: 'system' as const, content: actionsInstruction(actionOptions) }] : []),
+			{ role: 'user' as const, content: prompt },
+		];
+		// Exactly what went to the AI, shown as the answer's receipt
+		const receipt = buildReceipt({ nodes, messages, question: customPrompt, goal, suggestions: Boolean(actionOptions), memoryTurns: history.length / 2 });
+
 		const response = await openai.chat.completions.create({
 			model: PROMPT_CONFIG.MODEL,
-			// Earlier turns first, so follow-ups make sense; the documents ride
-			// with the newest question, so they're always the current context
-			messages: [
-				...(goal?.trim() ? [{ role: 'system' as const, content: `The user's research goal: ${goal.trim()}\nKeep every answer aimed at this goal.` }] : []),
-				...history,
-				// What the answer may suggest changing, as buttons the user can click
-				...(actionOptions ? [{ role: 'system' as const, content: actionsInstruction(actionOptions) }] : []),
-				{ role: 'user', content: prompt },
-			],
+			messages,
 			temperature: PROMPT_CONFIG.TEMPERATURE_ANALYSIS,
 			max_tokens: PROMPT_CONFIG.MAX_TOKENS_ANALYSIS,
 		});
@@ -44,7 +48,7 @@ export async function POST(request: NextRequest) {
 		// Suggested actions are checked against what's available; the rest is the answer
 		const { text, actions } = actionOptions ? extractActions(answer, actionOptions) : { text: answer, actions: [] };
 
-		return NextResponse.json({ summary: text, actions });
+		return NextResponse.json({ summary: text, actions, receipt });
 	} catch (error) {
 		return llmError('analyze-nodes', error, 'Failed to analyze nodes');
 	}

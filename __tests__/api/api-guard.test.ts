@@ -129,7 +129,16 @@ describe('POST /api/analyze-nodes', () => {
 		mockCreate.mockResolvedValue({ choices: [{ message: { content: 'A summary' } }] });
 		const res = await analyzeNodes(makeRequest({ nodes: [sampleNode], customPrompt: 'Summarize' }));
 		expect(res.status).toBe(200);
-		expect(await res.json()).toEqual({ summary: 'A summary', actions: [] });
+		expect(await res.json()).toMatchObject({ summary: 'A summary', actions: [] });
+	});
+
+	it('returns a receipt of exactly what was sent', async () => {
+		mockCreate.mockResolvedValue({ choices: [{ message: { content: 'A summary' } }] });
+		const res = await analyzeNodes(makeRequest({ nodes: [sampleNode], customPrompt: 'Summarize', goal: 'Brief the board' }));
+		const { receipt } = await res.json();
+		expect(receipt).toMatchObject({ question: 'Summarize', goal: 'Brief the board', suggestions: false, memoryTurns: 0, model: 'gpt-4o-mini' });
+		expect(receipt.documents).toEqual([{ id: 'A1', title: 'A1', sentAs: 'text', sent: 4, total: 4 }]);
+		expect(receipt.tokens).toBeGreaterThan(0);
 	});
 
 	it('takes suggested actions out of the answer and keeps only available ones', async () => {
@@ -146,7 +155,7 @@ describe('POST /api/analyze-nodes', () => {
 		const res = await analyzeNodes(
 			makeRequest({ nodes: [sampleNode], customPrompt: 'Where?', actionOptions: { continents: ['Europe'] } })
 		);
-		expect(await res.json()).toEqual({
+		expect(await res.json()).toMatchObject({
 			summary: 'Europe leads.',
 			actions: [{ type: 'filter', filter: 'continents', values: ['Europe'], label: 'Filter to Europe' }],
 		});

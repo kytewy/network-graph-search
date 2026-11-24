@@ -1,4 +1,5 @@
 import type { ChatAction } from '@/lib/contracts/analysis';
+import type { Receipt } from '@/lib/chat/receipt';
 import { create } from 'zustand';
 import { type Node } from '@/lib/stores/app-state';
 
@@ -34,6 +35,8 @@ export interface ChatConversation {
 	status?: 'thinking' | 'done' | 'stopped' | 'failed';
 	/** Buttons the answer suggests ("Filter to Europe"); nothing changes until clicked */
 	actions?: ChatAction[];
+	/** Exactly what went to the AI for this answer */
+	receipt?: Receipt;
 }
 
 interface ContextState {

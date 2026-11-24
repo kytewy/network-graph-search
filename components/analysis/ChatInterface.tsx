@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowUp, BookmarkPlus, Copy, FileText, Pencil, Plus, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ArrowUp, BookmarkPlus, Copy, FileText, Pencil, Plus, ReceiptText, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { analyzeNodes } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
@@ -12,6 +12,7 @@ import { useContextStore } from '@/lib/stores/context-store';
 import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 import { matchPrompts, recentPrompts, useSavedPrompts, type SavedPrompt } from '@/lib/stores/saved-prompts';
 import { SavedPromptsDialog } from './SavedPromptsDialog';
+import { ReceiptDialog } from './ReceiptDialog';
 import { DocumentView } from './DocumentView';
 import { documentTitle } from '@/lib/chat/citations';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -51,6 +52,8 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 	const savedPrompts = useSavedPrompts((s) => s.prompts);
 	// An answer opened as a document: beside the chat when the panel is wide, over it when narrow
 	const [openDocId, setOpenDocId] = useState<string | null>(null);
+	// The answer whose receipt ("What was sent") is open
+	const [receiptId, setReceiptId] = useState<string | null>(null);
 	// Clicked action buttons, with how to undo each ("turnId:index")
 	const [applied, setApplied] = useState<Record<string, { action: ChatAction; undo: () => void }>>({});
 	// Suggestion counts follow the filters, so re-draw when they change
@@ -102,7 +105,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 			const controller = new AbortController();
 			stopRef.current = controller;
 			try {
-				const { summary, actions } = await analyze.mutateAsync({
+				const { summary, actions, receipt } = await analyze.mutateAsync({
 					nodes: contextNodes.map(toAnalysisNode),
 					customPrompt: prompt,
 					history: memory,
@@ -111,7 +114,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 					actionOptions: actionOptionsFromStore(),
 					signal: controller.signal,
 				});
-				updateTurn(id, { response: summary, actions, status: 'done' });
+				updateTurn(id, { response: summary, actions, receipt, status: 'done' });
 			} catch (error) {
 				if (controller.signal.aborted) {
 					updateTurn(id, { response: STOPPED, status: 'stopped' });
@@ -271,6 +274,11 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 									<button type="button" className={tool} title="Copy" aria-label="Copy answer" onClick={() => navigator.clipboard?.writeText(turn.response)}>
 										<Copy className="h-3.5 w-3.5" />
 									</button>
+									{turn.receipt && (
+										<button type="button" className={tool} title="What was sent" aria-label="What was sent" onClick={() => setReceiptId(turn.id)}>
+											<ReceiptText className="h-3.5 w-3.5" />
+										</button>
+									)}
 									<button type="button" className={`${tool} ${turn.feedback === 'up' ? 'text-green-600' : ''}`} title="Good answer" aria-label="Good answer" aria-pressed={turn.feedback === 'up'} onClick={() => updateTurn(turn.id, { feedback: 'up' })}>
 										<ThumbsUp className="h-3.5 w-3.5" />
 									</button>
@@ -405,6 +413,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 				draft={chatInput}
 				saveText={saveText}
 			/>
+			<ReceiptDialog receipt={conversations.find((c) => c.id === receiptId)?.receipt ?? null} onClose={() => setReceiptId(null)} />
 		</div>
 	);
 
