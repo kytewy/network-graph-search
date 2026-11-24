@@ -1,4 +1,4 @@
-import { foundBy, hasRound, makeRound, mergeResults, searchGroup, stampRounds } from '@/lib/workspace/collect';
+import { foundBy, groupBySearch, hasRound, makeRound, mergeResults, roundTopIds, searchGroup, stampRounds } from '@/lib/workspace/collect';
 import type { Link, Node } from '@/lib/config/types';
 
 const doc = (id: string, score: number) => ({ id, label: id, score }) as Node;
@@ -69,3 +69,23 @@ describe('searchGroup', () => {
 		expect(searchGroup(undefined, queries)).toBe('Other');
 	});
 });
+
+describe('context by search', () => {
+	const r1 = makeRound(1, 'AI regulation', 50, [doc('a', 0.9), doc('b', 0.5), doc('c', 0.7)]);
+	const r2 = makeRound(2, 'compliance', 50, [doc('b', 0.7), doc('d', 0.6)]);
+
+	it("lists a search's documents best first, or its top few", () => {
+		expect(roundTopIds(r1)).toEqual(['a', 'c', 'b']);
+		expect(roundTopIds(r1, 2)).toEqual(['a', 'c']);
+	});
+
+	it('groups context documents under the first search that found them, others last', () => {
+		const groups = groupBySearch(['b', 'd', 'x'], [r1, r2]);
+		expect(groups.map((g) => [g.round?.n ?? null, g.ids])).toEqual([
+			[1, ['b']],
+			[2, ['d']],
+			[null, ['x']],
+		]);
+	});
+});
+

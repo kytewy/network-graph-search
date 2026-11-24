@@ -71,3 +71,27 @@ export function foundBy(rounds: readonly SearchRound[]): Record<string, number[]
 	for (const r of rounds) for (const id of Object.keys(r.scores)) (out[id] ??= []).push(r.n);
 	return out;
 }
+
+/** A search's documents, best first, optionally only the top few */
+export function roundTopIds(round: SearchRound, count = Infinity): string[] {
+	return Object.entries(round.scores)
+		.sort(([, a], [, b]) => b - a)
+		.slice(0, count)
+		.map(([id]) => id);
+}
+
+export interface ContextGroup {
+	/** The search, or null for documents no search in the workspace found */
+	round: SearchRound | null;
+	/** Context documents listed here: each appears once, under the first search that found it */
+	ids: string[];
+}
+
+/** The documents in context, grouped by the first search that found them */
+export function groupBySearch(contextIds: readonly string[], rounds: readonly SearchRound[]): ContextGroup[] {
+	const by = foundBy(rounds);
+	const groups: ContextGroup[] = rounds.map((round) => ({ round, ids: contextIds.filter((id) => by[id]?.[0] === round.n) }));
+	const other = contextIds.filter((id) => !by[id]);
+	return other.length ? [...groups, { round: null, ids: other }] : groups;
+}
+

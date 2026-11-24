@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect, type ReactNode } from 'react';
 import { PANEL_HEADER, PANEL_TAB } from '@/components/layout/PanelChrome';
+import { ContextGroups, type ContextGrouping } from './ContextGroups';
+import { useHasAiClusters } from '@/hooks/use-ai-clusters';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -108,6 +110,12 @@ export default function ContextManagement({
 	);
 	const [selectAll, setSelectAll] = useState(false);
 	const [sortByTokens, setSortByTokens] = useState(false);
+	// Group the context by search (once there are two) or by AI cluster (once clustered)
+	const [grouping, setGrouping] = useState<ContextGrouping | 'none'>('search');
+	const hasSearches = useAppStore((s) => s.rounds.length > 1);
+	const hasClusters = useHasAiClusters();
+	const groupings = [...(hasSearches ? ['search' as const] : []), ...(hasClusters ? ['cluster' as const] : [])];
+	const groupedBy = groupings.find((g) => g === grouping) ?? 'none';
 	const [currentPage, setCurrentPage] = useState(1);
 
 	// ALL EFFECT HOOKS - MUST be called before conditional returns
@@ -416,7 +424,37 @@ export default function ContextManagement({
 						)}
 					</div>
 
-					{/* Node list */}
+					{groupings.length > 0 && (
+						<div className="mt-3 flex items-center gap-1 text-xs" role="group" aria-label="Group context">
+							<span className="text-muted-foreground">Group:</span>
+							{[...groupings, 'none' as const].map((g) => (
+								<button
+									key={g}
+									type="button"
+									aria-pressed={groupedBy === g}
+									onClick={() => setGrouping(g)}
+									className={`rounded px-2 py-0.5 capitalize ${groupedBy === g ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-accent/50'}`}>
+									{g}
+								</button>
+							))}
+						</div>
+					)}
+
+					{groupedBy !== 'none' ? (
+						<div className="mt-3">
+							<ContextGroups
+								nodes={filteredNodes}
+								by={groupedBy}
+								onOpen={openDocumentOverlay}
+								onAsk={(message) => {
+									// Same hand-off as the Clusters tab: switch to Chat, then send
+									setActiveTab('analysis');
+									setTimeout(() => window.dispatchEvent(new CustomEvent('chat:send', { detail: { message } })), 100);
+								}}
+							/>
+						</div>
+					) : (
+					/* Node list */
 					<div className="mt-4">
 						<div className="bg-muted/20 rounded p-2 max-h-[500px] overflow-y-auto">
 							{filteredNodes.length > 0 ? (
@@ -545,6 +583,7 @@ export default function ContextManagement({
 							)}
 						</div>
 					</div>
+					)}
 				</TabsContent>
 
 				{/* Analysis Tab Content */}
