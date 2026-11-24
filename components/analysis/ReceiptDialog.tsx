@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cutCount, describeSent, type Receipt } from '@/lib/chat/receipt';
+import { cutCount, sentDetail, sentShare, type Receipt, type SentDocument } from '@/lib/chat/receipt';
 
 interface ReceiptDialogProps {
 	receipt: Receipt | null;
@@ -42,7 +42,7 @@ export function ReceiptDialog({ receipt, onClose }: ReceiptDialogProps) {
 							{receipt.documents.map((d) => (
 								<li key={d.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 py-2">
 									<span className="truncate" title={d.title}>{d.title}</span>
-									<span className={`whitespace-nowrap ${d.total > d.sent ? 'text-amber-800' : 'text-muted-foreground'}`}>{describeSent(d)}</span>
+									<SentMeter d={d} />
 								</li>
 							))}
 						</ul>
@@ -71,5 +71,25 @@ export function ReceiptDialog({ receipt, onClose }: ReceiptDialogProps) {
 				</Tabs>
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+/** How much of one document went: a small bar and a percentage, or "Summary" */
+function SentMeter({ d }: { d: SentDocument }) {
+	const share = sentShare(d);
+	if (share === null)
+		return (
+			<span className="whitespace-nowrap text-muted-foreground" title={sentDetail(d)}>
+				Summary
+			</span>
+		);
+	const pct = Math.round(share * 100);
+	return (
+		<span className="flex items-center gap-2 whitespace-nowrap" title={sentDetail(d)} aria-label={`${pct}% sent`}>
+			<span aria-hidden className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-200">
+				<span className={`block h-full ${pct < 100 ? 'bg-amber-500' : 'bg-teal-600'}`} style={{ width: `${pct}%` }} />
+			</span>
+			<span className={`w-10 text-right tabular-nums ${pct < 100 ? 'text-amber-800' : 'text-muted-foreground'}`}>{pct}%</span>
+		</span>
 	);
 }

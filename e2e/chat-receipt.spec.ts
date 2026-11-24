@@ -13,8 +13,8 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 					tokens: 1234,
 					charLimit: 800,
 					documents: [
-						{ id: 'a', title: 'EU AI Act', sentAs: 'text', sent: 800, total: 4200 },
-						{ id: 'b', title: 'OSFI E-23', sentAs: 'summary', sent: 310, total: 310 },
+						{ id: 'a', title: 'EU AI Act', sentAs: 'text', sent: 800, total: 4200, length: 4200 },
+						{ id: 'b', title: 'OSFI E-23', sentAs: 'summary', sent: 310, total: 310, length: 29960 },
 					],
 					question: 'Where are the binding rules?',
 					suggestions: true,
@@ -35,8 +35,9 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	const dialog = page.getByRole('dialog', { name: 'What was sent' });
 	await expect(dialog.getByTestId('receipt-line')).toHaveText('2 documents · about 1,234 of 128,000 tokens · gpt-4o-mini · 1 cut to 800 characters');
 	const docs = dialog.getByRole('list', { name: 'Documents sent' });
-	await expect(docs).toContainText('Document text · 800 of 4,200 characters · cut');
-	await expect(docs).toContainText('Summary · 310 characters');
+	// A simple share per document; the exact numbers are in the hover
+	await expect(docs.getByLabel('19% sent')).toHaveAttribute('title', "800 of 4,200 characters of the document's text");
+	await expect(docs.getByText('Summary', { exact: true })).toHaveAttribute('title', 'Summary sent (310 characters); the document is 29,960 characters');
 
 	await dialog.getByRole('tab', { name: 'Instructions' }).click();
 	await expect(dialog).toContainText('Where are the binding rules?');

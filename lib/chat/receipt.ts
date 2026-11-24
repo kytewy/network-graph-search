@@ -17,6 +17,8 @@ export interface SentDocument {
 	sent: number;
 	/** Characters available in what was sent from (summary or text) */
 	total: number;
+	/** The document's own text, in characters */
+	length: number;
 }
 
 export interface Receipt {
@@ -44,7 +46,7 @@ export function sentDocument(node: DocInput, charLimit: number = PROMPT_CONFIG.C
 	const summary = str(node.summary), content = str(node.content), name = str(node.name);
 	const text = str(node.text) || content || summary || name;
 	const sentAs: SentAs = !text || (text === name && text !== summary && text !== content) ? 'title' : text === summary ? 'summary' : 'text';
-	return { id: str(node.id), title: name || str(node.id), sentAs, sent: Math.min(text.length, charLimit), total: text.length };
+	return { id: str(node.id), title: name || str(node.id), sentAs, sent: Math.min(text.length, charLimit), total: text.length, length: content.length || text.length };
 }
 
 export function buildReceipt(input: {
@@ -78,4 +80,22 @@ export function describeSent(d: SentDocument): string {
 	if (d.sentAs === 'title') return how;
 	const n = (x: number) => x.toLocaleString('en-US');
 	return d.total > d.sent ? `${how} · ${n(d.sent)} of ${n(d.total)} characters · cut` : `${how} · ${n(d.sent)} characters`;
+}
+
+/** Share of the document's own text that was sent; none for a summary, which isn't part of the text */
+export function sentShare(d: SentDocument): number | null {
+	if (d.sentAs === 'summary') return null;
+	// Receipts saved before lengths were recorded fall back to what was sent from
+	const length = d.length || d.total;
+	if (d.sentAs === 'title' || !length) return 0;
+	return Math.min(1, d.sent / length);
+}
+
+/** "800 of 2,460 characters of the document's text" (the tooltip behind the percentage) */
+export function sentDetail(d: SentDocument): string {
+	const n = (x: number) => x.toLocaleString('en-US');
+	const length = d.length || d.total;
+	if (d.sentAs === 'summary') return `Summary sent (${n(d.sent)} characters); the document is ${n(length)} characters`;
+	if (d.sentAs === 'title') return 'Only the title was sent';
+	return `${n(d.sent)} of ${n(length)} characters of the document's text`;
 }

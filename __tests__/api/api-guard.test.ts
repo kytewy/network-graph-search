@@ -137,7 +137,7 @@ describe('POST /api/analyze-nodes', () => {
 		const res = await analyzeNodes(makeRequest({ nodes: [sampleNode], customPrompt: 'Summarize', goal: 'Brief the board' }));
 		const { receipt } = await res.json();
 		expect(receipt).toMatchObject({ question: 'Summarize', goal: 'Brief the board', suggestions: false, memoryTurns: 0, model: 'gpt-4o-mini' });
-		expect(receipt.documents).toEqual([{ id: 'A1', title: 'A1', sentAs: 'text', sent: 4, total: 4 }]);
+		expect(receipt.documents).toEqual([{ id: 'A1', title: 'A1', sentAs: 'text', sent: 4, total: 4, length: 4 }]);
 		expect(receipt.tokens).toBeGreaterThan(0);
 	});
 
