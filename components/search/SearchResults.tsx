@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/lib/stores/app-state';
 import { contentPreview } from '@/lib/utils/text-preview';
-import { BookOpen, ArrowUpDown, LayoutGrid, Rows3 } from 'lucide-react';
+import { ArrowUpDown, LayoutGrid, Rows3 } from 'lucide-react';
 import { ResultsTable } from './ResultsTable';
 import { foundByLabel, useFoundBy } from '@/hooks/use-found-by';
 import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
@@ -184,7 +184,9 @@ export function SearchResults() {
 							key={result.id}
 							data-result-card
 							{...highlight(result.id)}
-							className="border rounded-lg p-3 transition-all duration-200 hover:border-primary/50 hover:shadow-sm">
+							// Clicking the card opens the document
+							onClick={() => openReadingMode(result as Node)}
+							className="cursor-pointer border rounded-lg p-3 transition-all duration-200 hover:border-primary/50 hover:shadow-sm">
 							{/* Result Header */}
 							<div className="flex items-start justify-between gap-3">
 								<div className="flex-1 min-w-0">
@@ -205,20 +207,13 @@ export function SearchResults() {
 											</span>
 										)}
 										<h4 className="font-semibold text-sm leading-tight truncate">
-											{result.label}
+											<button type="button" onClick={(e) => (e.stopPropagation(), openReadingMode(result as Node))} className="text-left hover:underline">
+												{result.label}
+											</button>
 										</h4>
 									</div>
 								</div>
 
-								{/* Reading Mode Button */}
-								<Button
-									size="sm"
-									variant="ghost"
-									onClick={() => openReadingMode(result as Node)}
-									className="h-7 w-7 p-0 shrink-0"
-									title="Open in Reading Mode">
-									<BookOpen className="h-3 w-3" />
-								</Button>
 							</div>
 
 							{/* Content Preview */}

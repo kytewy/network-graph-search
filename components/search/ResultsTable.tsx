@@ -1,9 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import type { Node } from '@/lib/config/types';
 import { useAppStore } from '@/lib/stores/app-state';
 import { useContextStore } from '@/lib/stores/context-store';
@@ -81,7 +79,9 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 						{...highlight(node.id)}
 						// Narrow has no room for the extra columns, so they show on hover
 						title={wide ? undefined : [summaryOf(node), node.tags?.join(', '), cluster].filter(Boolean).join('\n')}
-						className="border-b last:border-0 hover:bg-accent/50 align-top">
+						// Clicking anywhere on the row opens the document
+						onClick={() => onOpen(node)}
+						className="cursor-pointer border-b last:border-0 hover:bg-accent/50 align-top">
 						<td className="px-2 py-2">
 							<Badge className="text-xs font-semibold px-2 py-0.5 text-white border-none" style={{ backgroundColor: scoreColor(node.score) }}>
 								{Math.round(node.score * 100)}
@@ -89,14 +89,14 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 						</td>
 						<td className="px-2 py-2 min-w-0">
 							<div className="flex items-start gap-1">
-								<span className="font-medium leading-tight line-clamp-1 flex-1">{node.label}</span>
+								{/* A real button so the keyboard can open it too */}
+								<button type="button" onClick={(e) => (e.stopPropagation(), onOpen(node))} className="flex-1 text-left font-medium leading-tight line-clamp-1 hover:underline">
+									{node.label}
+								</button>
 								{/* Narrow: a ★ when more than one search found it */}
 								{!wide && (found.byDoc[node.id]?.length ?? 0) > 1 && (
 									<span className="shrink-0 text-amber-500" title={`Found by ${foundByLabel(found.byDoc[node.id])}`} aria-label="Found by more than one search">★</span>
 								)}
-								<Button size="sm" variant="ghost" onClick={() => onOpen(node)} className="h-5 w-5 p-0 shrink-0" title="Open in Reading Mode">
-									<BookOpen className="h-3 w-3" />
-								</Button>
 							</div>
 							{wide && <p className="text-xs text-muted-foreground line-clamp-1">{summaryOf(node)}</p>}
 						</td>
@@ -122,7 +122,10 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 								role="switch"
 								aria-checked={inContext}
 								aria-label={`${inContext ? 'Remove' : 'Add'} ${node.label} ${inContext ? 'from' : 'to'} context`}
-								onClick={() => onToggleContext(node.id)}
+								onClick={(e) => {
+									e.stopPropagation(); // the ● adds to context; it doesn't open the document
+									onToggleContext(node.id);
+								}}
 								className={`inline-block h-3 w-3 rounded-full border-2 ${inContext ? 'bg-gray-900 border-gray-900' : 'border-gray-400 hover:border-gray-900'}`}
 							/>
 						</td>
