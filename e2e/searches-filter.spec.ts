@@ -46,8 +46,11 @@ test('the Searches filter shows one search or the overlap, colours by search, an
 	await expect(page.getByText('★ Found by 2+ searches').last()).toBeVisible();
 
 	// Cluster by search (offered once there are two searches)
-	await page.getByRole('button', { name: /^Cluster/ }).click();
-	await page.getByRole('menuitem', { name: 'Search', exact: true }).click();
+	// (Changing the colour rebuilds the graph, which can close a menu opened mid-rebuild, so retry)
+	await expect(async () => {
+		await page.getByRole('button', { name: /^Cluster/ }).click();
+		await page.getByRole('menuitem', { name: 'Search', exact: true }).click({ timeout: 3000 });
+	}).toPass();
 	await expect(page).toHaveURL(/cluster=search/);
 
 	// Removing #1 keeps what #2 also found; the workspace is back to one search
