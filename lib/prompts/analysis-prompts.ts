@@ -134,6 +134,10 @@ export function formatClusterSampleNodes(
  * Used by: /api/analyze-nodes
  * Purpose: Analyze selected network nodes with custom or default prompt
  */
+/** Always sent, whatever the question, so answers can be checked against what was sent */
+export const CITE_RULE =
+	'**Important:** When making claims or observations, cite the relevant document(s) using their actual titles in brackets, e.g., [Article 76: Supervision Testing in Real World Conditions by Market Surveillance Authorities].';
+
 export function buildAnalyzeNodesPrompt(params: AnalyzeNodesParams): string {
 	const { nodes, customPrompt, charLimitPerDoc } = params;
 	const nodeTexts = formatNodesForPrompt(nodes, charLimitPerDoc);
@@ -158,9 +162,7 @@ Provide your analysis in the following format:
 [Interesting patterns, clusters, or outliers based on content or metadata, with citations]
 
 **Insights**
-[Actionable findings or recommendations supported by evidence from specific documents]
-
-**Important:** When making claims or observations, cite the relevant document(s) using their actual titles in brackets, e.g., [Article 76: Supervision Testing in Real World Conditions by Market Surveillance Authorities].`;
+[Actionable findings or recommendations supported by evidence from specific documents]`;
 
 	return `You are an expert document analyst specializing in network analysis and pattern recognition.
 
@@ -169,6 +171,8 @@ Context: You are analyzing ${
 	} documents selected from a network graph visualization.
 
 ${customPrompt || defaultPrompt}
+
+${CITE_RULE}
 
 Documents to analyze:
 

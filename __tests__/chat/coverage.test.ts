@@ -1,4 +1,5 @@
 import { askAboutPrompt, coverage } from '@/lib/chat/coverage';
+import { buildAnalyzeNodesPrompt, CITE_RULE } from '@/lib/prompts/analysis-prompts';
 import type { Receipt, SentDocument } from '@/lib/chat/receipt';
 
 const doc = (id: string, title: string, extra: Partial<SentDocument> = {}): SentDocument => ({
@@ -37,5 +38,13 @@ describe('coverage: what the answer cites out of what was sent', () => {
 		expect(text).toContain('[Doc 0], [Doc 1]');
 		expect(text).toContain('and 2 more');
 		expect(text).not.toContain('[Doc 10]');
+	});
+});
+
+describe('the citation rule', () => {
+	it('goes with every question, typed or default, so coverage can be measured', () => {
+		const nodes = [{ id: 'a', name: 'EU AI Act', text: 'Text' }];
+		expect(buildAnalyzeNodesPrompt({ nodes, customPrompt: 'Where are the binding rules?' })).toContain(CITE_RULE);
+		expect(buildAnalyzeNodesPrompt({ nodes })).toContain(CITE_RULE);
 	});
 });
