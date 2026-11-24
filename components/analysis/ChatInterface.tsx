@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowUp, BookmarkPlus, Check, Copy, FileText, Pencil, Plus, Sparkles, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ArrowUp, BookmarkPlus, Copy, FileText, Pencil, Plus, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { analyzeNodes } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
@@ -16,7 +16,9 @@ import { DocumentView } from './DocumentView';
 import { documentTitle } from '@/lib/chat/citations';
 import { useAppStore } from '@/lib/stores/app-state';
 import { useWorkspaceGoal } from '@/lib/workspace/keep';
-import { actionOptionsFromStore, applyAction } from '@/lib/chat/actions';
+import { actionOptionsFromStore, applyAction, previewCount } from '@/lib/chat/actions';
+import type { ChatAction } from '@/lib/contracts/analysis';
+import { ActionButton } from './ActionButton';
 import { reportError } from '@/lib/observability/capture-client';
 import { toAnalysisNode } from '@/lib/utils/llm-tokens';
 import { debugLog } from '@/lib/utils/debug';
@@ -50,7 +52,9 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 	// An answer opened as a document: beside the chat when the panel is wide, over it when narrow
 	const [openDocId, setOpenDocId] = useState<string | null>(null);
 	// Clicked action buttons, with how to undo each ("turnId:index")
-	const [applied, setApplied] = useState<Record<string, () => void>>({});
+	const [applied, setApplied] = useState<Record<string, { action: ChatAction; undo: () => void }>>({});
+	// Suggestion counts follow the filters, so re-draw when they change
+	useAppStore((s) => s.filteredResults);
 	const [docFull, setDocFull] = useState(false);
 	const setRightPanelExpanded = useAppStore((s) => s.setRightPanelExpanded);
 	const touchPrompt = useSavedPrompts((s) => s.touchPrompt);
@@ -229,34 +233,23 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 									<div className="mt-2 flex flex-wrap gap-1.5" aria-label="Suggested actions">
 										{turn.actions!.map((action, i) => {
 											const key = `${turn.id}:${i}`;
-											const undo = applied[key];
-											return undo ? (
-												<span key={key} className="inline-flex items-center gap-1.5 rounded-full border border-green-300 bg-green-50 px-2.5 py-1 text-xs text-green-800">
-													<Check className="h-3 w-3" />
-													{action.label}
-													<button
-														type="button"
-														className="font-medium underline"
-														onClick={() => {
-															undo();
-															setApplied((prev) => {
-																const next = { ...prev };
-																delete next[key];
-																return next;
-															});
-														}}>
-														Undo
-													</button>
-												</span>
-											) : (
-												<button
+											// A filter that would leave nothing isn't worth offering
+											if (!applied[key] && previewCount(action) === 0) return null;
+											return (
+												<ActionButton
 													key={key}
-													type="button"
-													onClick={() => setApplied((prev) => ({ ...prev, [key]: applyAction(action) }))}
-													className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-white px-2.5 py-1 text-xs text-primary hover:bg-primary/5">
-													<Sparkles className="h-3 w-3" aria-hidden />
-													{action.label}
-												</button>
+													action={action}
+													applied={applied[key]?.action}
+													onApply={(chosen) => setApplied((prev) => ({ ...prev, [key]: { action: chosen, undo: applyAction(chosen) } }))}
+													onUndo={() => {
+														applied[key]?.undo();
+														setApplied((prev) => {
+															const next = { ...prev };
+															delete next[key];
+															return next;
+														});
+													}}
+												/>
 											);
 										})}
 									</div>

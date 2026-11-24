@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { graphNodeCount, RESULT_COUNT, search } from './helpers';
 
-test('answers suggest action buttons; nothing changes until clicked, and Undo puts it back', async ({ page }) => {
+test('answers suggest actions: exact wording with counts, alternatives in ▾, nothing changes until clicked, Undo', async ({ page }) => {
 	let sentOptions: any;
 	await page.route('**/api/analyze-nodes', (r) => {
 		sentOptions = r.request().postDataJSON().actionOptions;
@@ -9,8 +9,9 @@ test('answers suggest action buttons; nothing changes until clicked, and Undo pu
 			json: {
 				summary: 'Europe leads on binding rules.',
 				actions: [
-					{ type: 'filter', filter: 'continents', values: ['Europe'], label: 'Filter to Europe' },
-					{ type: 'color', mode: 'publisher', label: 'Colour by publisher' },
+					{ type: 'filter', filter: 'continents', values: ['Europe'], label: 'Focus on the EU' },
+					{ type: 'color', mode: 'publisher', label: 'See who published' },
+					{ type: 'filter', filter: 'continents', values: ['Antarctica'], label: 'Nothing here' },
 				],
 			},
 		});
@@ -26,20 +27,31 @@ test('answers suggest action buttons; nothing changes until clicked, and Undo pu
 	expect(sentOptions.continents).toContain('Europe');
 	expect(sentOptions.colorModes).toContain('publisher');
 
-	// Buttons appear; nothing has changed yet
+	// The app's own wording with a count (the AI's wording is in the hover); nothing has changed yet
 	const actions = page.getByLabel('Suggested actions');
-	await expect(actions.getByRole('button', { name: 'Filter to Europe' })).toBeVisible();
+	const europe = actions.getByRole('button', { name: 'Continent: Europe · 3 docs', exact: true });
+	await expect(europe).toBeVisible();
+	await expect(europe).toHaveAttribute('title', 'Suggested: Focus on the EU');
+	await expect(actions.getByRole('button', { name: 'Colour by Publisher', exact: true })).toBeVisible();
+	// A filter that would leave nothing isn't offered
+	await expect(actions).not.toContainText('Antarctica');
 	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', String(RESULT_COUNT));
 
-	// Click: the filter applies; Undo removes it
-	await actions.getByRole('button', { name: 'Filter to Europe' }).click();
-	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', '3');
-	await expect(actions).toContainText('Filter to Europe');
+	// ▾ offers close alternatives: pick the country instead of the continent
+	await actions.getByRole('button', { name: 'Other choices for Continent: Europe' }).click();
+	await page.getByRole('menuitem', { name: /Country: European Union · 2 docs/ }).click();
+	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', '2');
+	await expect(actions).toContainText('Country: European Union');
 	await actions.getByRole('button', { name: 'Undo' }).click();
 	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', String(RESULT_COUNT));
 
+	// The suggestion itself, then undo
+	await europe.click();
+	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', '3');
+	await actions.getByRole('button', { name: 'Undo' }).click();
+
 	// Colour by publisher, then undo it
-	await actions.getByRole('button', { name: 'Colour by publisher' }).click();
+	await actions.getByRole('button', { name: 'Colour by Publisher', exact: true }).click();
 	await expect(page).toHaveURL(/color=publisher/);
 	await actions.getByRole('button', { name: 'Undo' }).click();
 	await expect(page).not.toHaveURL(/color=publisher/);

@@ -1,5 +1,5 @@
-import { actionsInstruction, extractActions, type ActionOptions } from '@/lib/contracts/analysis';
-import { actionOptionsFromStore, applyAction } from '@/lib/chat/actions';
+import { actionsInstruction, extractActions, type ActionOptions, type ChatAction } from '@/lib/contracts/analysis';
+import { actionOptionsFromStore, alternatives, applyAction, describeAction, previewCount } from '@/lib/chat/actions';
 import { useAppStore } from '@/lib/stores/app-state';
 import { useContextStore } from '@/lib/stores/context-store';
 import type { Node } from '@/lib/config/types';
@@ -86,3 +86,34 @@ describe('applyAction', () => {
 		expect(o.colorModes).not.toContain('search');
 	});
 });
+
+describe('what a suggestion shows', () => {
+	const doc = (id: string, label: string, continent: string, country: string) => ({ id, label, continent, country, publisher: 'Regulator', score: 0.8 }) as Node;
+	beforeEach(() => {
+		useAppStore.setState({ selectedContinents: [], selectedCountries: [], colorMode: 'continent', rounds: [], aiClusters: {} });
+		useAppStore.getState().setSearchResults([
+			doc('eu', 'EU AI Act', 'Europe', 'European Union'),
+			doc('uk', 'UK principles', 'Europe', 'United Kingdom'),
+			doc('ca', 'OSFI Guideline E-23', 'North America', 'Canada'),
+		]);
+	});
+	const europe: ChatAction = { type: 'filter', filter: 'continents', values: ['Europe'], label: 'Focus on the EU' };
+
+	it('the button says exactly what will happen, whatever the AI called it', () => {
+		expect(describeAction(europe)).toBe('Continent: Europe');
+		expect(describeAction({ type: 'cluster', mode: 'country', label: 'x' })).toBe('Cluster by Country');
+		expect(describeAction({ type: 'context', titles: ['osfi guideline e-23'], label: 'x' })).toBe('Add OSFI Guideline E-23');
+	});
+
+	it('counts what a filter would leave', () => {
+		expect(previewCount(europe)).toBe(2);
+		expect(previewCount({ type: 'filter', filter: 'continents', values: ['Asia'], label: 'x' })).toBe(0);
+		expect(previewCount({ type: 'color', mode: 'publisher', label: 'x' })).toBeNull();
+	});
+
+	it('offers close alternatives: a continent and its countries, never one that shows nothing', () => {
+		expect(alternatives(europe).map(describeAction)).toEqual(['Country: European Union', 'Country: United Kingdom']);
+		expect(alternatives({ type: 'filter', filter: 'countries', values: ['Canada'], label: 'x' }).map(describeAction)).toEqual(['Continent: North America']);
+	});
+});
+
