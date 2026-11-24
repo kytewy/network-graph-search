@@ -4,7 +4,7 @@ import { buildAnalyzeNodesPrompt, PROMPT_CONFIG } from '@/lib/prompts/analysis-p
 import { LIMITS, badRequest, rateLimit } from '@/lib/utils/api-guard';
 import { actionsInstruction, analyzeRequestSchema, extractActions, type ChatAction } from '@/lib/contracts/analysis';
 import { buildReceipt, type Receipt } from '@/lib/chat/receipt';
-import { BUDGET_CHARS, charsRead, READ_LIMITS, READ_TOOL, serveRead, type ReadingEvent } from '@/lib/chat/read-document';
+import { BUDGET_CHARS, charsRead, READ_INSTRUCTION, READ_LIMITS, READ_TOOL, serveRead, type ReadingEvent } from '@/lib/chat/read-document';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 interface Answer {
@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
 				...history,
 				// What the answer may suggest changing, as buttons the user can click
 				...(actionOptions ? [{ role: 'system' as const, content: actionsInstruction(actionOptions) }] : []),
+				// Cut excerpts get read in full before they're cited
+				{ role: 'system' as const, content: READ_INSTRUCTION },
 				{ role: 'user' as const, content: prompt },
 			];
 			// The AI may read whole documents before answering (read_document), as

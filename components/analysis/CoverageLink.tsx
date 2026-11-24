@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { AppWindow } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { coverage, WEAK_SHARE } from '@/lib/chat/coverage';
-import { sentShare, type Receipt, type SentDocument } from '@/lib/chat/receipt';
+import { coverage } from '@/lib/chat/coverage';
+import { sentShare, type Receipt } from '@/lib/chat/receipt';
 
 interface CoverageLinkProps {
 	answer: string;
@@ -13,39 +13,12 @@ interface CoverageLinkProps {
 	onOpenReceipt: () => void;
 }
 
-const SHOWN = 8;
 const n = (x: number) => x.toLocaleString('en-US');
-const pct = (d: SentDocument) => {
-	const share = sentShare(d);
-	return share === null ? 'Summary' : `${Math.round(share * 100)}%`;
-};
-
-/** A short list of documents with how much of each was sent, and "and N more" */
-function DocList({ label, docs }: { label: string; docs: SentDocument[] }) {
-	return (
-		<div>
-			<h3 className="mb-1 text-xs font-medium">
-				{label} ({docs.length})
-			</h3>
-			{docs.length > 0 && (
-				<ul className="space-y-0.5 text-xs" aria-label={label}>
-					{docs.slice(0, SHOWN).map((d) => (
-						<li key={d.id} className="flex justify-between gap-3">
-							<span className="truncate" title={d.title}>{d.title}</span>
-							<span className={`shrink-0 tabular-nums ${(sentShare(d) ?? 0) < WEAK_SHARE ? 'text-amber-700' : 'text-muted-foreground'}`}>{pct(d)}</span>
-						</li>
-					))}
-					{docs.length > SHOWN && <li className="text-muted-foreground">and {docs.length - SHOWN} more</li>}
-				</ul>
-			)}
-		</div>
-	);
-}
 
 /** The answer's context at a glance: "45 sent · 7 cited", opening what went in and what the answer used */
 export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkProps) {
 	const [open, setOpen] = useState(false);
-	const { cited, notCited, weak, unmatched } = coverage(answer, receipt);
+	const { cited, weak, unmatched } = coverage(answer, receipt);
 	const docs = receipt.documents;
 	const onRequest = docs.filter((d) => d.readOnRequest).length;
 	const shares = docs.filter((d) => !d.readOnRequest).map(sentShare);
@@ -93,8 +66,11 @@ export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkPro
 							{receipt.memoryTurns > 0 && ` · ${receipt.memoryTurns} earlier turns`}
 						</p>
 					</div>
-					<DocList label="Cited" docs={cited} />
-					<DocList label="Sent, not cited" docs={notCited} />
+					<p className="text-xs" data-testid="context-cited">
+						Cited {cited.length} of {docs.length}
+						{weak.length > 0 && <span className="text-amber-700"> · {weak.length} cited but mostly unsent</span>}
+						{unmatched.length > 0 && <span className="text-red-700"> · {unmatched.length} match no document sent</span>}
+					</p>
 					<button
 						type="button"
 						onClick={() => {

@@ -41,8 +41,7 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	const peek = page.getByRole('dialog', { name: 'Context for this answer' });
 	await expect(peek).toContainText('about 1,234 of 128,000 tokens (1%)');
 	await expect(peek.getByTestId('context-mix')).toHaveText('3 documents: 0 whole · 1 in part · 1 as summary · 1 read in full on request (2 rounds)');
-	await expect(peek.getByRole('list', { name: 'Cited' })).toContainText('EU AI Act19%');
-	await expect(peek.getByRole('list', { name: 'Sent, not cited' })).toContainText('OSFI E-23Summary');
+	await expect(peek.getByTestId('context-cited')).toHaveText('Cited 1 of 3 · 1 cited but mostly unsent · 1 match no document sent');
 	await peek.getByRole('button', { name: 'Full receipt' }).click();
 	const dialog = page.getByRole('dialog', { name: 'What was sent' });
 	await expect(dialog.getByTestId('receipt-line')).toHaveText('3 documents · about 1,234 of 128,000 tokens · gpt-4o-mini · 1 cut to 800 characters');

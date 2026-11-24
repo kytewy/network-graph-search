@@ -154,6 +154,8 @@ describe('POST /api/analyze-nodes', () => {
 		expect(mockCreate.mock.calls.at(-1)![0].messages.at(-1)).toEqual({ role: 'tool', tool_call_id: 't1', content: 'Text' });
 		expect(receipt.documents[0]).toMatchObject({ readOnRequest: true, sentAs: 'text' });
 		expect(receipt.readRounds).toBe(1);
+		// Every question tells the AI to read cut excerpts before citing them
+		expect(JSON.stringify(mockCreate.mock.calls[0][0].messages)).toContain('read it in full with read_document');
 	});
 
 	it('streams each document as it is read, then the answer', async () => {

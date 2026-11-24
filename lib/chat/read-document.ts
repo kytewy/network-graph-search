@@ -15,6 +15,11 @@ export const READ_LIMITS = {
 } as const;
 export const BUDGET_CHARS = READ_LIMITS.BUDGET_TOKENS * 4;
 
+/** Sent with every chat question: a cut excerpt is read before it's relied on */
+export const READ_INSTRUCTION =
+	'Documents whose content ends with "..." were cut to an excerpt. Before you cite or rely on one of those, ' +
+	'read it in full with read_document, so your answer rests on the whole text. Short documents are already complete.';
+
 export const READ_TOOL = {
 	type: 'function' as const,
 	function: {
