@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { AppWindow } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { coverage } from '@/lib/chat/coverage';
+import { coverage, WEAK_SHARE } from '@/lib/chat/coverage';
 import { sentShare, type Receipt, type SentDocument } from '@/lib/chat/receipt';
 
 interface CoverageLinkProps {
@@ -32,7 +32,7 @@ function DocList({ label, docs }: { label: string; docs: SentDocument[] }) {
 					{docs.slice(0, SHOWN).map((d) => (
 						<li key={d.id} className="flex justify-between gap-3">
 							<span className="truncate" title={d.title}>{d.title}</span>
-							<span className="shrink-0 tabular-nums text-muted-foreground">{pct(d)}</span>
+							<span className={`shrink-0 tabular-nums ${(sentShare(d) ?? 0) < WEAK_SHARE ? 'text-amber-700' : 'text-muted-foreground'}`}>{pct(d)}</span>
 						</li>
 					))}
 					{docs.length > SHOWN && <li className="text-muted-foreground">and {docs.length - SHOWN} more</li>}
@@ -90,11 +90,6 @@ export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkPro
 							{receipt.memoryTurns > 0 && ` · ${receipt.memoryTurns} earlier turns`}
 						</p>
 					</div>
-					{warnings.map((w) => (
-						<p key={w} className={`rounded-md px-2 py-1 text-xs ${w.includes('no document') ? 'bg-red-50 text-red-800' : 'bg-amber-50 text-amber-900'}`}>
-							{w}
-						</p>
-					))}
 					<DocList label="Cited" docs={cited} />
 					<DocList label="Sent, not cited" docs={notCited} />
 					<button
