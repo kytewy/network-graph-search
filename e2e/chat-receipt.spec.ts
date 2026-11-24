@@ -31,18 +31,10 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	await box.press('Enter');
 	await expect(page.getByText(/Two binding rules/)).toBeVisible();
 
-	// Coverage: what the answer cites out of what was sent, with warnings
-	const line = page.getByTestId('coverage-line');
-	await expect(line.getByRole('button', { name: 'Cited 1 of 2' })).toBeVisible();
-	await expect(line).toContainText('1 cited but mostly unsent');
-	await expect(line).toContainText('1 citation matches no document sent');
-	await line.getByRole('button', { name: /1 not cited/ }).click();
-	await expect(page.getByRole('list', { name: 'Not cited' })).toContainText('OSFI E-23');
-	await page.getByRole('button', { name: 'Ask about these' }).click();
-	await expect(box).toHaveValue(/didn't cite these documents: \[OSFI E-23\]/);
-	await page.keyboard.press('Escape');
-
-	await page.getByRole('button', { name: 'What was sent' }).click();
+	// Coverage sits at the end of the answer's tools: a link to the receipt, a dot when a citation needs a look
+	const coverage = page.getByTestId('coverage');
+	await expect(coverage.getByRole('img')).toHaveAccessibleName(/1 citation matches no document sent: The Made Up Act\. 1 cited but mostly unsent: EU AI Act/);
+	await coverage.getByRole('button', { name: 'Cited 1 of 2' }).click();
 	const dialog = page.getByRole('dialog', { name: 'What was sent' });
 	await expect(dialog.getByTestId('receipt-line')).toHaveText('2 documents · about 1,234 of 128,000 tokens · gpt-4o-mini · 1 cut to 800 characters');
 	const docs = dialog.getByRole('list', { name: 'Documents sent' });

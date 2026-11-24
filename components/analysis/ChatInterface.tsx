@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowUp, BookmarkPlus, Copy, FileText, Pencil, Plus, ReceiptText, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ArrowUp, BookmarkPlus, Copy, FileText, Pencil, Plus, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { analyzeNodes } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
@@ -13,7 +13,7 @@ import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 import { matchPrompts, recentPrompts, useSavedPrompts, type SavedPrompt } from '@/lib/stores/saved-prompts';
 import { SavedPromptsDialog } from './SavedPromptsDialog';
 import { ReceiptDialog } from './ReceiptDialog';
-import { CoverageLine } from './CoverageLine';
+import { CoverageLink } from './CoverageLink';
 import { DocumentView } from './DocumentView';
 import { documentTitle } from '@/lib/chat/citations';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -261,38 +261,32 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 										})}
 									</div>
 								)}
-								{/* Which of the documents sent the answer actually cites */}
-								{turn.status === 'done' && turn.receipt && (
-									<CoverageLine answer={turn.response} receipt={turn.receipt} onOpenReceipt={() => setReceiptId(turn.id)} onAsk={fillText} />
-								)}
-								{/* Opens the answer as a document */}
-								{turn.status === 'done' && (
-									<button
-										type="button"
-										onClick={() => setOpenDocId(turn.id)}
-										aria-label={`Open ${documentTitle(turn.response, turn.prompt)} as a document`}
-										aria-pressed={openDocId === turn.id}
-										className={`mt-2 flex max-w-full items-center gap-2 rounded-lg border px-3 py-1.5 text-sm hover:border-primary/50 hover:bg-primary/5 ${openDocId === turn.id ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white'}`}>
-										<FileText className="h-4 w-4 shrink-0 text-primary" />
-										<span className="truncate">{documentTitle(turn.response, turn.prompt)}</span>
-										<span aria-hidden className="text-muted-foreground">▸</span>
-									</button>
-								)}
 								<div className="mt-1 flex items-center gap-0.5">
+									{/* Opens the answer as a document */}
+									{turn.status === 'done' && (
+										<button
+											type="button"
+											className={`${tool} ${openDocId === turn.id ? 'bg-primary/10 text-primary' : ''}`}
+											title="Open as a document"
+											aria-label={`Open ${documentTitle(turn.response, turn.prompt)} as a document`}
+											aria-pressed={openDocId === turn.id}
+											onClick={() => setOpenDocId(turn.id)}>
+											<FileText className="h-3.5 w-3.5" />
+										</button>
+									)}
 									<button type="button" className={tool} title="Copy" aria-label="Copy answer" onClick={() => navigator.clipboard?.writeText(turn.response)}>
 										<Copy className="h-3.5 w-3.5" />
 									</button>
-									{turn.receipt && (
-										<button type="button" className={tool} title="What was sent" aria-label="What was sent" onClick={() => setReceiptId(turn.id)}>
-											<ReceiptText className="h-3.5 w-3.5" />
-										</button>
-									)}
 									<button type="button" className={`${tool} ${turn.feedback === 'up' ? 'text-green-600' : ''}`} title="Good answer" aria-label="Good answer" aria-pressed={turn.feedback === 'up'} onClick={() => updateTurn(turn.id, { feedback: 'up' })}>
 										<ThumbsUp className="h-3.5 w-3.5" />
 									</button>
 									<button type="button" className={`${tool} ${turn.feedback === 'down' ? 'text-red-600' : ''}`} title="Bad answer" aria-label="Bad answer" aria-pressed={turn.feedback === 'down'} onClick={() => updateTurn(turn.id, { feedback: 'down' })}>
 										<ThumbsDown className="h-3.5 w-3.5" />
 									</button>
+									{/* Which of the documents sent the answer cites; opens the receipt */}
+									{turn.status === 'done' && turn.receipt && (
+										<CoverageLink answer={turn.response} receipt={turn.receipt} onOpenReceipt={() => setReceiptId(turn.id)} />
+									)}
 								</div>
 							</div>
 						)}

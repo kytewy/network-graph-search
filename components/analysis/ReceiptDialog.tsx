@@ -42,8 +42,11 @@ export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) 
 								Each document sends at most {n(receipt.charLimit)} characters, about a paragraph. {cut} of {docs} were cut, so the AI saw only their start.
 							</p>
 						)}
+						<p className="mb-1 text-xs text-muted-foreground">
+							Cited {citedIds.size} of {docs}, cited first
+						</p>
 						<ul className="divide-y text-sm" aria-label="Documents sent">
-							{receipt.documents.map((d) => (
+							{[...receipt.documents].sort((a, b) => Number(citedIds.has(b.id)) - Number(citedIds.has(a.id))).map((d) => (
 								<li key={d.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-x-4 py-2">
 									<span className="truncate" title={d.title}>{d.title}</span>
 									<span className="text-xs text-teal-800">{citedIds.has(d.id) ? 'Cited' : ''}</span>

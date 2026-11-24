@@ -1,4 +1,4 @@
-import { askAboutPrompt, coverage } from '@/lib/chat/coverage';
+import { coverage } from '@/lib/chat/coverage';
 import { buildAnalyzeNodesPrompt, CITE_RULE } from '@/lib/prompts/analysis-prompts';
 import type { Receipt, SentDocument } from '@/lib/chat/receipt';
 
@@ -30,14 +30,6 @@ describe('coverage: what the answer cites out of what was sent', () => {
 
 	it('lists citations that match no document sent', () => {
 		expect(coverage('See [The Made Up Act] and [EU AI Act].', sent).unmatched).toEqual(['The Made Up Act']);
-	});
-
-	it('writes a follow-up that names up to 10 documents', () => {
-		const many = Array.from({ length: 12 }, (_, i) => doc(`d${i}`, `Doc ${i}`));
-		const text = askAboutPrompt(many);
-		expect(text).toContain('[Doc 0], [Doc 1]');
-		expect(text).toContain('and 2 more');
-		expect(text).not.toContain('[Doc 10]');
 	});
 });
 
