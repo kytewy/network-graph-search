@@ -34,7 +34,14 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	// Coverage sits at the end of the answer's tools: a link to the receipt, a dot when a citation needs a look
 	const coverage = page.getByTestId('coverage');
 	await expect(coverage.getByRole('img')).toHaveAccessibleName(/1 citation matches no document sent: The Made Up Act\. 1 cited but mostly unsent: EU AI Act/);
-	await coverage.getByRole('button', { name: 'Cited 1 of 2' }).click();
+	await coverage.getByRole('button', { name: '2 sent · 1 cited' }).click();
+	// The popup: the context window, how documents went, and what the answer cited
+	const peek = page.getByRole('dialog', { name: 'Context for this answer' });
+	await expect(peek).toContainText('about 1,234 of 128,000 tokens (1%)');
+	await expect(peek.getByTestId('context-mix')).toHaveText('2 documents: 0 whole · 1 in part · 1 as summary');
+	await expect(peek.getByRole('list', { name: 'Cited' })).toContainText('EU AI Act19%');
+	await expect(peek.getByRole('list', { name: 'Sent, not cited' })).toContainText('OSFI E-23Summary');
+	await peek.getByRole('button', { name: 'Full receipt' }).click();
 	const dialog = page.getByRole('dialog', { name: 'What was sent' });
 	await expect(dialog.getByTestId('receipt-line')).toHaveText('2 documents · about 1,234 of 128,000 tokens · gpt-4o-mini · 1 cut to 800 characters');
 	const docs = dialog.getByRole('list', { name: 'Documents sent' });
