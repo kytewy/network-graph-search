@@ -18,7 +18,7 @@ export function ReceiptDialog({ receipt, onClose }: ReceiptDialogProps) {
 	const docs = receipt.documents.length;
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
-			<DialogContent style={{ maxWidth: 'min(44rem, calc(100vw - 2rem))' }} className="max-h-[85vh] overflow-y-auto">
+			<DialogContent style={{ width: 'min(60rem, calc(100vw - 2rem))', maxWidth: 'none' }} className="max-h-[85vh] grid-cols-[minmax(0,1fr)] overflow-x-hidden overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>What was sent</DialogTitle>
 					<DialogDescription data-testid="receipt-line">
@@ -26,7 +26,7 @@ export function ReceiptDialog({ receipt, onClose }: ReceiptDialogProps) {
 						{cut > 0 && ` · ${cut} cut to ${n(receipt.charLimit)} characters`}
 					</DialogDescription>
 				</DialogHeader>
-				<Tabs defaultValue="documents">
+				<Tabs defaultValue="documents" className="min-w-0">
 					<TabsList>
 						<TabsTrigger value="documents">Documents {docs}</TabsTrigger>
 						<TabsTrigger value="instructions">Instructions</TabsTrigger>
@@ -40,9 +40,9 @@ export function ReceiptDialog({ receipt, onClose }: ReceiptDialogProps) {
 						)}
 						<ul className="divide-y text-sm" aria-label="Documents sent">
 							{receipt.documents.map((d) => (
-								<li key={d.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 py-2">
-									<span className="min-w-0 flex-1 truncate" title={d.title}>{d.title}</span>
-									<span className={d.total > d.sent ? 'text-amber-800' : 'text-muted-foreground'}>{describeSent(d)}</span>
+								<li key={d.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 py-2">
+									<span className="truncate" title={d.title}>{d.title}</span>
+									<span className={`whitespace-nowrap ${d.total > d.sent ? 'text-amber-800' : 'text-muted-foreground'}`}>{describeSent(d)}</span>
 								</li>
 							))}
 						</ul>
