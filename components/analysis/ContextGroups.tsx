@@ -133,13 +133,16 @@ export function ContextGroups({ nodes, by, onOpen, onAsk }: ContextGroupsProps) 
 							<ul className="text-xs">
 								{g.ids.map((id) => {
 									const node = byId.get(id)!;
-									const also = (found[id] ?? []).slice(by === 'search' ? 1 : 0);
 									return (
 										<li key={id} {...highlight(id)} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-muted/30" onClick={() => onOpen(node)}>
 											<span className="min-w-0 flex-1 truncate font-medium">{node.label}</span>
 											{(found[id]?.length ?? 0) > 1 && (
-												<span className="shrink-0 text-amber-600" title={`Found by ${found[id].map((n) => `#${n}`).join(', ')}`}>
-													★{by === 'search' ? ` also ${also.map((n) => `#${n}`).join(' ')}` : ''}
+												// Just the star, as everywhere else; hover says which searches
+												<span
+													className="shrink-0 text-amber-600"
+													title={`Found by ${found[id].map((n) => `#${n}`).join(', ')}`}
+													aria-label={`Found by ${found[id].map((n) => `#${n}`).join(', ')}`}>
+													★
 												</span>
 											)}
 											<span className="text-muted-foreground/60">{nodeTokens(node).toLocaleString()}</span>
