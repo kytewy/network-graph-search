@@ -114,7 +114,7 @@ Builds toward workstreams; see [vision-architecture.md](./vision-architecture.md
 | A4 | Answers open as documents: copy, download, expand; [citations] linked to the graph; Sources | Done |
 | A5 | Saved prompts: + window (use, edit, duplicate, delete, save a chat question), "/" menu, recent-first chips | Done |
 | — | Clusters tab summary (count, AI overview, one line per cluster); chat takes up to 200 documents | Done |
-| A6 | Chat actions: answers suggest buttons ("Filter to Europe", "Cluster these"); nothing changes until clicked | Later |
+| A6 | Chat actions: answers suggest up to 3 buttons (filter, colour, cluster, add to context), checked by the server; nothing changes until clicked; Undo | **In review** |
 
 **Collect track (now): several searches in one workspace**
 

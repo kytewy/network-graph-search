@@ -1,3 +1,4 @@
+import type { ChatAction } from '@/lib/contracts/analysis';
 import { create } from 'zustand';
 import { type Node } from '@/lib/stores/app-state';
 
@@ -31,6 +32,8 @@ export interface ChatConversation {
 	feedback?: 'up' | 'down';
 	/** Waiting, stopped or failed turns are shown but not remembered for follow-ups */
 	status?: 'thinking' | 'done' | 'stopped' | 'failed';
+	/** Buttons the answer suggests ("Filter to Europe"); nothing changes until clicked */
+	actions?: ChatAction[];
 }
 
 interface ContextState {

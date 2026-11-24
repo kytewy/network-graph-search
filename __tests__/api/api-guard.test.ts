@@ -129,7 +129,29 @@ describe('POST /api/analyze-nodes', () => {
 		mockCreate.mockResolvedValue({ choices: [{ message: { content: 'A summary' } }] });
 		const res = await analyzeNodes(makeRequest({ nodes: [sampleNode], customPrompt: 'Summarize' }));
 		expect(res.status).toBe(200);
-		expect(await res.json()).toEqual({ summary: 'A summary' });
+		expect(await res.json()).toEqual({ summary: 'A summary', actions: [] });
+	});
+
+	it('takes suggested actions out of the answer and keeps only available ones', async () => {
+		mockCreate.mockResolvedValue({
+			choices: [
+				{
+					message: {
+						content:
+							'Europe leads.\n\n```actions\n[{"type":"filter","filter":"continents","values":["Europe"],"label":"Filter to Europe"},{"type":"filter","filter":"continents","values":["Mars"],"label":"Mars"}]\n```',
+					},
+				},
+			],
+		});
+		const res = await analyzeNodes(
+			makeRequest({ nodes: [sampleNode], customPrompt: 'Where?', actionOptions: { continents: ['Europe'] } })
+		);
+		expect(await res.json()).toEqual({
+			summary: 'Europe leads.',
+			actions: [{ type: 'filter', filter: 'continents', values: ['Europe'], label: 'Filter to Europe' }],
+		});
+		// The AI was told what it may suggest
+		expect(JSON.stringify(mockCreate.mock.calls.at(-1)![0].messages)).toContain('continents: \\"Europe\\"');
 	});
 
 	it('hides internal error details from the client', async () => {

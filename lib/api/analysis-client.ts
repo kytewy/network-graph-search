@@ -6,7 +6,7 @@
 import { queryClient } from './query-client';
 import { RETRY, requestJson, shouldRetry, sortedIds } from './http';
 import type { ClusterAnalysisResponse } from '@/lib/stores/context-store';
-import type { AnalyzeRequest } from '@/lib/contracts/analysis';
+import type { AnalyzeRequest, ChatAction } from '@/lib/contracts/analysis';
 
 const REMEMBER_MS = 30 * 60_000;
 const post = (body: unknown, signal?: AbortSignal): RequestInit => ({ method: 'POST', body: JSON.stringify(body), signal });
@@ -44,5 +44,5 @@ export function cancelClustering() {
 
 /** Ask the AI about the documents. Pass a signal so Stop really cancels the request. */
 export function analyzeNodes({ signal, ...body }: AnalyzeRequest & { signal?: AbortSignal }) {
-	return requestJson<{ summary: string }>('/api/analyze-nodes', post(body, signal), 'Analysis failed');
+	return requestJson<{ summary: string; actions?: ChatAction[] }>('/api/analyze-nodes', post(body, signal), 'Analysis failed');
 }
