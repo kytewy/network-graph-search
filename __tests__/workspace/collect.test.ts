@@ -1,4 +1,4 @@
-import { foundBy, hasRound, makeRound, mergeResults, stampRounds } from '@/lib/workspace/collect';
+import { foundBy, hasRound, makeRound, mergeResults, searchGroup, stampRounds } from '@/lib/workspace/collect';
 import type { Link, Node } from '@/lib/config/types';
 
 const doc = (id: string, score: number) => ({ id, label: id, score }) as Node;
@@ -58,5 +58,14 @@ describe('rounds', () => {
 			['a', 0.9],
 			['b', 0.5],
 		]);
+	});
+});
+
+describe('searchGroup', () => {
+	it('names the group a document clusters into', () => {
+		const queries = { 1: 'AI regulation', 2: 'compliance' };
+		expect(searchGroup([2], queries)).toBe('#2 compliance');
+		expect(searchGroup([1, 2], queries)).toBe('★ Found by 2+ searches');
+		expect(searchGroup(undefined, queries)).toBe('Other');
 	});
 });

@@ -127,6 +127,8 @@ export const CLUSTER_MODES = [
 	{ id: 'country', label: 'Country', needsAiClusters: false },
 	{ id: 'publisher', label: 'Publisher', needsAiClusters: false },
 	{ id: 'ai_clusters', label: 'AI clusters', needsAiClusters: true },
+	// Offered once the workspace has two or more searches
+	{ id: 'search', label: 'Search', needsAiClusters: false, needsSearches: true },
 ] as const;
 
 /** Layout ids as the network store keeps them. */

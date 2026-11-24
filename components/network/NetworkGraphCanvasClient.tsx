@@ -47,6 +47,9 @@ export function NetworkGraphCanvasClient() {
 	const highlightedNodes = useAppStore((state) => state.highlightedNodes);
 	// New AI clusters re-run the layout even when "Cluster: AI clusters" was already picked
 	const aiClustersVersion = useAppStore((state) => state.aiClustersVersion);
+	// Same for "Cluster: Search" when a search is added or removed
+	const searchCount = useAppStore((state) => state.rounds.length);
+	const clusterVersion = clusterMode === 'ai_clusters' ? aiClustersVersion : clusterMode === 'search' ? searchCount : 0;
 	const setHighlightedNodes = useAppStore((state) => state.setHighlightedNodes);
 	// Lassoed nodes stay purple too, until they're sent or the lasso menu closes
 	const highlightedSet = useMemo(
@@ -146,7 +149,7 @@ export function NetworkGraphCanvasClient() {
 
 				{safeGraphNodes.length > 0 ? (
 					<GraphCanvas
-						key={`graph-${nodeSizeMode}-${colorMode}-${clusterMode}-${clusterMode === 'ai_clusters' ? aiClustersVersion : 0}`}
+						key={`graph-${nodeSizeMode}-${colorMode}-${clusterMode}-${clusterVersion}`}
 						ref={graphRef}
 						nodes={safeGraphNodes}
 						edges={safeGraphEdges}

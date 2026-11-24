@@ -1,4 +1,5 @@
 'use client';
+import { useMemo } from 'react';
 
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -22,12 +23,16 @@ export function useGraphView() {
 			clusterMode: s.clusterMode,
 		}))
 	);
+	// Each search's words, so "Cluster: Search" can name its groups
+	const rounds = useAppStore((s) => s.rounds);
+	const searchQueries = useMemo(() => Object.fromEntries(rounds.map((r) => [r.n, r.query])), [rounds]);
 	const { layoutType } = useGraphLayout();
 	const { graphNodes, graphEdges, getNodeColor } = useGraphData(filteredResults, filteredLinks, {
 		colorMode,
 		nodeSizeMode,
 		clusterMode,
 		aiClusters,
+		searchQueries,
 	});
 
 	return { graphNodes, graphEdges, getNodeColor, layoutType, showLabels, colorMode, nodeSizeMode, clusterMode };

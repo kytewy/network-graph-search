@@ -5,6 +5,7 @@ import type { GraphNode, GraphEdge } from 'reagraph';
 import type { Node, Link } from '@/lib/stores/app-state';
 import { NodeSizeCalculator } from '@/lib/utils/node-sizing';
 import { NO_CLUSTERS, type ClusterAssignments } from '@/lib/clustering/assignments';
+import { searchGroup } from '@/lib/workspace/collect';
 
 import { colorOfNode, type ColorMode, type NodeSizeMode } from '@/lib/config/view-modes';
 export type { ColorMode, NodeSizeMode };
@@ -14,6 +15,7 @@ interface UseGraphDataOptions {
 	nodeSizeMode: NodeSizeMode;
 	clusterMode?: string; // Cluster mode
 	aiClusters?: ClusterAssignments; // AI cluster per node id
+	searchQueries?: Readonly<Record<number, string>>; // Each search's words, for clustering by search
 }
 
 interface UseGraphDataReturn {
@@ -52,7 +54,7 @@ interface UseGraphDataReturn {
 export function useGraphData(
 	nodes: Node[],
 	links: Link[],
-	{ colorMode, nodeSizeMode, clusterMode, aiClusters = NO_CLUSTERS }: UseGraphDataOptions
+	{ colorMode, nodeSizeMode, clusterMode, aiClusters = NO_CLUSTERS, searchQueries = {} }: UseGraphDataOptions
 ): UseGraphDataReturn {
 	const getNodeColor = useCallback(
 		(node: Node) => {
@@ -82,7 +84,7 @@ export function useGraphData(
 				// Original node data for menus and interactions. Reagraph groups by
 				// data[clusterAttribute], so the AI cluster goes here too (a copy,
 				// never written onto the search result)
-				data: { ...node, ai_clusters: aiClusters[node.id] } as any,
+				data: { ...node, ai_clusters: aiClusters[node.id], search: searchGroup(node.foundBy, searchQueries) } as any,
 				
 				// Attach all possible cluster properties to the node
 				// Reagraph will use the one specified by clusterAttribute
@@ -91,6 +93,7 @@ export function useGraphData(
 				country: nodeData.country,
 				publisher: nodeData.publisher,
 				ai_clusters: aiClusters[node.id], // AI cluster from the assignments map (e.g., "cluster_0")
+				search: searchGroup(node.foundBy, searchQueries), // "#1 AI regulation", or the overlap
 				
 				// Include fields needed by UI components
 				summary: nodeData.summary,

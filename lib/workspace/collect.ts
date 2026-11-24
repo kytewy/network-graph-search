@@ -58,6 +58,13 @@ export function stampRounds(nodes: readonly Node[], rounds: readonly SearchRound
 		.map((d) => ({ ...d, foundBy: by[d.id], score: Math.max(...rounds.filter((r) => d.id in r.scores).map((r) => r.scores[d.id])) }));
 }
 
+/** The group a document falls in when clustering by search: its search, or the overlap */
+export function searchGroup(foundBy: readonly number[] | undefined, queries: Readonly<Record<number, string>>): string {
+	if (!foundBy?.length) return 'Other';
+	if (foundBy.length > 1) return '★ Found by 2+ searches';
+	return `#${foundBy[0]} ${queries[foundBy[0]] ?? ''}`.trim();
+}
+
 /** For each document, the rounds that found it, in order (e.g. [1, 3]) */
 export function foundBy(rounds: readonly SearchRound[]): Record<string, number[]> {
 	const out: Record<string, number[]> = {};

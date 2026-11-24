@@ -30,6 +30,8 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 	// Settings straight from the store (one shallow read), layout from its hook
 	const { layoutType: currentLayout, handleLayoutChange: onLayoutChange } = useGraphLayout();
 	const hasAiClusters = useHasAiClusters();
+	// "Cluster: Search" needs two or more searches in the workspace
+	const hasSearches = useAppStore((s) => s.rounds.length > 1);
 	const {
 		currentColorBy,
 		onColorByChange,
@@ -89,7 +91,9 @@ export function VisualizationControls({}: VisualizationControlsProps) {
 	const toOption = (m: { id: string; label: string }) => ({ id: m.id, name: m.label });
 	const colorByOptions = COLOR_MODES.map(toOption);
 	const sizeByOptions = SIZE_MODES.filter((m) => m.inControls).map(toOption);
-	const clusterByOptions = CLUSTER_MODES.filter((m) => !m.needsAiClusters || hasAiClusters).map(toOption);
+	const clusterByOptions = CLUSTER_MODES.filter(
+		(m) => (!m.needsAiClusters || hasAiClusters) && (!('needsSearches' in m) || hasSearches)
+	).map(toOption);
 
 	// Get display name for current layout
 	const getCurrentLayoutName = () => {
