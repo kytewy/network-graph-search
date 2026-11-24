@@ -2,7 +2,7 @@
  * @vitest-environment node
  */
 
-import { filterNodes } from '@/lib/filters/filter-nodes';
+import { facetNodes, filterNodes } from '@/lib/filters/filter-nodes';
 import type { Node } from '@/lib/config/types';
 
 const node = (id: string, extra: Partial<Node>): Node =>
@@ -53,5 +53,24 @@ describe('filterNodes', () => {
 		const copy = JSON.parse(JSON.stringify(nodes));
 		filterNodes(nodes, { ...none, publishers: ['NGO'] });
 		expect(nodes).toEqual(copy);
+	});
+});
+
+describe('facetNodes (what each filter section counts from)', () => {
+	const ticked = { ...none, continents: ['Europe'], publishers: ['Government'] };
+
+	it("narrows by every other section's ticks, not its own", () => {
+		// Location counts from Government only, so it still shows what North America would add
+		expect(ids(facetNodes(nodes, ticked, 'location'))).toEqual(['eu-law']);
+		// Publisher counts from Europe only
+		expect(ids(facetNodes(nodes, ticked, 'publishers'))).toEqual(['eu-law', 'eu-firm']);
+	});
+
+	it('is everything when only its own section is ticked', () => {
+		expect(ids(facetNodes(nodes, { ...none, continents: ['Europe'] }, 'location'))).toEqual(['eu-law', 'eu-firm', 'ca-reg', 'us-ngo']);
+	});
+
+	it('a section with nothing ticked counts from what the panel shows', () => {
+		expect(ids(facetNodes(nodes, ticked, 'tags'))).toEqual(ids(filterNodes(nodes, ticked)));
 	});
 });

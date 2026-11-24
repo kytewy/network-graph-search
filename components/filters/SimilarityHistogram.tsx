@@ -15,6 +15,8 @@ export function SimilarityHistogram() {
 
 	// Get state and actions from app store - MUST be called before conditional returns
 	const searchResults = useAppStore((state) => state.searchResults);
+	// Re-count when any other filter changes (the bars follow them)
+	const filteredResults = useAppStore((state) => state.filteredResults);
 	const selectedSimilarityRanges = useAppStore(
 		(state) => state.selectedSimilarityRanges
 	);
@@ -30,7 +32,7 @@ export function SimilarityHistogram() {
 		const ranges = SEARCH_CONFIG.SIMILARITY_RANGES;
 
 		// Always show bars if we have nodes
-		const safeSearchResults = searchResults;
+		const safeSearchResults = useAppStore.getState().facet('similarity');
 		if (safeSearchResults.length === 0) {
 			// Return minimal width bars when no results are available
 			return ranges.map(({ range, min, max }) => ({
@@ -88,7 +90,8 @@ export function SimilarityHistogram() {
 					);
 			return { range, count, width, min, max };
 		});
-	}, [searchResults]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [searchResults, filteredResults]);
 
 	useEffect(() => {
 		setIsClient(true);
@@ -113,7 +116,7 @@ export function SimilarityHistogram() {
 								className={`${SEARCH_CONFIG.HISTOGRAM.BAR_HEIGHT} rounded cursor-pointer transition-all ${SEARCH_CONFIG.HISTOGRAM.ANIMATION_DURATION} flex items-center justify-end pr-2 ${
 									selectedSimilarityRanges.includes(bar.range)
 										? 'bg-primary text-white hover:bg-primary/90 shadow-md'
-										: 'bg-primary/20 text-primary hover:bg-primary/30'
+										: `bg-primary/20 text-primary hover:bg-primary/30 ${bar.count === 0 ? 'opacity-40' : ''}`
 								}`}
 								style={{ width: `${bar.width}%` }}
 								onClick={() => toggleSimilarityRange(bar.range)}>

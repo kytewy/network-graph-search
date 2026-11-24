@@ -46,7 +46,7 @@ export function GeographicFilters({
 										isSelected
 											? 'bg-primary text-primary-foreground hover:bg-primary/90'
 											: 'hover:bg-accent/50'
-									}`}
+									} ${!isSelected && getNodeCountByContinent(continent) === 0 ? 'opacity-40' : ''}`}
 									onClick={() => toggleContinent(continent)}>
 									<span>
 										{continent} {isSelected && '✓'}
@@ -125,7 +125,7 @@ export function GeographicFilters({
 																	isCountrySelected
 																		? 'bg-primary text-primary-foreground hover:bg-primary/90'
 																		: 'hover:bg-accent/50'
-																}`}
+																} ${!isCountrySelected && nodeCount === 0 ? 'opacity-40' : ''}`}
 																onClick={() => toggleCountry(country)}>
 																<span className="text-xs font-medium">
 																	{countrySearchTerm

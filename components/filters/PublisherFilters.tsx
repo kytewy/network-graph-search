@@ -21,6 +21,8 @@ export function PublisherFilters({
 		<div className="flex flex-wrap gap-2">
 			{availablePublishers.map((publisher) => {
 				const selected = selectedPublishers.includes(publisher);
+				// None left after the other filters: faded, still clickable
+				const empty = !selected && getNodeCountByPublisher(publisher) === 0;
 				return (
 					<Badge
 						key={publisher}
@@ -30,7 +32,7 @@ export function PublisherFilters({
 						variant={selected ? 'default' : 'outline'}
 						className={`cursor-pointer gap-1.5 transition-colors ${
 							selected ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-accent/50'
-						}`}
+						} ${empty ? 'opacity-40' : ''}`}
 						onClick={() => togglePublisher(publisher)}
 						onKeyDown={(e) => {
 							if (e.key === 'Enter' || e.key === ' ') {

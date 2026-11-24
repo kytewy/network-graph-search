@@ -3,7 +3,7 @@ import { isCancelledError } from '@tanstack/react-query';
 import { cancelSearch, searchOnce } from '@/lib/api/search-client';
 import { isAbortError } from '@/lib/utils/latest-request';
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
-import { filterNodes } from '@/lib/filters/filter-nodes';
+import { facetNodes, filterNodes } from '@/lib/filters/filter-nodes';
 import { selectionsFromStore } from '@/lib/config/filters';
 import { create } from 'zustand';
 import type { Node, Link } from '@/lib/config/types';
@@ -93,6 +93,8 @@ interface SearchState {
 	clearPublisherFilters: () => void;
 	getAvailablePublishers: () => string[]; // Publishers in the results, taxonomy order
 	getNodeCountByPublisher: (publisher: string) => number;
+	/** The results each filter section counts from: narrowed by every other section */
+	facet: (group: string) => Node[];
 }
 
 export type AppState = SearchState & ViewSlice & SelectionSlice;
@@ -333,17 +335,13 @@ export const useAppStore = create<AppState>()(
 		},
 
 		// Get count of nodes for a specific continent
-		getNodeCountByContinent: (continent: string) => {
-			const { searchResults } = get();
-			return searchResults.filter((node) => node.continent === continent)
-				.length;
-		},
+		facet: (group) => facetNodes(get().searchResults, selectionsFromStore(get()), group),
+
+		// Counts follow the other filters (see facet)
+		getNodeCountByContinent: (continent: string) => get().facet('location').filter((node) => node.continent === continent).length,
 
 		// Get count of nodes for a specific country
-		getNodeCountByCountry: (country: string) => {
-			const { searchResults } = get();
-			return searchResults.filter((node) => node.country === country).length;
-		},
+		getNodeCountByCountry: (country: string) => get().facet('location').filter((node) => node.country === country).length,
 
 		// Get list of all continents in current data
 		getAvailableContinents: () => {
@@ -396,13 +394,7 @@ export const useAppStore = create<AppState>()(
 			return Array.from(tags).sort();
 		},
 
-		getNodeCountByTag: (tag: string) => {
-			const { searchResults } = get();
-			const safeFilteredResults = searchResults;
-			return safeFilteredResults.filter((node) => 
-				Array.isArray(node.tags) && node.tags.includes(tag)
-			).length;
-		},
+		getNodeCountByTag: (tag: string) => get().facet('tags').filter((node) => Array.isArray(node.tags) && node.tags.includes(tag)).length,
 
 		// Publisher filter: like location and tags, it changes which documents
 		// match, so it re-runs the search in Pinecone
@@ -425,8 +417,7 @@ export const useAppStore = create<AppState>()(
 			return PUBLISHERS.map((p) => p.value).filter((value) => present.has(value));
 		},
 
-		getNodeCountByPublisher: (publisher) =>
-			get().searchResults.filter((node) => node.publisher === publisher).length,
+		getNodeCountByPublisher: (publisher) => get().facet('publishers').filter((node) => node.publisher === publisher).length,
 			}),
 			{
 				name: PREFERENCES_STORAGE_KEY,

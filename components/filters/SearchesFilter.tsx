@@ -14,11 +14,15 @@ export function SearchesFilter() {
 	const rounds = useAppStore((s) => s.rounds);
 	const selected = useAppStore((s) => s.selectedSearches);
 	const results = useAppStore((s) => s.searchResults);
+	// Counts follow the other filters (Location, score…); re-count when they change
+	useAppStore((s) => s.filteredResults);
+	const base = useAppStore.getState().facet('searches');
 	const toggle = useAppStore((s) => s.toggleSearchFilter);
 	const removeRound = useAppStore((s) => s.removeRound);
 	const setHighlighted = useAppStore((s) => s.setHighlightedNodes);
 
 	const overlap = results.filter((d) => (d.foundBy?.length ?? 0) > 1);
+	const overlapLeft = base.filter((d) => (d.foundBy?.length ?? 0) > 1).length;
 	const row = (value: string, ticked: boolean) =>
 		`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${ticked ? 'bg-primary/10 font-medium' : 'hover:bg-accent/50'}`;
 
@@ -27,6 +31,8 @@ export function SearchesFilter() {
 			{rounds.map((r) => {
 				const value = String(r.n);
 				const ids = Object.keys(r.scores);
+				const left = base.filter((d) => d.foundBy?.includes(r.n)).length;
+				const faded = !selected.includes(value) && left === 0 ? 'opacity-40' : '';
 				return (
 					<li key={r.n} className="group flex items-center gap-1">
 						<button
@@ -35,12 +41,12 @@ export function SearchesFilter() {
 							onClick={() => toggle(value)}
 							onMouseEnter={() => setHighlighted(ids)}
 							onMouseLeave={() => setHighlighted([])}
-							className={row(value, selected.includes(value))}>
+							className={`${row(value, selected.includes(value))} ${faded}`}>
 							<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: searchColor(r.n) }} />
 							<span className="min-w-0 flex-1 truncate">
 								#{r.n} {r.query}
 							</span>
-							<span className="text-xs text-muted-foreground">{ids.length}</span>
+							<span className="text-xs text-muted-foreground">{left}</span>
 						</button>
 						{rounds.length > 1 && (
 							<button
@@ -63,10 +69,10 @@ export function SearchesFilter() {
 						onClick={() => toggle(FOUND_BY_MANY)}
 						onMouseEnter={() => setHighlighted(overlap.map((d) => d.id))}
 						onMouseLeave={() => setHighlighted([])}
-						className={row(FOUND_BY_MANY, selected.includes(FOUND_BY_MANY))}>
+						className={`${row(FOUND_BY_MANY, selected.includes(FOUND_BY_MANY))} ${!selected.includes(FOUND_BY_MANY) && overlapLeft === 0 ? 'opacity-40' : ''}`}>
 						<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: FOUND_BY_MANY_COLOR }} />
 						<span className="flex-1">★ Found by 2+ searches</span>
-						<span className="text-xs text-muted-foreground">{overlap.length}</span>
+						<span className="text-xs text-muted-foreground">{overlapLeft}</span>
 					</button>
 				</li>
 			)}

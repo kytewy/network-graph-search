@@ -30,7 +30,7 @@ export function TagFilters({
 					return (
 						<div
 							key={tag}
-							className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer group"
+							className={`flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer group ${count === 0 && !isSelected ? 'opacity-40' : ''}`}
 							onClick={() => toggleTag(tag)}>
 							<div className="flex items-center space-x-2">
 								<Checkbox
