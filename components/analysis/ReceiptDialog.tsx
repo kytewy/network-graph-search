@@ -13,11 +13,16 @@ interface ReceiptDialogProps {
 }
 
 const n = (x: number) => x.toLocaleString('en-US');
+/** A document's own length; receipts saved before lengths were recorded use what was sent from */
+const lengthOf = (d: SentDocument) => d.length || d.total;
 
 /** "What was sent": every input to one answer, exactly as the server sent it */
 export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) {
 	if (!receipt) return null;
 	const citedIds = new Set(coverage(answer, receipt).cited.map((d) => d.id));
+	const totalLength = receipt.documents.reduce((sum, d) => sum + lengthOf(d), 0);
+	// A summary isn't part of the text, so only text that was sent counts here
+	const totalSent = receipt.documents.reduce((sum, d) => sum + (d.sentAs === 'text' ? d.sent : 0), 0);
 	const cut = cutCount(receipt);
 	const docs = receipt.documents.length;
 	return (
@@ -47,13 +52,17 @@ export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) 
 						</p>
 						<ul className="divide-y text-sm" aria-label="Documents sent">
 							{[...receipt.documents].sort((a, b) => Number(citedIds.has(b.id)) - Number(citedIds.has(a.id))).map((d) => (
-								<li key={d.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-x-4 py-2">
+								<li key={d.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto_6.5rem] items-baseline gap-x-4 py-2">
 									<span className="truncate" title={d.title}>{d.title}</span>
 									<span className="text-xs text-teal-800">{citedIds.has(d.id) ? 'Cited' : ''}</span>
 									<SentMeter d={d} />
+									<span className="text-right text-xs tabular-nums text-muted-foreground">{n(lengthOf(d))} chars</span>
 								</li>
 							))}
 						</ul>
+						<p className="mt-2 border-t pt-2 text-right text-xs text-muted-foreground" data-testid="receipt-total">
+							{docs} documents · {n(totalLength)} characters in all · {n(totalSent)} sent ({Math.round((totalSent / Math.max(totalLength, 1)) * 100)}%)
+						</p>
 					</TabsContent>
 					<TabsContent value="instructions" className="space-y-3 text-sm">
 						<div>

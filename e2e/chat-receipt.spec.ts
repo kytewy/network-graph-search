@@ -48,6 +48,8 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	// A simple share per document; the exact numbers are in the hover
 	await expect(docs.getByLabel('19% sent')).toHaveAttribute('title', "800 of 4,200 characters of the document's text");
 	await expect(docs.getByText('Cited', { exact: true })).toHaveCount(1);
+	await expect(docs).toContainText('29,960 chars');
+	await expect(dialog.getByTestId('receipt-total')).toHaveText('2 documents · 34,160 characters in all · 800 sent (2%)');
 	await expect(docs.getByText('Summary', { exact: true })).toHaveAttribute('title', 'Summary sent (310 characters); the document is 29,960 characters');
 
 	await dialog.getByRole('tab', { name: 'Instructions' }).click();
