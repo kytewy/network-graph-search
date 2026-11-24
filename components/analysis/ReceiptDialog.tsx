@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { coverage } from '@/lib/chat/coverage';
+import { BUDGET_CHARS } from '@/lib/chat/read-document';
 import { cutCount, sentDetail, sentShare, type Receipt, type SentDocument } from '@/lib/chat/receipt';
 
 interface ReceiptDialogProps {
@@ -20,6 +21,9 @@ const lengthOf = (d: SentDocument) => d.length || d.total;
 export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) {
 	if (!receipt) return null;
 	const citedIds = new Set(coverage(answer, receipt).cited.map((d) => d.id));
+	const readDocs = receipt.documents.filter((d) => d.readOnRequest);
+	const readCount = readDocs.length;
+	const readChars = readDocs.reduce((sum, d) => sum + d.sent, 0);
 	const totalLength = receipt.documents.reduce((sum, d) => sum + lengthOf(d), 0);
 	// A summary isn't part of the text, so only text that was sent counts here
 	const totalSent = receipt.documents.reduce((sum, d) => sum + (d.sentAs === 'text' ? d.sent : 0), 0);
@@ -42,6 +46,12 @@ export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) 
 						<TabsTrigger value="memory">Memory {receipt.memoryTurns}</TabsTrigger>
 					</TabsList>
 					<TabsContent value="documents">
+						{readCount > 0 && (
+							<p className="mb-2 rounded-md bg-violet-50 px-3 py-2 text-sm text-violet-900" data-testid="read-on-request">
+								The AI read {readCount} document{readCount === 1 ? '' : 's'} in full on request ({n(readChars)} of {n(BUDGET_CHARS)} characters of its reading budget, {receipt.readRounds ?? 1} round{(receipt.readRounds ?? 1) === 1 ? '' : 's'})
+								{(receipt.readsRefused ?? 0) > 0 && `, and asked for ${receipt.readsRefused} more after the budget ran out`}.
+							</p>
+						)}
 						{cut > 0 && (
 							<p className="mb-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
 								Each document sends at most {n(receipt.charLimit)} characters, about a paragraph. {cut} of {docs} were cut, so the AI saw only their start.
@@ -54,7 +64,7 @@ export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) 
 							{[...receipt.documents].sort((a, b) => Number(citedIds.has(b.id)) - Number(citedIds.has(a.id))).map((d) => (
 								<li key={d.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto_6.5rem] items-baseline gap-x-4 py-2">
 									<span className="truncate" title={d.title}>{d.title}</span>
-									<span className="text-xs text-teal-800">{citedIds.has(d.id) ? 'Cited' : ''}</span>
+									<span className="text-xs text-teal-800">{[d.readOnRequest && 'Read on request', citedIds.has(d.id) && 'Cited'].filter(Boolean).join(' · ')}</span>
 									<SentMeter d={d} />
 									<span className="text-right text-xs tabular-nums text-muted-foreground">{n(lengthOf(d))} chars</span>
 								</li>

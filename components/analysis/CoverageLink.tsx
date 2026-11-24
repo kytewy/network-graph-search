@@ -47,10 +47,11 @@ export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkPro
 	const [open, setOpen] = useState(false);
 	const { cited, notCited, weak, unmatched } = coverage(answer, receipt);
 	const docs = receipt.documents;
-	const shares = docs.map(sentShare);
+	const onRequest = docs.filter((d) => d.readOnRequest).length;
+	const shares = docs.filter((d) => !d.readOnRequest).map(sentShare);
 	const whole = shares.filter((s) => s === 1).length;
 	const summaries = shares.filter((s) => s === null).length;
-	const part = docs.length - whole - summaries;
+	const part = shares.length - whole - summaries;
 	const used = Math.min(100, Math.round((receipt.tokens / receipt.contextWindow) * 100));
 	const warnings = [
 		unmatched.length > 0 &&
@@ -87,6 +88,8 @@ export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkPro
 						</div>
 						<p className="mt-1 text-xs text-muted-foreground" data-testid="context-mix">
 							{docs.length} documents: {whole} whole · {part} in part · {summaries} as summary
+							{onRequest > 0 && ` · ${onRequest} read in full on request`}
+							{(receipt.readRounds ?? 0) > 1 && ` (${receipt.readRounds} rounds)`}
 							{receipt.memoryTurns > 0 && ` · ${receipt.memoryTurns} earlier turns`}
 						</p>
 					</div>

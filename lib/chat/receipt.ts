@@ -19,6 +19,8 @@ export interface SentDocument {
 	total: number;
 	/** The document's own text, in characters */
 	length: number;
+	/** The AI asked for this document's full text (read_document) */
+	readOnRequest?: boolean;
 }
 
 export interface Receipt {
@@ -36,6 +38,10 @@ export interface Receipt {
 	suggestions: boolean;
 	/** Earlier question-and-answer pairs sent for follow-ups */
 	memoryTurns: number;
+	/** Requests to read a document in full that the budget turned down */
+	readsRefused?: number;
+	/** Rounds of reading the AI took before answering */
+	readRounds?: number;
 }
 
 type DocInput = Record<string, unknown>;
@@ -56,6 +62,10 @@ export function buildReceipt(input: {
 	goal?: string;
 	suggestions: boolean;
 	memoryTurns: number;
+	/** Documents the AI read in full: id → characters read */
+	read?: ReadonlyMap<string, number>;
+	readsRefused?: number;
+	readRounds?: number;
 }): Receipt {
 	const chars = input.messages.reduce((n, m) => n + m.content.length, 0);
 	return {
@@ -63,11 +73,17 @@ export function buildReceipt(input: {
 		contextWindow: PROMPT_CONFIG.CONTEXT_WINDOW_TOKENS,
 		tokens: Math.ceil(chars / 4),
 		charLimit: PROMPT_CONFIG.CHAR_LIMIT_GENERAL_ANALYSIS,
-		documents: input.nodes.map((n) => sentDocument(n)),
+		documents: input.nodes.map((node) => {
+			const d = sentDocument(node);
+			const chars = input.read?.get(d.id);
+			return chars === undefined ? d : { ...d, sentAs: 'text' as const, sent: Math.max(chars, d.sent), total: Math.max(chars, d.total), readOnRequest: true };
+		}),
 		question: input.question?.trim() || undefined,
 		goal: input.goal?.trim() || undefined,
 		suggestions: input.suggestions,
 		memoryTurns: input.memoryTurns,
+		...(input.readsRefused ? { readsRefused: input.readsRefused } : {}),
+		...(input.readRounds ? { readRounds: input.readRounds } : {}),
 	};
 }
 

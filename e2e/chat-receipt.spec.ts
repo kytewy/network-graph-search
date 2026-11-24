@@ -15,7 +15,9 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 					documents: [
 						{ id: 'a', title: 'EU AI Act', sentAs: 'text', sent: 800, total: 4200, length: 4200 },
 						{ id: 'b', title: 'OSFI E-23', sentAs: 'summary', sent: 310, total: 310, length: 29960 },
+						{ id: 'c', title: 'Article 6', sentAs: 'text', sent: 5000, total: 5000, length: 5000, readOnRequest: true },
 					],
+					readRounds: 2,
 					question: 'Where are the binding rules?',
 					suggestions: true,
 					memoryTurns: 0,
@@ -34,22 +36,24 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	// Coverage sits at the end of the answer's tools: a link to the receipt, a dot when a citation needs a look
 	const coverage = page.getByTestId('coverage');
 	await expect(coverage.getByRole('img')).toHaveAccessibleName(/1 citation matches no document sent: The Made Up Act\. 1 cited but mostly unsent: EU AI Act/);
-	await coverage.getByRole('button', { name: '2 sent · 1 cited' }).click();
+	await coverage.getByRole('button', { name: '3 sent · 1 cited' }).click();
 	// The popup: the context window, how documents went, and what the answer cited
 	const peek = page.getByRole('dialog', { name: 'Context for this answer' });
 	await expect(peek).toContainText('about 1,234 of 128,000 tokens (1%)');
-	await expect(peek.getByTestId('context-mix')).toHaveText('2 documents: 0 whole · 1 in part · 1 as summary');
+	await expect(peek.getByTestId('context-mix')).toHaveText('3 documents: 0 whole · 1 in part · 1 as summary · 1 read in full on request (2 rounds)');
 	await expect(peek.getByRole('list', { name: 'Cited' })).toContainText('EU AI Act19%');
 	await expect(peek.getByRole('list', { name: 'Sent, not cited' })).toContainText('OSFI E-23Summary');
 	await peek.getByRole('button', { name: 'Full receipt' }).click();
 	const dialog = page.getByRole('dialog', { name: 'What was sent' });
-	await expect(dialog.getByTestId('receipt-line')).toHaveText('2 documents · about 1,234 of 128,000 tokens · gpt-4o-mini · 1 cut to 800 characters');
+	await expect(dialog.getByTestId('receipt-line')).toHaveText('3 documents · about 1,234 of 128,000 tokens · gpt-4o-mini · 1 cut to 800 characters');
 	const docs = dialog.getByRole('list', { name: 'Documents sent' });
 	// A simple share per document; the exact numbers are in the hover
 	await expect(docs.getByLabel('19% sent')).toHaveAttribute('title', "800 of 4,200 characters of the document's text");
 	await expect(docs.getByText('Cited', { exact: true })).toHaveCount(1);
 	await expect(docs).toContainText('29,960 chars');
-	await expect(dialog.getByTestId('receipt-total')).toHaveText('2 documents · 34,160 characters in all · 800 sent (2%)');
+	await expect(docs).toContainText('Read on request');
+	await expect(dialog.getByTestId('read-on-request')).toContainText('The AI read 1 document in full on request (5,000 of 200,000 characters of its reading budget, 2 rounds)');
+	await expect(dialog.getByTestId('receipt-total')).toHaveText('3 documents · 39,160 characters in all · 5,800 sent (15%)');
 	await expect(docs.getByText('Summary', { exact: true })).toHaveAttribute('title', 'Summary sent (310 characters); the document is 29,960 characters');
 
 	await dialog.getByRole('tab', { name: 'Instructions' }).click();

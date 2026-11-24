@@ -141,6 +141,21 @@ describe('POST /api/analyze-nodes', () => {
 		expect(receipt.tokens).toBeGreaterThan(0);
 	});
 
+	it('lets the AI read a whole document before answering, and puts it on the receipt', async () => {
+		mockCreate
+			.mockResolvedValueOnce({
+				choices: [{ message: { role: 'assistant', content: null, tool_calls: [{ id: 't1', type: 'function', function: { name: 'read_document', arguments: '{"title":"A1"}' } }] } }],
+			})
+			.mockResolvedValueOnce({ choices: [{ message: { content: 'Read it.' } }] });
+		const res = await analyzeNodes(makeRequest({ nodes: [sampleNode], customPrompt: 'Summarize' }));
+		const { summary, receipt } = await res.json();
+		expect(summary).toBe('Read it.');
+		// The full text went back to the AI as the tool's answer
+		expect(mockCreate.mock.calls.at(-1)![0].messages.at(-1)).toEqual({ role: 'tool', tool_call_id: 't1', content: 'Text' });
+		expect(receipt.documents[0]).toMatchObject({ readOnRequest: true, sentAs: 'text' });
+		expect(receipt.readRounds).toBe(1);
+	});
+
 	it('takes suggested actions out of the answer and keeps only available ones', async () => {
 		mockCreate.mockResolvedValue({
 			choices: [
