@@ -13,6 +13,7 @@ import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 import { matchPrompts, recentPrompts, useSavedPrompts, type SavedPrompt } from '@/lib/stores/saved-prompts';
 import { SavedPromptsDialog } from './SavedPromptsDialog';
 import { ReceiptDialog } from './ReceiptDialog';
+import { CoverageLine } from './CoverageLine';
 import { DocumentView } from './DocumentView';
 import { documentTitle } from '@/lib/chat/citations';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -135,10 +136,13 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 	const stop = () => stopRef.current?.abort();
 
 	/** Puts a saved prompt in the box, ready to edit or send */
+	const fillText = (text: string) => {
+		setChatInput(text);
+		requestAnimationFrame(() => inputRef.current?.focus());
+	};
 	const fillBox = (prompt: SavedPrompt) => {
 		touchPrompt(prompt.id);
-		setChatInput(prompt.text);
-		requestAnimationFrame(() => inputRef.current?.focus());
+		fillText(prompt.text);
 	};
 
 	// The box grows upward with what you type, up to about 8 lines, then scrolls inside
@@ -256,6 +260,10 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 											);
 										})}
 									</div>
+								)}
+								{/* Which of the documents sent the answer actually cites */}
+								{turn.status === 'done' && turn.receipt && (
+									<CoverageLine answer={turn.response} receipt={turn.receipt} onOpenReceipt={() => setReceiptId(turn.id)} onAsk={fillText} />
 								)}
 								{/* Opens the answer as a document */}
 								{turn.status === 'done' && (
@@ -413,7 +421,11 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 				draft={chatInput}
 				saveText={saveText}
 			/>
-			<ReceiptDialog receipt={conversations.find((c) => c.id === receiptId)?.receipt ?? null} onClose={() => setReceiptId(null)} />
+			<ReceiptDialog
+				receipt={conversations.find((c) => c.id === receiptId)?.receipt ?? null}
+				answer={conversations.find((c) => c.id === receiptId)?.response ?? ''}
+				onClose={() => setReceiptId(null)}
+			/>
 		</div>
 	);
 

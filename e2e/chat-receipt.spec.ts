@@ -5,7 +5,7 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	await page.route('**/api/analyze-nodes', (r) =>
 		r.fulfill({
 			json: {
-				summary: 'Two binding rules.',
+				summary: 'Two binding rules, from [EU AI Act] and [The Made Up Act].',
 				actions: [],
 				receipt: {
 					model: 'gpt-4o-mini',
@@ -29,7 +29,18 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	const box = page.getByRole('textbox', { name: 'Ask about the documents' });
 	await box.fill('Where are the binding rules?');
 	await box.press('Enter');
-	await expect(page.getByText('Two binding rules.')).toBeVisible();
+	await expect(page.getByText(/Two binding rules/)).toBeVisible();
+
+	// Coverage: what the answer cites out of what was sent, with warnings
+	const line = page.getByTestId('coverage-line');
+	await expect(line.getByRole('button', { name: 'Cited 1 of 2' })).toBeVisible();
+	await expect(line).toContainText('1 cited but mostly unsent');
+	await expect(line).toContainText('1 citation matches no document sent');
+	await line.getByRole('button', { name: /1 not cited/ }).click();
+	await expect(page.getByRole('list', { name: 'Not cited' })).toContainText('OSFI E-23');
+	await page.getByRole('button', { name: 'Ask about these' }).click();
+	await expect(box).toHaveValue(/didn't cite these documents: \[OSFI E-23\]/);
+	await page.keyboard.press('Escape');
 
 	await page.getByRole('button', { name: 'What was sent' }).click();
 	const dialog = page.getByRole('dialog', { name: 'What was sent' });
@@ -37,6 +48,7 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	const docs = dialog.getByRole('list', { name: 'Documents sent' });
 	// A simple share per document; the exact numbers are in the hover
 	await expect(docs.getByLabel('19% sent')).toHaveAttribute('title', "800 of 4,200 characters of the document's text");
+	await expect(docs.getByText('Cited', { exact: true })).toHaveCount(1);
 	await expect(docs.getByText('Summary', { exact: true })).toHaveAttribute('title', 'Summary sent (310 characters); the document is 29,960 characters');
 
 	await dialog.getByRole('tab', { name: 'Instructions' }).click();

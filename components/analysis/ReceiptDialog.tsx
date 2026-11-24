@@ -2,18 +2,22 @@
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { coverage } from '@/lib/chat/coverage';
 import { cutCount, sentDetail, sentShare, type Receipt, type SentDocument } from '@/lib/chat/receipt';
 
 interface ReceiptDialogProps {
 	receipt: Receipt | null;
+	/** The answer, to mark which documents it cites */
+	answer: string;
 	onClose: () => void;
 }
 
 const n = (x: number) => x.toLocaleString('en-US');
 
 /** "What was sent": every input to one answer, exactly as the server sent it */
-export function ReceiptDialog({ receipt, onClose }: ReceiptDialogProps) {
+export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) {
 	if (!receipt) return null;
+	const citedIds = new Set(coverage(answer, receipt).cited.map((d) => d.id));
 	const cut = cutCount(receipt);
 	const docs = receipt.documents.length;
 	return (
@@ -40,8 +44,9 @@ export function ReceiptDialog({ receipt, onClose }: ReceiptDialogProps) {
 						)}
 						<ul className="divide-y text-sm" aria-label="Documents sent">
 							{receipt.documents.map((d) => (
-								<li key={d.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 py-2">
+								<li key={d.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-x-4 py-2">
 									<span className="truncate" title={d.title}>{d.title}</span>
+									<span className="text-xs text-teal-800">{citedIds.has(d.id) ? 'Cited' : ''}</span>
 									<SentMeter d={d} />
 								</li>
 							))}
