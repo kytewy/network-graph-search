@@ -15,6 +15,7 @@ import { SavedPromptsDialog } from './SavedPromptsDialog';
 import { DocumentView } from './DocumentView';
 import { documentTitle } from '@/lib/chat/citations';
 import { useAppStore } from '@/lib/stores/app-state';
+import { useWorkspaceGoal } from '@/lib/workspace/keep';
 import { reportError } from '@/lib/observability/capture-client';
 import { toAnalysisNode } from '@/lib/utils/llm-tokens';
 import { debugLog } from '@/lib/utils/debug';
@@ -98,6 +99,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 					nodes: contextNodes.map(toAnalysisNode),
 					customPrompt: prompt,
 					history: memory,
+					goal: useWorkspaceGoal.getState().goal || undefined,
 					signal: controller.signal,
 				});
 				updateTurn(id, { response: summary, status: 'done' });

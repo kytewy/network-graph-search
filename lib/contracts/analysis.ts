@@ -33,6 +33,8 @@ export const analyzeRequestSchema = z.object({
 		.string()
 		.max(CHAT_LIMITS.MAX_PROMPT_CHARS, { error: `Prompt must be text under ${CHAT_LIMITS.MAX_PROMPT_CHARS} characters` })
 		.optional(),
+	/** The workspace's goal ("…so I can brief the board Friday"), so answers stay aimed at it */
+	goal: z.string().max(300, { error: 'Goal must be under 300 characters' }).optional(),
 	history: z
 		.array(memoryMessage)
 		.max(CHAT_LIMITS.MEMORY_TURNS * 2, { error: `Send at most ${CHAT_LIMITS.MEMORY_TURNS} earlier turns` })

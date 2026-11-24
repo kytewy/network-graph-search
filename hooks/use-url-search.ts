@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react';
 import { useQueryStates } from 'nuqs';
 import { clampTopK, searchUrlParams } from '@/lib/url/search-params';
 import { useAppStore } from '@/lib/stores/app-state';
+import { keepSaving, readSnapshot, restoreSnapshot, snapshotMatches } from '@/lib/workspace/keep';
 
 /**
  * Runs the search in the web address: when the page opens (a refresh or a
@@ -13,10 +14,19 @@ import { useAppStore } from '@/lib/stores/app-state';
 export function useSearchFromUrl() {
 	const [{ q, k }] = useQueryStates(searchUrlParams);
 
+	// The workspace is saved as it changes (lib/workspace/keep.ts)
+	useEffect(() => keepSaving(), []);
+
 	useEffect(() => {
 		const query = q?.trim();
-		if (!query) return;
 		const topK = clampTopK(k);
+		// The saved workspace started from this search (or there's none in the
+		// address): bring it back instead of searching again, once per page open
+		if (useAppStore.getState().rounds.length === 0) {
+			const saved = readSnapshot();
+			if (snapshotMatches(saved, query, topK)) return restoreSnapshot(saved!);
+		}
+		if (!query) return;
 		const { setQuery, setTopK, performSearch } = useAppStore.getState();
 		setQuery(query);
 		setTopK(topK);

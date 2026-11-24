@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 	try {
 		const parsed = analyzeRequestSchema.safeParse(await request.json().catch(() => null));
 		if (!parsed.success) return badRequest(parsed.error.issues[0]?.message ?? 'Invalid request');
-		const { nodes, customPrompt, history } = parsed.data;
+		const { nodes, customPrompt, history, goal } = parsed.data;
 
 		if (nodes.length === 0 || nodes.length > LIMITS.MAX_NODES_LLM) {
 			return badRequest(`Send between 1 and ${LIMITS.MAX_NODES_LLM} nodes`);
@@ -29,7 +29,11 @@ export async function POST(request: NextRequest) {
 			model: PROMPT_CONFIG.MODEL,
 			// Earlier turns first, so follow-ups make sense; the documents ride
 			// with the newest question, so they're always the current context
-			messages: [...history, { role: 'user', content: prompt }],
+			messages: [
+				...(goal?.trim() ? [{ role: 'system' as const, content: `The user's research goal: ${goal.trim()}\nKeep every answer aimed at this goal.` }] : []),
+				...history,
+				{ role: 'user', content: prompt },
+			],
 			temperature: PROMPT_CONFIG.TEMPERATURE_ANALYSIS,
 			max_tokens: PROMPT_CONFIG.MAX_TOKENS_ANALYSIS,
 		});

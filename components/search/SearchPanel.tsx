@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SearchInput } from './SearchInput';
+import { WorkspaceBar } from './WorkspaceBar';
 import { SearchResults } from './SearchResults';
 import FilterPanel from '@/components/filters/FilterPanel';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -91,7 +92,8 @@ export function SearchPanel() {
 					</span>
 					<span className="ml-auto">{expandButton}</span>
 				</div>
-				<div className="px-4 py-3 shrink-0 border-b border-sidebar-border">
+				<div className="px-4 py-3 shrink-0 border-b border-sidebar-border space-y-2">
+					<WorkspaceBar />
 					<SearchInput />
 				</div>
 				{searchCount > 0 ? (
@@ -167,6 +169,7 @@ export function SearchPanel() {
 						className="flex-1 overflow-y-auto data-[state=inactive]:hidden">
 						{/* The search box sits in the Search tab; 16px gaps throughout */}
 						<div className="p-4 space-y-3">
+							<WorkspaceBar />
 							<SearchInput />
 							{searchCount > 0 ? (
 								<SearchResults />
