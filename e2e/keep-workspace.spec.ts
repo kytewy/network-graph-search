@@ -68,3 +68,35 @@ test('a link to a different search starts fresh instead of restoring', async ({ 
 	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', String(RESULT_COUNT));
 	await expect(page.getByTestId('workspace-status')).toHaveAttribute('title', /^1 search ·/);
 });
+
+test('AI clusters come back after a refresh, without asking the AI again', async ({ page }) => {
+	let aiCalls = 0;
+	await page.route('**/api/analyze-nodes', (r) => (aiCalls++, r.fulfill({ json: { summary: 'Two clusters: rules and frameworks.' } })));
+	await page.route('**/api/analyze-cluster', (r) => (aiCalls++, r.fulfill({ json: { clusterName: ['EU rules', 'Frameworks'][r.request().postDataJSON().clusterIndex], description: 'x' } })));
+	const ids = reply.nodes.map((n) => n.id);
+	const clusters = [
+		{ cluster_id: 'cluster_0', label: 'Cluster 0', size: 3, top_terms: ['eu'], node_ids: ids.slice(0, 3) },
+		{ cluster_id: 'cluster_1', label: 'Cluster 1', size: 3, top_terms: ['us'], node_ids: ids.slice(3) },
+	];
+	await page.route('**/api/cluster-analysis', (r) =>
+		r.fulfill({ json: { clusters, cluster_assignments: Object.fromEntries(clusters.flatMap((c) => c.node_ids.map((id) => [id, c.cluster_id]))) } })
+	);
+	await search(page);
+	for (const row of await page.getByTestId('results-table').locator('[data-result-row]').all()) await row.getByRole('switch').click();
+	const header = page.locator('[data-panel-header="right"]');
+	await header.getByRole('tab', { name: 'Clusters' }).click();
+	await page.getByRole('button', { name: 'Analyze Clusters' }).click();
+	await expect(page.getByTestId('cluster-summary')).toContainText('Two clusters');
+
+	await page.waitForTimeout(600);
+	const before = aiCalls;
+	await page.reload();
+	await page.locator('[data-panel-header="right"]').getByRole('tab', { name: 'Clusters' }).click();
+	await expect(page.getByTestId('cluster-overview').getByRole('button', { name: /EU rules/ })).toBeVisible();
+	await expect(page.getByTestId('cluster-summary')).toContainText('Two clusters');
+	expect(aiCalls).toBe(before);
+	// …and the Context tab can still group by cluster
+	await page.locator('[data-panel-header="right"]').getByRole('tab', { name: /^Context/ }).click();
+	await expect(page.getByRole('group', { name: 'Group context' }).getByRole('button', { name: 'cluster' })).toBeVisible();
+});
+

@@ -43,6 +43,8 @@ interface ContextState {
 	
 	// LLM cluster suggestions
 	clusterSuggestions: Map<number, ClusterSuggestion>;
+	/** The Clusters tab's quick summary, with the clusters it was written for (kept with the workspace) */
+	clusterOverview: { key: string; summary: string } | null;
 	
 	// Chat conversations
 	chatConversations: ChatConversation[];
@@ -72,6 +74,7 @@ export const useContextStore = create<ContextState>((set) => ({
 	clusterResults: null,
 	expandedClusters: new Set<string>(),
 	clusterSuggestions: new Map(),
+	clusterOverview: null,
 	chatConversations: [],
 
 	addNodesToContext: (nodes) =>

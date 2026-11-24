@@ -58,6 +58,27 @@ describe('keeping the workspace', () => {
 		expect(useContextStore.getState().chatConversations[0].timestamp).toBeInstanceOf(Date);
 	});
 
+	it('keeps AI clusters: assignments, results, names and the quick summary', () => {
+		const results = { clusters: [{ cluster_id: 'cluster_0', size: 2, top_terms: [], node_ids: ['a', 'b'] }] } as any;
+		useAppStore.setState({ rounds, aiClusters: { a: 'cluster_0', b: 'cluster_0' } });
+		useContextStore.setState({
+			clusterResults: results,
+			clusterSuggestions: new Map([[0, { clusterName: 'EU rules', description: 'x' }]]) as any,
+			clusterOverview: { key: 'k', summary: 'One cluster.' },
+		});
+		const saved = JSON.parse(JSON.stringify(takeSnapshot())); // as it would be stored
+
+		clearWorkspace();
+		expect(useContextStore.getState().clusterResults).toBeNull();
+		const version = useAppStore.getState().aiClustersVersion;
+
+		restoreSnapshot(saved);
+		expect(useAppStore.getState().aiClusters).toEqual({ a: 'cluster_0', b: 'cluster_0' });
+		expect(useAppStore.getState().aiClustersVersion).toBe(version + 1); // the graph re-groups
+		expect(useContextStore.getState().clusterSuggestions.get(0)).toMatchObject({ clusterName: 'EU rules' });
+		expect(useContextStore.getState().clusterOverview?.summary).toBe('One cluster.');
+	});
+
 	it('New workspace empties it, saved copy included', () => {
 		localStorage.setItem(WORKSPACE_KEY, JSON.stringify({ v: 1, rounds }));
 		useAppStore.setState({ rounds });

@@ -8,6 +8,7 @@ import { useAppStore } from '@/lib/stores/app-state';
 import { useContextStore, type ChatConversation } from '@/lib/stores/context-store';
 import type { Link, Node } from '@/lib/config/types';
 import type { SearchRound } from './collect';
+import type { ClusterAssignments } from '@/lib/clustering/assignments';
 
 export const WORKSPACE_KEY = 'network-graph-search:workspace';
 export const MAX_GOAL = 300;
@@ -27,7 +28,16 @@ export interface Snapshot {
 	selectedSearches: string[];
 	context: Node[];
 	chat: ChatConversation[];
+	/** AI clusters: which cluster each document is in, the results, names and quick summary */
+	clusters?: {
+		assignments: ClusterAssignments;
+		results: ContextState['clusterResults'];
+		suggestions: [number, unknown][];
+		overview: ContextState['clusterOverview'];
+	};
 }
+
+type ContextState = ReturnType<typeof useContextStore.getState>;
 
 /** What's on screen now, ready to save (unfinished chat answers left out) */
 export function takeSnapshot(): Snapshot {
@@ -42,6 +52,9 @@ export function takeSnapshot(): Snapshot {
 		selectedSearches: app.selectedSearches,
 		context: ctx.contextNodes,
 		chat: ctx.chatConversations.filter((c) => c.status !== 'thinking'),
+		clusters: ctx.clusterResults
+			? { assignments: app.aiClusters, results: ctx.clusterResults, suggestions: [...ctx.clusterSuggestions], overview: ctx.clusterOverview }
+			: undefined,
 	};
 }
 
@@ -76,6 +89,15 @@ export function restoreSnapshot(s: Snapshot) {
 		contextNodes: s.context,
 		chatConversations: s.chat.map((c) => ({ ...c, timestamp: new Date(c.timestamp) })),
 	});
+	if (s.clusters) {
+		// The graph re-groups (a new version re-runs its layout); the Clusters tab shows its cards
+		useAppStore.setState((app) => ({ aiClusters: s.clusters!.assignments, aiClustersVersion: app.aiClustersVersion + 1 }));
+		useContextStore.setState({
+			clusterResults: s.clusters.results,
+			clusterSuggestions: new Map(s.clusters.suggestions) as ContextState['clusterSuggestions'],
+			clusterOverview: s.clusters.overview,
+		});
+	}
 }
 
 /** Empties the workspace: searches, context, chat, goal, and the saved copy */
@@ -88,7 +110,9 @@ export function clearWorkspace() {
 	useWorkspaceGoal.setState({ goal: '' });
 	useAppStore.setState({ rounds: [], links: [], selectedSearches: [], query: '', hasSearched: false });
 	useAppStore.getState().setSearchResults([]);
+	useAppStore.getState().clearAiClusters();
 	useContextStore.getState().clearContext();
+	useContextStore.setState({ clusterSuggestions: new Map(), clusterOverview: null });
 	useContextStore.getState().clearChatConversations();
 }
 

@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useContextStore } from '@/lib/stores/context-store';
 import { Loader2 } from 'lucide-react';
 import { analyzeNodes } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
@@ -37,9 +39,13 @@ export function ClusterOverview({ clusters, suggestions, namesLoading, onJump }:
 
 	// Written from the names and descriptions, so it waits for them. Remembered
 	// for the same clusters, so switching tabs doesn't ask again.
+	// The last summary is kept with the workspace, so a refresh doesn't ask again
+	const key = clusters.map((c, i) => `${c.cluster_id}:${c.size}:${suggestions.get(i)?.clusterName ?? ''}`).join('|');
+	const kept = useContextStore((s) => (s.clusterOverview?.key === key ? s.clusterOverview.summary : undefined));
 	const overview = useQuery(
 		{
-			queryKey: ['cluster-overview', clusters.map((c, i) => `${c.cluster_id}:${c.size}:${suggestions.get(i)?.clusterName ?? ''}`)],
+			queryKey: ['cluster-overview', key],
+			initialData: kept ? { summary: kept } : undefined,
 			queryFn: ({ signal }) =>
 				analyzeNodes({
 					signal,
@@ -57,6 +63,9 @@ export function ClusterOverview({ clusters, suggestions, namesLoading, onJump }:
 		},
 		queryClient
 	);
+	useEffect(() => {
+		if (named && overview.data && overview.data.summary !== kept) useContextStore.setState({ clusterOverview: { key, summary: overview.data.summary } });
+	}, [named, overview.data, key, kept]);
 
 	return (
 		<section className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3" aria-label="Clusters overview" data-testid="cluster-overview">

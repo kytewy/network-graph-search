@@ -126,7 +126,7 @@ Search in rounds, collect the results in one graph, then ask big questions acros
 | C2 | "Searches" filter (tick a search, ★ found by 2+, ✕ remove a search) + colour and cluster by search | `workspace/searches-filter` | 150 | Done |
 | F1 | Filters react to each other: each section counts what the other sections leave; empty options fade | `filters/facets` | 120 | Done |
 | C3 | Context grouped by search (+ Top 10 / + All / Remove per search) or by AI cluster (Ask about this / Remove); overlap icon | `workspace/context-by-search` | 200 | Done |
-| C4 | Workspace goal sent with every chat question; workspace kept in the browser (survives a refresh); "New workspace" | `workspace/keep` | 200 | **In review** |
+| C4 | Workspace goal sent with every chat question; workspace kept in the browser (survives a refresh), AI clusters included; "New workspace" | `workspace/keep`, `workspace/keep-clusters` | 250 | Done |
 
 **After the collect track**
 
