@@ -15,11 +15,15 @@ const node = (extra: Record<string, unknown>) =>
 	({ id: 'A50', label: 'Article 50', publisher: 'Government', documentType: 'Law', country: 'European Union', ...extra } as any);
 
 describe('toAnalysisNode (what the chat sends)', () => {
-	// Search results never carried a separate full text (fields.full_text), so
-	// the summary comes first, then the document's text
-	it('prefers summary, then content', () => {
-		expect(toAnalysisNode(node({ summary: 'S', content: 'C' })).text).toBe('S');
-		expect(toAnalysisNode(node({ content: 'C' })).text).toBe('C');
+	const long = 'x'.repeat(PROMPT_CONFIG.CHAR_LIMIT_GENERAL_ANALYSIS + 1);
+	it('sends the whole text when it fits, so short documents are never summarised', () => {
+		expect(toAnalysisNode(node({ summary: 'S', content: 'C' })).text).toBe('C');
+	});
+
+	it('sends a real summary for long documents, and the text when the summary is just the title', () => {
+		expect(toAnalysisNode(node({ summary: 'A real summary', content: long })).text).toBe('A real summary');
+		// EU recitals: the "summary" repeats the title, which would tell the AI nothing
+		expect(toAnalysisNode(node({ summary: 'Article 50', content: long })).text).toBe(long);
 		expect(toAnalysisNode(node({})).text).toBe('No content available');
 	});
 
