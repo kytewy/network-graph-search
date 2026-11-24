@@ -4,10 +4,11 @@
  * and costs no AI call. Chat questions are never remembered.
  */
 import { queryClient } from './query-client';
-import { RETRY, requestJson, shouldRetry, sortedIds } from './http';
+import { ApiError, RETRY, requestJson, shouldRetry, sortedIds } from './http';
 import type { ClusterAnalysisResponse } from '@/lib/stores/context-store';
 import type { AnalyzeRequest, ChatAction } from '@/lib/contracts/analysis';
 import type { Receipt } from '@/lib/chat/receipt';
+import type { ReadingEvent } from '@/lib/chat/read-document';
 
 const REMEMBER_MS = 30 * 60_000;
 const post = (body: unknown, signal?: AbortSignal): RequestInit => ({ method: 'POST', body: JSON.stringify(body), signal });
@@ -46,4 +47,47 @@ export function cancelClustering() {
 /** Ask the AI about the documents. Pass a signal so Stop really cancels the request. */
 export function analyzeNodes({ signal, ...body }: AnalyzeRequest & { signal?: AbortSignal }) {
 	return requestJson<{ summary: string; actions?: ChatAction[]; receipt?: Receipt }>('/api/analyze-nodes', post(body, signal), 'Analysis failed');
+}
+
+export type AnalysisAnswer = { summary: string; actions?: ChatAction[]; receipt?: Receipt };
+
+/**
+ * Ask the AI and hear, as it happens, each document it opens to read in
+ * full. Resolves with the answer; Stop (the signal) cancels it.
+ */
+export async function analyzeNodesLive({
+	signal,
+	onRead,
+	...body
+}: AnalyzeRequest & { signal?: AbortSignal; onRead?: (event: ReadingEvent) => void }): Promise<AnalysisAnswer> {
+	const response = await fetch('/api/analyze-nodes', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ ...body, stream: true }),
+		signal,
+	});
+	// Turned down before any reading (bad request, rate limit): a plain JSON error
+	if (!response.ok || !response.body) {
+		const data = await response.json().catch(() => null);
+		throw new ApiError(data?.error || 'Analysis failed', response.status);
+	}
+	// A plain reply (no live updates) is the whole answer at once
+	if (!response.headers.get('Content-Type')?.includes('ndjson')) return (await response.json()) as AnalysisAnswer;
+	const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+	let buffered = '';
+	for (;;) {
+		const { value, done } = await reader.read();
+		if (done) break;
+		buffered += value;
+		const lines = buffered.split('\n');
+		buffered = lines.pop() ?? '';
+		for (const line of lines) {
+			if (!line.trim()) continue;
+			const event = JSON.parse(line);
+			if (event.type === 'reading') onRead?.(event);
+			else if (event.type === 'done') return { summary: event.summary, actions: event.actions, receipt: event.receipt };
+			else if (event.type === 'error') throw new ApiError(event.message || 'Analysis failed', event.status ?? 500);
+		}
+	}
+	throw new ApiError('The answer was cut off. Try again.', 502);
 }

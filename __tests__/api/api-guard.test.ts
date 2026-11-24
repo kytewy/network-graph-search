@@ -156,6 +156,29 @@ describe('POST /api/analyze-nodes', () => {
 		expect(receipt.readRounds).toBe(1);
 	});
 
+	it('streams each document as it is read, then the answer', async () => {
+		mockCreate
+			.mockResolvedValueOnce({
+				choices: [{ message: { role: 'assistant', content: null, tool_calls: [{ id: 't1', type: 'function', function: { name: 'read_document', arguments: '{"title":"A1"}' } }] } }],
+			})
+			.mockResolvedValueOnce({ choices: [{ message: { content: 'Read it.' } }] });
+		const res = await analyzeNodes(makeRequest({ nodes: [sampleNode], customPrompt: 'Summarize', stream: true }));
+		expect(res.headers.get('Content-Type')).toContain('ndjson');
+		const lines = (await res.text()).trim().split('\n').map((l) => JSON.parse(l));
+		expect(lines[0]).toEqual({ type: 'reading', id: 'A1', title: 'Article 1', round: 1 });
+		expect(lines[1]).toMatchObject({ type: 'done', summary: 'Read it.' });
+	});
+
+	it('streams a failure as an error line', async () => {
+		mockCreate.mockRejectedValue(new Error('secret upstream failure'));
+		const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		const res = await analyzeNodes(makeRequest({ nodes: [sampleNode], stream: true }));
+		const line = JSON.parse((await res.text()).trim());
+		expect(line).toMatchObject({ type: 'error', status: 500 });
+		expect(JSON.stringify(line)).not.toContain('secret upstream failure');
+		spy.mockRestore();
+	});
+
 	it('takes suggested actions out of the answer and keeps only available ones', async () => {
 		mockCreate.mockResolvedValue({
 			choices: [

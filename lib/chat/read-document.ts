@@ -33,6 +33,13 @@ export const READ_TOOL = {
 /** Characters read so far for this answer */
 export const charsRead = (read: ReadonlyMap<string, number>) => [...read.values()].reduce((n, c) => n + c, 0);
 
+/** Sent to the browser as each document is opened, so it can show "Reading…" */
+export interface ReadingEvent {
+	id: string;
+	title: string;
+	round: number;
+}
+
 type DocInput = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 

@@ -37,6 +37,8 @@ export interface ChatConversation {
 	actions?: ChatAction[];
 	/** Exactly what went to the AI for this answer */
 	receipt?: Receipt;
+	/** Documents the AI is opening to read in full, while it thinks */
+	reading?: { title: string; round: number }[];
 }
 
 interface ContextState {

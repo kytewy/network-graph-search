@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ArrowUp, BookmarkPlus, Copy, FileText, Pencil, Plus, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { analyzeNodes } from '@/lib/api/analysis-client';
+import { analyzeNodesLive } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
 import { chatMemory, CHAT_LIMITS } from '@/lib/contracts/analysis';
@@ -14,6 +14,7 @@ import { matchPrompts, recentPrompts, useSavedPrompts, type SavedPrompt } from '
 import { SavedPromptsDialog } from './SavedPromptsDialog';
 import { ReceiptDialog } from './ReceiptDialog';
 import { CoverageLink } from './CoverageLink';
+import { ReadFolded, ReadingNow } from './ReadingNote';
 import { DocumentView } from './DocumentView';
 import { documentTitle } from '@/lib/chat/citations';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -86,7 +87,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 	const [thinking, setThinking] = useState(false);
 
 	// A network blip is retried once; a stopped request never is
-	const analyze = useMutation({ mutationFn: analyzeNodes, retry: shouldRetry, retryDelay: RETRY.DELAY_MS }, queryClient);
+	const analyze = useMutation({ mutationFn: analyzeNodesLive, retry: shouldRetry, retryDelay: RETRY.DELAY_MS }, queryClient);
 
 	// Only finished answers are remembered for follow-ups
 	const finished = conversations.filter((c) => (c.status ?? 'done') === 'done');
@@ -114,6 +115,11 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 					// What the answer may suggest changing, as buttons
 					actionOptions: actionOptionsFromStore(),
 					signal: controller.signal,
+					// Each document the AI opens shows in the thinking bubble as it happens
+					onRead: ({ title, round }) => {
+						const sofar = useContextStore.getState().chatConversations.find((c) => c.id === id)?.reading ?? [];
+						updateTurn(id, { reading: [...sofar, { title, round }] });
+					},
 				});
 				updateTurn(id, { response: summary, actions, receipt, status: 'done' });
 			} catch (error) {
@@ -220,15 +226,18 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 							</div>
 						</div>
 						{turn.status === 'thinking' ? (
-							<div className="w-fit flex items-center gap-2 rounded-2xl rounded-bl-sm border border-gray-200 bg-white px-4 py-2 text-sm text-muted-foreground" role="status" aria-label="Thinking">
+							<div className="w-fit max-w-full flex items-center gap-2 rounded-2xl rounded-bl-sm border border-gray-200 bg-white px-4 py-2 text-sm text-muted-foreground" role="status" aria-label="Thinking">
 								<span className="sr-only">Thinking</span>
 								{/* Three dots that light up one after another */}
 								{[0, 0.2, 0.4].map((delay) => (
 									<span key={delay} aria-hidden className="chat-dot h-2 w-2 rounded-full bg-primary" style={{ animationDelay: `${delay}s` }} />
 								))}
+								{(turn.reading?.length ?? 0) > 0 && <ReadingNow reading={turn.reading!} />}
 							</div>
 						) : (
 							<div data-role="assistant" className={turn.status === 'failed' ? 'text-destructive text-sm' : ''}>
+								{/* What it read in full, folded: "Read 3 documents in full ▸" */}
+								{turn.status === 'done' && <ReadFolded turn={turn} />}
 								{/* The AI's own bubble, on the left */}
 								<div className="mr-4 w-fit max-w-full rounded-2xl rounded-bl-sm border border-gray-200 bg-white px-4 py-3 shadow-sm">
 									<div className="prose prose-sm max-w-none text-gray-800 leading-relaxed">

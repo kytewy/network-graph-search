@@ -38,6 +38,8 @@ export const analyzeRequestSchema = z.object({
 	/** What the answer may suggest changing (see chat actions below); none = no suggestions */
 	// Suggestions are extras: options that don't fit are dropped, never a reason to refuse the question
 	actionOptions: z.lazy(() => actionOptionsSchema).optional().catch(undefined),
+	/** Send live updates (one line per document read) instead of one reply at the end */
+	stream: z.boolean().optional(),
 	history: z
 		.array(memoryMessage)
 		.max(CHAT_LIMITS.MEMORY_TURNS * 2, { error: `Send at most ${CHAT_LIMITS.MEMORY_TURNS} earlier turns` })
