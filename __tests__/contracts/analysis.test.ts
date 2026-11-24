@@ -37,3 +37,16 @@ describe('shouldRetry', () => {
 		expect(shouldRetry(0, new TypeError('network'))).toBe(true);
 	});
 });
+
+describe('actionOptions', () => {
+	it('never blocks a question: options that break the rules are dropped', () => {
+		const parsed = analyzeRequestSchema.safeParse({ nodes: [{}], actionOptions: { titles: ['x'.repeat(5_000)] } });
+		expect(parsed.success).toBe(true);
+		expect(parsed.success && parsed.data.actionOptions).toBeUndefined();
+	});
+
+	it('accepts long document titles', () => {
+		const parsed = analyzeRequestSchema.safeParse({ nodes: [{}], actionOptions: { titles: ['t'.repeat(250)] } });
+		expect(parsed.success && parsed.data.actionOptions?.titles).toHaveLength(1);
+	});
+});

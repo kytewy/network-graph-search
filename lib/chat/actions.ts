@@ -9,9 +9,11 @@ import { CLUSTER_MODES, COLOR_MODES } from '@/lib/config/view-modes';
 import { useAppStore } from '@/lib/stores/app-state';
 import { useContextStore } from '@/lib/stores/context-store';
 import { matchCitation } from './citations';
-import type { ActionOptions, ChatAction } from '@/lib/contracts/analysis';
+import { NAME_MAX, OPTION_LIMITS, type ActionOptions, type ChatAction } from '@/lib/contracts/analysis';
 
 const unique = (xs: (string | undefined)[]) => [...new Set(xs.filter((x): x is string => Boolean(x)))].sort();
+/** Keeps a list within what the server accepts: skips over-long names, caps the count */
+const fit = (xs: string[], max: number) => xs.filter((x) => x.length <= NAME_MAX).slice(0, max);
 
 /** Everything an answer may suggest right now: values in the results, searches, view modes */
 export function actionOptionsFromStore(): ActionOptions {
@@ -19,13 +21,15 @@ export function actionOptionsFromStore(): ActionOptions {
 	const collected = rounds.length > 1;
 	const clustered = Object.keys(aiClusters).length > 0;
 	return {
-		continents: unique(searchResults.map((d) => d.continent)),
-		countries: unique(searchResults.map((d) => d.country)),
-		publishers: unique(searchResults.map((d) => d.publisher)),
-		searches: collected ? [...rounds.map((r) => ({ value: String(r.n), query: r.query })), { value: FOUND_BY_MANY, query: 'found by 2+ searches' }] : [],
+		continents: fit(unique(searchResults.map((d) => d.continent)), OPTION_LIMITS.continents),
+		countries: fit(unique(searchResults.map((d) => d.country)), OPTION_LIMITS.countries),
+		publishers: fit(unique(searchResults.map((d) => d.publisher)), OPTION_LIMITS.publishers),
+		searches: collected
+			? [...rounds.map((r) => ({ value: String(r.n), query: r.query.slice(0, NAME_MAX) })), { value: FOUND_BY_MANY, query: 'found by 2+ searches' }].slice(-OPTION_LIMITS.searches)
+			: [],
 		colorModes: COLOR_MODES.map((m) => m.id as string).filter((id) => id !== 'search' || collected),
 		clusterModes: CLUSTER_MODES.map((m) => m.id as string).filter((id) => (id !== 'search' || collected) && (id !== 'ai_clusters' || clustered)),
-		titles: searchResults.map((d) => d.label),
+		titles: fit(searchResults.map((d) => d.label), OPTION_LIMITS.titles),
 	};
 }
 

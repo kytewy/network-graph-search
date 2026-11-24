@@ -36,7 +36,8 @@ export const analyzeRequestSchema = z.object({
 	/** The workspace's goal ("…so I can brief the board Friday"), so answers stay aimed at it */
 	goal: z.string().max(300, { error: 'Goal must be under 300 characters' }).optional(),
 	/** What the answer may suggest changing (see chat actions below); none = no suggestions */
-	actionOptions: z.lazy(() => actionOptionsSchema).optional(),
+	// Suggestions are extras: options that don't fit are dropped, never a reason to refuse the question
+	actionOptions: z.lazy(() => actionOptionsSchema).optional().catch(undefined),
 	history: z
 		.array(memoryMessage)
 		.max(CHAT_LIMITS.MEMORY_TURNS * 2, { error: `Send at most ${CHAT_LIMITS.MEMORY_TURNS} earlier turns` })
@@ -67,26 +68,30 @@ export function chatMemory(turns: readonly ChatTurn[], maxTurns: number = CHAT_L
  * server checks every suggestion. Nothing changes until the user clicks.
  */
 export const MAX_ACTIONS = 3;
+/** Longest name or title an option can carry (document titles can be long) */
+export const NAME_MAX = 300;
+/** How many of each list the browser may send */
+export const OPTION_LIMITS = { continents: 20, countries: 80, publishers: 30, searches: 20, colorModes: 20, clusterModes: 20, titles: 200 } as const;
 const label = z.string().min(1).max(60);
 
 export const chatActionSchema = z.discriminatedUnion('type', [
-	z.object({ type: z.literal('filter'), filter: z.enum(['continents', 'countries', 'publishers', 'searches']), values: z.array(z.string().max(120)).min(1).max(10), label }),
+	z.object({ type: z.literal('filter'), filter: z.enum(['continents', 'countries', 'publishers', 'searches']), values: z.array(z.string().max(NAME_MAX)).min(1).max(10), label }),
 	z.object({ type: z.literal('color'), mode: z.string().max(40), label }),
 	z.object({ type: z.literal('cluster'), mode: z.string().max(40), label }),
 	z.object({ type: z.literal('context'), titles: z.array(z.string().max(300)).min(1).max(10), label }),
 ]);
 export type ChatAction = z.infer<typeof chatActionSchema>;
 
-const names = (max: number) => z.array(z.string().max(120)).max(max).default([]);
+const names = (max: number) => z.array(z.string().max(NAME_MAX)).max(max).default([]);
 export const actionOptionsSchema = z.object({
-	continents: names(20),
-	countries: names(80),
-	publishers: names(30),
+	continents: names(OPTION_LIMITS.continents),
+	countries: names(OPTION_LIMITS.countries),
+	publishers: names(OPTION_LIMITS.publishers),
 	/** The workspace's searches: "1" = #1, "2+" = found by 2+ searches */
-	searches: z.array(z.object({ value: z.string().max(4), query: z.string().max(200) })).max(20).default([]),
-	colorModes: names(20),
-	clusterModes: names(20),
-	titles: names(200),
+	searches: z.array(z.object({ value: z.string().max(4), query: z.string().max(NAME_MAX) })).max(OPTION_LIMITS.searches).default([]),
+	colorModes: names(OPTION_LIMITS.colorModes),
+	clusterModes: names(OPTION_LIMITS.clusterModes),
+	titles: names(OPTION_LIMITS.titles),
 });
 export type ActionOptions = z.infer<typeof actionOptionsSchema>;
 

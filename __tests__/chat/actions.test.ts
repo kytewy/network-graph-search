@@ -1,4 +1,4 @@
-import { actionsInstruction, extractActions, type ActionOptions, type ChatAction } from '@/lib/contracts/analysis';
+import { actionsInstruction, analyzeRequestSchema, extractActions, type ActionOptions, type ChatAction } from '@/lib/contracts/analysis';
 import { actionOptionsFromStore, alternatives, applyAction, describeAction, previewCount } from '@/lib/chat/actions';
 import { useAppStore } from '@/lib/stores/app-state';
 import { useContextStore } from '@/lib/stores/context-store';
@@ -84,6 +84,15 @@ describe('applyAction', () => {
 		expect(o.searches).toEqual([]);
 		expect(o.clusterModes).not.toContain('ai_clusters');
 		expect(o.colorModes).not.toContain('search');
+	});
+
+	it('always fits the server rules, however many or long the documents', () => {
+		const many = Array.from({ length: 300 }, (_, i) => ({ id: `d${i}`, label: i === 0 ? 'x'.repeat(400) : `Doc ${i}`, continent: 'Europe' }) as Node);
+		useAppStore.getState().setSearchResults(many);
+		const o = actionOptionsFromStore();
+		expect(o.titles).toHaveLength(200);
+		expect(o.titles).not.toContain('x'.repeat(400));
+		expect(analyzeRequestSchema.safeParse({ nodes: [{}], actionOptions: o }).data?.actionOptions).toBeDefined();
 	});
 });
 
