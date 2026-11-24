@@ -29,7 +29,7 @@ test('context grouped by search (bulk add/remove) and by cluster (ask the chat)'
 	const groups = page.getByTestId('context-groups');
 	await expect(groups.getByRole('region', { name: '#1 AI regulation' })).toContainText('0 of 6');
 	await groups.getByRole('button', { name: '+ Top 10 #1 AI regulation' }).click();
-	await expect(groups).toContainText('6 in context · 2 found by 2+ searches ★');
+	await expect(groups).toContainText('6 in context · 2 found by 2+ searches');
 	await expect(groups.getByRole('region', { name: '#1 AI regulation' }).getByLabel('Found by #1, #2').first()).toBeVisible();
 	await expect(groups.getByRole('region', { name: '#2 compliance' })).toContainText('2 of 3');
 

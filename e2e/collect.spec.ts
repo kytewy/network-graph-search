@@ -14,7 +14,7 @@ const compliance = {
 };
 const total = RESULT_COUNT + 2;
 
-test('a second search can be added to the workspace: one graph, no duplicates, "found by" and ★', async ({ page }) => {
+test('a second search can be added to the workspace: one graph, no duplicates, "found by" and the overlap icon', async ({ page }) => {
 	await search(page); // #1 AI regulation (the fake search answers every query with the fixture)
 	await page.route('**/api/reranked-vector-search', (r) =>
 		r.request().postDataJSON().query === 'compliance' ? r.fulfill({ json: compliance }) : r.fallback()
@@ -27,14 +27,15 @@ test('a second search can be added to the workspace: one graph, no duplicates, "
 	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', String(total));
 	await expect(page.getByRole('heading', { name: `Workspace (${total}) · 2 searches` })).toBeVisible();
 
-	// Found by more than one search: a ★ (narrow table)
+	// Found by more than one search: the overlap icon (narrow table)
 	const rows = page.getByTestId('results-table').locator('[data-result-row]');
-	await expect(rows.filter({ hasText: 'EU AI Act' }).first().getByLabel('Found by more than one search')).toBeVisible();
-	await expect(rows.filter({ hasText: 'ISO/IEC 42001' }).getByLabel('Found by more than one search')).toHaveCount(0);
+	await expect(rows.filter({ hasText: 'EU AI Act' }).first().getByLabel('Found by #1 #2')).toBeVisible();
+	await expect(rows.filter({ hasText: 'ISO/IEC 42001' }).getByLabel(/Found by/)).toHaveCount(0);
 
 	// Wide: a Found by column
 	await page.getByRole('button', { name: 'Expand search panel' }).click();
-	await expect(rows.filter({ hasText: 'OSFI Guideline E-23' }).locator('[data-found-by]')).toHaveText('#1 #2 ★');
+	await expect(rows.filter({ hasText: 'OSFI Guideline E-23' }).locator('[data-found-by]')).toHaveText('#1 #2');
+	await expect(rows.filter({ hasText: 'OSFI Guideline E-23' }).locator('[data-found-by]').getByLabel('Found by more than one search')).toBeVisible();
 	await expect(rows.filter({ hasText: 'NIST AI RMF' }).locator('[data-found-by]')).toHaveText('#2');
 
 	// Adding the same search again changes nothing

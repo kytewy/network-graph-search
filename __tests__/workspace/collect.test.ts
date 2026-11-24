@@ -65,7 +65,7 @@ describe('searchGroup', () => {
 	it('names the group a document clusters into', () => {
 		const queries = { 1: 'AI regulation', 2: 'compliance' };
 		expect(searchGroup([2], queries)).toBe('#2 compliance');
-		expect(searchGroup([1, 2], queries)).toBe('★ Found by 2+ searches');
+		expect(searchGroup([1, 2], queries)).toBe('Found by 2+ searches');
 		expect(searchGroup(undefined, queries)).toBe('Other');
 	});
 });

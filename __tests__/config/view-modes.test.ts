@@ -34,7 +34,7 @@ describe('view mode registry', () => {
 		const one = node({ foundBy: [2] });
 		const both = node({ foundBy: [1, 2] });
 		const legend = colorLegend('search', [one, both]);
-		expect(legend.map((e) => e.label)).toEqual(['Search #2', '★ Found by 2+ searches']);
+		expect(legend.map((e) => e.label)).toEqual(['Search #2', 'Found by 2+ searches']);
 		expect(colorOfNode(one, 'search')).toBe(legend[0].color);
 		expect(colorOfNode(both, 'search')).toBe(legend[1].color);
 	});

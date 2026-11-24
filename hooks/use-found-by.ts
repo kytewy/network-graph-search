@@ -12,8 +12,8 @@ export function useFoundBy() {
 	return useMemo(() => ({ collected: rounds.length > 1, rounds: rounds.length, byDoc: foundBy(rounds) }), [rounds]);
 }
 
-/** "#1 #2" with a ★ when more than one search found it */
+/** "#1 #2": which searches found it (shown with the overlap icon when more than one) */
 export function foundByLabel(ns: number[] | undefined): string {
 	if (!ns?.length) return '';
-	return `${ns.map((n) => `#${n}`).join(' ')}${ns.length > 1 ? ' ★' : ''}`;
+	return ns.map((n) => `#${n}`).join(' ');
 }

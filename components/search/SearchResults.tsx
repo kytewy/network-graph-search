@@ -9,6 +9,7 @@ import { contentPreview } from '@/lib/utils/text-preview';
 import { ArrowUpDown, LayoutGrid, Rows3 } from 'lucide-react';
 import { ResultsTable } from './ResultsTable';
 import { foundByLabel, useFoundBy } from '@/hooks/use-found-by';
+import { OverlapIcon } from './OverlapIcon';
 import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
 import { useContextStore } from '@/lib/stores/context-store';
 import type { Node } from '@/lib/config/types';
@@ -204,6 +205,7 @@ export function SearchResults() {
 										{found.collected && (
 											<span className="text-xs text-muted-foreground whitespace-nowrap" title="Searches that found it" data-found-by>
 												{foundByLabel(found.byDoc[result.id])}
+												{(found.byDoc[result.id]?.length ?? 0) > 1 && <OverlapIcon />}
 											</span>
 										)}
 										<h4 className="font-semibold text-sm leading-tight truncate">

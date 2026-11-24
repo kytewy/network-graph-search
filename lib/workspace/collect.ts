@@ -61,7 +61,7 @@ export function stampRounds(nodes: readonly Node[], rounds: readonly SearchRound
 /** The group a document falls in when clustering by search: its search, or the overlap */
 export function searchGroup(foundBy: readonly number[] | undefined, queries: Readonly<Record<number, string>>): string {
 	if (!foundBy?.length) return 'Other';
-	if (foundBy.length > 1) return '★ Found by 2+ searches';
+	if (foundBy.length > 1) return 'Found by 2+ searches';
 	return `#${foundBy[0]} ${queries[foundBy[0]] ?? ''}`.trim();
 }
 

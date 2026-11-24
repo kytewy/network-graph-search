@@ -9,6 +9,7 @@ import { useHighlightOnHover } from '@/hooks/use-highlight-on-hover';
 import { clusterDisplayName, namesFromSuggestions } from '@/lib/clustering/cluster-display';
 import { contentPreview } from '@/lib/utils/text-preview';
 import { foundByLabel, useFoundBy } from '@/hooks/use-found-by';
+import { OverlapIcon } from './OverlapIcon';
 import { nextSort, sortRows, type ResultRow, type TableSortKey } from '@/lib/search/results-table';
 
 interface ResultsTableProps {
@@ -93,10 +94,8 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 								<button type="button" onClick={(e) => (e.stopPropagation(), onOpen(node))} className="flex-1 text-left font-medium leading-tight line-clamp-1 hover:underline">
 									{node.label}
 								</button>
-								{/* Narrow: a ★ when more than one search found it */}
-								{!wide && (found.byDoc[node.id]?.length ?? 0) > 1 && (
-									<span className="shrink-0 text-amber-500" title={`Found by ${foundByLabel(found.byDoc[node.id])}`} aria-label="Found by more than one search">★</span>
-								)}
+								{/* Narrow: the overlap icon when more than one search found it */}
+								{!wide && (found.byDoc[node.id]?.length ?? 0) > 1 && <OverlapIcon label={`Found by ${foundByLabel(found.byDoc[node.id])}`} />}
 							</div>
 							{wide && <p className="text-xs text-muted-foreground line-clamp-1">{summaryOf(node)}</p>}
 						</td>
@@ -112,7 +111,10 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 						)}
 						{wide && found.collected && (
 							<td className="px-2 py-2 text-xs whitespace-nowrap" data-found-by>
-								{foundByLabel(found.byDoc[node.id])}
+								<span className="inline-flex items-center gap-1">
+									{foundByLabel(found.byDoc[node.id])}
+									{(found.byDoc[node.id]?.length ?? 0) > 1 && <OverlapIcon />}
+								</span>
 							</td>
 						)}
 						{wide && <td className="px-2 py-2 text-xs">{cluster ?? <span className="text-muted-foreground">—</span>}</td>}

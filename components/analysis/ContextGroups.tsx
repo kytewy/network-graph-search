@@ -10,6 +10,7 @@ import { searchColor } from '@/lib/config/view-modes';
 import { foundBy, groupBySearch, roundTopIds } from '@/lib/workspace/collect';
 import { nodeTokens } from '@/lib/utils/llm-tokens';
 import type { Node } from '@/lib/config/types';
+import { OverlapIcon } from '@/components/search/OverlapIcon';
 
 export type ContextGrouping = 'search' | 'cluster';
 
@@ -37,7 +38,7 @@ const action = 'rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-acc
 /**
  * The Context tab as folders: one per search (with + Top 10 / + All / Remove)
  * or one per AI cluster (with Ask about this / Remove). Each document is
- * listed once; ★ marks documents more than one search found.
+ * listed once; the overlap icon marks documents more than one search found.
  */
 export function ContextGroups({ nodes, by, onOpen, onAsk }: ContextGroupsProps) {
 	const rounds = useAppStore((s) => s.rounds);
@@ -105,10 +106,15 @@ export function ContextGroups({ nodes, by, onOpen, onAsk }: ContextGroupsProps) 
 
 	return (
 		<div className="space-y-2" data-testid="context-groups">
-			<p className="text-xs text-muted-foreground">
+			<p className="flex items-center gap-1 text-xs text-muted-foreground">
 				{nodes.length} in context
 				{by === 'cluster' ? ` · ${groups.filter((g) => g.key !== 'c').length} clusters` : ''}
-				{overlap > 0 ? ` · ${overlap} found by 2+ searches ★` : ''}
+				{overlap > 0 && (
+					<>
+						{` · ${overlap} found by 2+ searches`}
+						<OverlapIcon />
+					</>
+				)}
 			</p>
 			{groups.map((g) => (
 				<section key={g.key} aria-label={g.title} className="rounded-md border border-sidebar-border bg-white/60">
@@ -137,13 +143,8 @@ export function ContextGroups({ nodes, by, onOpen, onAsk }: ContextGroupsProps) 
 										<li key={id} {...highlight(id)} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-muted/30" onClick={() => onOpen(node)}>
 											<span className="min-w-0 flex-1 truncate font-medium">{node.label}</span>
 											{(found[id]?.length ?? 0) > 1 && (
-												// Just the star, as everywhere else; hover says which searches
-												<span
-													className="shrink-0 text-amber-600"
-													title={`Found by ${found[id].map((n) => `#${n}`).join(', ')}`}
-													aria-label={`Found by ${found[id].map((n) => `#${n}`).join(', ')}`}>
-													★
-												</span>
+												// The overlap icon, as everywhere else; hover says which searches
+												<OverlapIcon label={`Found by ${found[id].map((n) => `#${n}`).join(', ')}`} />
 											)}
 											<span className="text-muted-foreground/60">{nodeTokens(node).toLocaleString()}</span>
 											<button

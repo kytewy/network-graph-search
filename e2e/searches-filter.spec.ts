@@ -35,7 +35,7 @@ test('the Searches filter shows one search or the overlap, colours by search, an
 	await nodes(compliance.nodes.length);
 	await expect(page.getByText(`showing ${compliance.nodes.length} of ${total}`)).toBeVisible();
 
-	// Only the overlap (#2 untick, ★ tick)
+	// Only the overlap (#2 untick, overlap tick)
 	await searches.getByRole('button', { name: /^#2 compliance/ }).click();
 	await searches.getByRole('button', { name: /Found by 2\+ searches/ }).click();
 	await nodes(2);
@@ -43,7 +43,7 @@ test('the Searches filter shows one search or the overlap, colours by search, an
 	// Colour by search: the legend names the searches and the overlap
 	await page.getByRole('button', { name: /^Color/ }).click();
 	await page.getByRole('menuitem', { name: 'Search', exact: true }).click();
-	await expect(page.getByText('★ Found by 2+ searches').last()).toBeVisible();
+	await expect(page.getByText('Found by 2+ searches').last()).toBeVisible();
 
 	// Cluster by search (offered once there are two searches)
 	// (Changing the colour rebuilds the graph, which can close a menu opened mid-rebuild, so retry)

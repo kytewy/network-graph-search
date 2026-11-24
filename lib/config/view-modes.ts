@@ -104,7 +104,7 @@ export const COLOR_MODES = [
 			const many = onScreen.some((n) => (n.foundBy?.length ?? 0) > 1);
 			return [
 				...firsts.map((n) => ({ label: `Search #${n}`, color: searchColor(n) })),
-				...(many ? [{ label: '★ Found by 2+ searches', color: FOUND_BY_MANY_COLOR }] : []),
+				...(many ? [{ label: 'Found by 2+ searches', color: FOUND_BY_MANY_COLOR }] : []),
 				...(onScreen.some((n) => !n.foundBy?.length) ? [{ label: 'Other', color: UNKNOWN_COLOR }] : []),
 			];
 		},

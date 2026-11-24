@@ -181,7 +181,7 @@ const FilterPanel = () => {
 
 			{/* Similarity Score Card */}
 			{rounds > 1 && (
-				<FilterSection icon={Search} title="Searches" about="Which searches in the workspace found each document. Tick to show only theirs; ★ shows documents more than one search found; ✕ removes a search.">
+				<FilterSection icon={Search} title="Searches" about="Which searches in the workspace found each document. Tick to show only theirs; “Found by 2+ searches” shows the overlap; ✕ removes a search.">
 					<SearchesFilter />
 				</FilterSection>
 			)}

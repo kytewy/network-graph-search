@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { OverlapIcon } from '@/components/search/OverlapIcon';
 import { useAppStore } from '@/lib/stores/app-state';
 import { FOUND_BY_MANY } from '@/lib/config/filters';
 import { FOUND_BY_MANY_COLOR, searchColor } from '@/lib/config/view-modes';
@@ -71,7 +72,8 @@ export function SearchesFilter() {
 						onMouseLeave={() => setHighlighted([])}
 						className={`${row(FOUND_BY_MANY, selected.includes(FOUND_BY_MANY))} ${!selected.includes(FOUND_BY_MANY) && overlapLeft === 0 ? 'opacity-40' : ''}`}>
 						<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: FOUND_BY_MANY_COLOR }} />
-						<span className="flex-1">★ Found by 2+ searches</span>
+						<OverlapIcon label="" />
+						<span className="flex-1">Found by 2+ searches</span>
 						<span className="text-xs text-muted-foreground">{overlapLeft}</span>
 					</button>
 				</li>
