@@ -32,16 +32,14 @@ export function WorkspaceBar() {
 				/>
 			</label>
 			{searches > 0 && (
-				<div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
-					<span data-testid="workspace-status">
-						✓ Saved · {searches} {searches === 1 ? 'search' : 'searches'} · {inContext} in context
-					</span>
+				// One short line: the details are in the hover, and "Start over?" takes the whole line
+				<div className="flex items-center gap-2 whitespace-nowrap px-1 text-xs text-muted-foreground">
 					{confirming ? (
-						<span className="ml-auto flex items-center gap-2">
-							Start over?
+						<>
+							<span>Start over?</span>
 							<button
 								type="button"
-								className="font-medium text-destructive hover:underline"
+								className="ml-auto font-medium text-destructive hover:underline"
 								onClick={() => {
 									clearWorkspace();
 									clear();
@@ -52,11 +50,16 @@ export function WorkspaceBar() {
 							<button type="button" className="hover:underline" onClick={() => setConfirming(false)}>
 								Cancel
 							</button>
-						</span>
+						</>
 					) : (
-						<button type="button" className="ml-auto hover:text-foreground hover:underline" onClick={() => setConfirming(true)}>
-							New workspace
-						</button>
+						<>
+							<span data-testid="workspace-status" title={`${searches} ${searches === 1 ? 'search' : 'searches'} · ${inContext} in context`}>
+								✓ Saved
+							</span>
+							<button type="button" className="ml-auto hover:text-foreground hover:underline" onClick={() => setConfirming(true)}>
+								New workspace
+							</button>
+						</>
 					)}
 				</div>
 			)}

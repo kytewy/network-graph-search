@@ -36,14 +36,14 @@ test('the workspace (goal, searches, context, chat) survives a refresh; New work
 	await expect(page.locator('[data-role="assistant"]')).toContainText('board briefing');
 	// The goal goes with the question
 	expect(sent.at(-1).goal).toContain('brief the board Friday');
-	await expect(page.getByTestId('workspace-status')).toHaveText('✓ Saved · 2 searches · 2 in context');
+	await expect(page.getByTestId('workspace-status')).toHaveAttribute('title', '2 searches · 2 in context');
 
 	// Refresh: everything comes back without searching again
 	await page.waitForTimeout(600); // the save waits a moment after the last change
 	await page.reload();
 	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', String(total));
 	await expect(page.getByLabel('Workspace goal')).toHaveValue(/brief the board Friday/);
-	await expect(page.getByTestId('workspace-status')).toHaveText('✓ Saved · 2 searches · 2 in context');
+	await expect(page.getByTestId('workspace-status')).toHaveAttribute('title', '2 searches · 2 in context');
 	await page.locator('[data-panel-header="right"]').getByRole('tab', { name: 'Chat' }).click();
 	await expect(page.locator('[data-role="assistant"]')).toContainText('board briefing');
 
@@ -66,5 +66,5 @@ test('a link to a different search starts fresh instead of restoring', async ({ 
 	await page.waitForTimeout(600);
 	await page.goto('/graph?q=privacy&k=50');
 	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', String(RESULT_COUNT));
-	await expect(page.getByTestId('workspace-status')).toHaveText(/1 search ·/);
+	await expect(page.getByTestId('workspace-status')).toHaveAttribute('title', /^1 search ·/);
 });
