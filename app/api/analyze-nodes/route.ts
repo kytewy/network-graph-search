@@ -5,6 +5,7 @@ import { LIMITS, badRequest, rateLimit } from '@/lib/utils/api-guard';
 import { actionsInstruction, analyzeRequestSchema, extractActions, type ChatAction } from '@/lib/contracts/analysis';
 import { buildReceipt, type Receipt } from '@/lib/chat/receipt';
 import { BUDGET_CHARS, charsRead, READ_INSTRUCTION, READ_LIMITS, READ_TOOL, serveRead, type ReadingEvent } from '@/lib/chat/read-document';
+import { checkInstruction, citationsToCheck } from '@/lib/chat/verify';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 interface Answer {
@@ -77,6 +78,25 @@ export async function POST(request: NextRequest) {
 				}
 				// The AI decides when to stop; the last round or a spent budget makes it answer
 				response = await ask(round >= READ_LIMITS.MAX_ROUNDS || charsRead(read) >= BUDGET_CHARS);
+			}
+
+			// Check the draft: cited documents the AI only got an excerpt of are read
+			// in full, and the AI keeps, fixes or removes the claims that rest on them
+			const toCheck = citationsToCheck(response.choices[0].message.content ?? '', nodes, read);
+			if (toCheck.length > 0) {
+				const checked: string[] = [];
+				messages.push({ role: 'assistant', content: response.choices[0].message.content ?? '' });
+				toCheck.forEach((doc, i) => {
+					const text = serveRead(JSON.stringify({ title: doc.title }), nodes, read, refused);
+					if (!read.has(doc.id)) return; // the reading budget ran out
+					checked.push(doc.title);
+					messages.push({ role: 'system', content: `Full text of [${doc.title}]:\n${text}` });
+					onRead?.({ id: doc.id, title: doc.title, round: rounds + 1, check: { index: i + 1, total: toCheck.length } });
+				});
+				if (checked.length > 0) {
+					messages.push({ role: 'user', content: checkInstruction(checked) });
+					response = await ask(true);
+				}
 			}
 
 			// Exactly what went to the AI, shown as the answer's receipt

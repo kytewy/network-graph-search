@@ -129,9 +129,9 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 					actionOptions: SUGGESTIONS ? actionOptionsFromStore() : undefined,
 					signal: controller.signal,
 					// Each document the AI opens shows in the thinking bubble as it happens
-					onRead: ({ title, round }) => {
+					onRead: ({ title, round, check }) => {
 						const sofar = useContextStore.getState().chatConversations.find((c) => c.id === id)?.reading ?? [];
-						updateTurn(id, { reading: [...sofar, { title, round }] });
+						updateTurn(id, { reading: [...sofar, { title, round, check }] });
 					},
 				});
 				updateTurn(id, { response: summary, actions, receipt, status: 'done' });

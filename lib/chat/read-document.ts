@@ -43,6 +43,8 @@ export interface ReadingEvent {
 	id: string;
 	title: string;
 	round: number;
+	/** Set while checking the answer's citations: this is document `index` of `total` */
+	check?: { index: number; total: number };
 }
 
 type DocInput = Record<string, unknown>;

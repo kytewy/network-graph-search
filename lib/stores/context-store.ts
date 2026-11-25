@@ -38,7 +38,7 @@ export interface ChatConversation {
 	/** Exactly what went to the AI for this answer */
 	receipt?: Receipt;
 	/** Documents the AI is opening to read in full, while it thinks */
-	reading?: { title: string; round: number }[];
+	reading?: { title: string; round: number; check?: { index: number; total: number } }[];
 	/** Which chat this question belongs to (none = the main chat, as before) */
 	chatId?: string;
 }

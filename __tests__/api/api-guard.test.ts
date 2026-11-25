@@ -158,6 +158,21 @@ describe('POST /api/analyze-nodes', () => {
 		expect(JSON.stringify(mockCreate.mock.calls[0][0].messages)).toContain('read it in full with read_document');
 	});
 
+	it('checks a draft that cites a cut excerpt: reads it in full, then asks for the corrected answer', async () => {
+		const longNode = { id: 'L1', name: 'Long doc', text: 'x'.repeat(800), content: 'Full text. ' + 'x'.repeat(5000) };
+		mockCreate
+			.mockResolvedValueOnce({ choices: [{ message: { content: 'Draft from [Long doc].' } }] })
+			.mockResolvedValueOnce({ choices: [{ message: { content: 'Checked from [Long doc].' } }] });
+		const res = await analyzeNodes(makeRequest({ nodes: [longNode], customPrompt: 'Summarize', stream: true }));
+		const lines = (await res.text()).trim().split('\n').map((l) => JSON.parse(l));
+		expect(lines[0]).toMatchObject({ type: 'reading', title: 'Long doc', check: { index: 1, total: 1 } });
+		expect(lines[1]).toMatchObject({ type: 'done', summary: 'Checked from [Long doc].' });
+		const sent = JSON.stringify(mockCreate.mock.calls.at(-1)![0].messages);
+		expect(sent).toContain('Full text of [Long doc]');
+		expect(sent).toContain('complete corrected answer');
+		expect(lines[1].receipt.documents[0]).toMatchObject({ readOnRequest: true });
+	});
+
 	it('streams each document as it is read, then the answer', async () => {
 		mockCreate
 			.mockResolvedValueOnce({
