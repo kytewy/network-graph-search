@@ -13,6 +13,7 @@ import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 import { matchPrompts, recentPrompts, useSavedPrompts, type SavedPrompt } from '@/lib/stores/saved-prompts';
 import { SavedPromptsDialog } from './SavedPromptsDialog';
 import { ReceiptDialog } from './ReceiptDialog';
+import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
 import { CoverageLink } from './CoverageLink';
 import { ChatSwitcher } from './ChatSwitcher';
 import { ReadFolded, ReadingNow } from './ReadingNote';
@@ -65,6 +66,15 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 	const [openDocId, setOpenDocId] = useState<string | null>(null);
 	// The answer whose receipt ("What was sent") is open
 	const [receiptId, setReceiptId] = useState<string | null>(null);
+	// A document opened in reading mode from the receipt, and the receipt to return to
+	const [reading, setReading] = useState<{ docId: string; receiptId: string | null } | null>(null);
+	const chatDocs = useContextStore((s) => s.contextNodes);
+	const readingNode = reading
+		? (useAppStore.getState().searchResults.find((n) => n.id === reading.docId) ?? chatDocs.find((n) => n.id === reading.docId) ?? null)
+		: null;
+	const inChat = (id: string) => chatDocs.some((n) => n.id === id);
+	const toggleInChat = (node: (typeof chatDocs)[number]) =>
+		inChat(node.id) ? useContextStore.getState().removeNodeFromContext(node.id) : useContextStore.getState().addNodesToContext([node]);
 	// Clicked action buttons, with how to undo each ("turnId:index")
 	const [applied, setApplied] = useState<Record<string, { action: ChatAction; undo: () => void }>>({});
 	// Suggestion counts follow the filters, so re-draw when they change
@@ -478,7 +488,23 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 				receipt={conversations.find((c) => c.id === receiptId)?.receipt ?? null}
 				answer={conversations.find((c) => c.id === receiptId)?.response ?? ''}
 				onClose={() => setReceiptId(null)}
+				onOpenDocument={(docId) => {
+					// The receipt steps aside for reading mode, and comes back when it closes
+					setReading({ docId, receiptId });
+					setReceiptId(null);
+				}}
 			/>
+			{readingNode && (
+				<DocumentOverlay
+					document={nodeToReadingItem(readingNode)}
+					onClose={() => {
+						setReceiptId(reading!.receiptId);
+						setReading(null);
+					}}
+					isInContext={inChat(readingNode.id)}
+					onToggleContext={() => toggleInChat(readingNode)}
+				/>
+			)}
 		</div>
 	);
 

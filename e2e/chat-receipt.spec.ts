@@ -13,7 +13,7 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 					tokens: 1234,
 					charLimit: 800,
 					documents: [
-						{ id: 'a', title: 'EU AI Act', sentAs: 'text', sent: 800, total: 4200, length: 4200 },
+						{ id: 'eu-ai-act', title: 'EU AI Act', sentAs: 'text', sent: 800, total: 4200, length: 4200 },
 						{ id: 'b', title: 'OSFI E-23', sentAs: 'summary', sent: 310, total: 310, length: 29960 },
 						{ id: 'c', title: 'Article 6', sentAs: 'text', sent: 5000, total: 5000, length: 5000, readOnRequest: true },
 					],
@@ -54,6 +54,12 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	await expect(dialog.getByTestId('read-on-request')).toHaveText('Read 1 in full on request · 5,000 of 200,000 budget characters · 2 rounds');
 	await expect(dialog.getByTestId('receipt-total')).toHaveText('3 documents · 39,160 characters in all · 5,800 sent (15%)');
 	await expect(docs.getByText('Summary', { exact: true })).toHaveAttribute('title', 'Summary sent (310 characters); the document is 29,960 characters');
+
+	// A document opens in reading mode; closing it brings the receipt back
+	await docs.getByRole('button', { name: 'EU AI Act' }).click();
+	await expect(page.getByRole('button', { name: 'Close reading mode' })).toBeVisible();
+	await page.getByRole('button', { name: 'Close reading mode' }).click();
+	await expect(dialog).toBeVisible();
 
 	await dialog.getByRole('tab', { name: 'Instructions' }).click();
 	await expect(dialog).toContainText('Where are the binding rules?');

@@ -12,6 +12,8 @@ interface ReceiptDialogProps {
 	/** The answer, to mark which documents it cites */
 	answer: string;
 	onClose: () => void;
+	/** Opens a document in reading mode (the receipt comes back when it closes) */
+	onOpenDocument?: (id: string) => void;
 }
 
 const n = (x: number) => x.toLocaleString('en-US');
@@ -21,7 +23,7 @@ const ROW = 'grid grid-cols-[2.5rem_minmax(0,1fr)_7.5rem_5rem] items-center gap-
 const lengthOf = (d: SentDocument) => d.length || d.total;
 
 /** "What was sent": every input to one answer, exactly as the server sent it */
-export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) {
+export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: ReceiptDialogProps) {
 	if (!receipt) return null;
 	const citedIds = new Set(coverage(answer, receipt).cited.map((d) => d.id));
 	const readDocs = receipt.documents.filter((d) => d.readOnRequest);
@@ -34,21 +36,22 @@ export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) 
 	const docs = receipt.documents.length;
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
-			<DialogContent style={{ width: 'min(60rem, calc(100vw - 2rem))', maxWidth: 'none' }} className="max-h-[85vh] grid-cols-[minmax(0,1fr)] overflow-x-hidden overflow-y-auto">
-				<DialogHeader>
+			<DialogContent style={{ width: 'min(60rem, calc(100vw - 2rem))', maxWidth: 'none' }} className="flex h-[85vh] flex-col overflow-hidden">
+				{/* A fixed height, so the top stays put; the header and tabs stay, only the list scrolls */}
+				<DialogHeader className="shrink-0">
 					<DialogTitle>What was sent</DialogTitle>
 					<DialogDescription data-testid="receipt-line">
 						{docs} document{docs === 1 ? '' : 's'} · about {n(receipt.tokens)} of {n(receipt.contextWindow)} tokens · {receipt.model}
 						{cut > 0 && ` · ${cut} cut to ${n(receipt.charLimit)} characters`}
 					</DialogDescription>
 				</DialogHeader>
-				<Tabs defaultValue="documents" className="min-w-0">
-					<TabsList>
+				<Tabs defaultValue="documents" className="flex min-h-0 min-w-0 flex-1 flex-col">
+					<TabsList className="shrink-0">
 						<TabsTrigger value="documents">Documents {docs}</TabsTrigger>
 						<TabsTrigger value="instructions">Instructions</TabsTrigger>
 						<TabsTrigger value="memory">Memory {receipt.memoryTurns}</TabsTrigger>
 					</TabsList>
-					<TabsContent value="documents">
+					<TabsContent value="documents" className="min-h-0 flex-1 overflow-y-auto pr-1">
 						{readCount > 0 && (
 							<p className="mb-2 text-xs text-violet-800" data-testid="read-on-request">
 								Read {readCount} in full on request · {n(readChars)} of {n(BUDGET_CHARS)} budget characters · {receipt.readRounds ?? 1} round{(receipt.readRounds ?? 1) === 1 ? '' : 's'}
@@ -66,7 +69,13 @@ export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) 
 								<li key={d.id} className={`${ROW} py-1.5`}>
 									<span className="flex justify-center">{citedIds.has(d.id) && <Check role="img" aria-label="Cited" className="h-3.5 w-3.5 text-teal-700" />}</span>
 									<span className="flex min-w-0 items-baseline gap-2">
-										<span className="truncate" title={d.title}>{d.title}</span>
+										<button
+											type="button"
+											onClick={() => onOpenDocument?.(d.id)}
+											title={`Open ${d.title} in reading mode`}
+											className="truncate text-left underline-offset-2 hover:text-primary hover:underline">
+											{d.title}
+										</button>
 										{d.readOnRequest && <span className="shrink-0 text-xs text-violet-700">read in full</span>}
 									</span>
 									<SentMeter d={d} />
@@ -78,7 +87,7 @@ export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) 
 							{docs} documents · {n(totalLength)} characters in all · {n(totalSent)} sent ({Math.round((totalSent / Math.max(totalLength, 1)) * 100)}%)
 						</p>
 					</TabsContent>
-					<TabsContent value="instructions" className="space-y-3 text-sm">
+					<TabsContent value="instructions" className="min-h-0 flex-1 space-y-3 overflow-y-auto text-sm">
 						<div>
 							<h3 className="font-medium">Question</h3>
 							<p className="text-muted-foreground">{receipt.question ?? 'The default analysis: themes, relationships, patterns and insights'}</p>
@@ -94,7 +103,7 @@ export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) 
 							</p>
 						</div>
 					</TabsContent>
-					<TabsContent value="memory" className="text-sm text-muted-foreground">
+					<TabsContent value="memory" className="min-h-0 flex-1 overflow-y-auto text-sm text-muted-foreground">
 						{receipt.memoryTurns === 0
 							? 'No earlier questions went along: this was answered on its own.'
 							: `The last ${receipt.memoryTurns} question${receipt.memoryTurns === 1 ? '' : 's'} and answer${receipt.memoryTurns === 1 ? '' : 's'} went along, so follow-ups make sense.`}
