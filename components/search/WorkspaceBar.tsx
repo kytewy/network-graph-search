@@ -20,7 +20,7 @@ export function WorkspaceBar() {
 
 	return (
 		<div className="space-y-1" data-testid="workspace-bar">
-			<label className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 focus-within:border-primary">
+			<label className="flex items-center gap-2 rounded-lg border border-primary/30 bg-white px-3 py-1.5 focus-within:border-primary">
 				<Target className="h-4 w-4 shrink-0 text-primary" aria-hidden />
 				<input
 					value={goal}

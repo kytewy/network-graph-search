@@ -1,6 +1,8 @@
 'use client';
 
 import { SearchError } from './SearchError';
+import { RecentSearches } from './RecentSearches';
+import { useRecentSearches } from '@/lib/stores/recent-searches';
 import { useSearch } from '@/hooks/use-search';
 import { useUrlSearch } from '@/hooks/use-url-search';
 import { useState, useEffect } from 'react';
@@ -41,6 +43,9 @@ export function SearchInput() {
 	const { isLoading } = useSearch();
 	// A search goes into the web address, which then runs it
 	const { submit } = useUrlSearch();
+	// The list of searches shows under the box while it's focused, or whenever there are no results
+	const [focused, setFocused] = useState(false);
+	const hasResults = useAppStore((state) => state.searchResults.length > 0);
 	// Adding needs a workspace to add to
 	const canAdd = useAppStore((state) => state.rounds.length > 0);
 
@@ -65,13 +70,26 @@ export function SearchInput() {
 	// Handle search
 	const handleSearch = () => {
 		if (!query.trim()) return;
+		useRecentSearches.getState().remember(query, topK);
+		setFocused(false);
 		submit(query, topK);
+	};
+
+	// A search picked from the list: run it again, or add it to the workspace
+	const pick = (q: string, k: number, mode: 'replace' | 'add') => {
+		setQuery(q);
+		setFocused(false);
+		useRecentSearches.getState().remember(q, k);
+		if (mode === 'add') useAppStore.getState().performSearch(q, k, 'add');
+		else submit(q, k);
 	};
 
 	// Collects this search into the workspace instead of replacing it. It
 	// doesn't change the web address, which holds the search the workspace started from.
 	const handleAdd = () => {
 		if (!query.trim() || !canAdd) return;
+		useRecentSearches.getState().remember(query, topK);
+		setFocused(false);
 		useAppStore.getState().performSearch(query, topK, 'add');
 	};
 
@@ -96,7 +114,7 @@ export function SearchInput() {
 	const geoCount = selectedContinents.length + selectedCountries.length;
 
 	return (
-		<div className="space-y-2">
+		<div className="relative space-y-2">
 			{/* Full-width search input */}
 			<div className="relative">
 				<Input
@@ -107,7 +125,9 @@ export function SearchInput() {
 						// Enter searches; Shift+Enter adds to the workspace
 						if (e.key === 'Enter') (e.shiftKey && canAdd ? handleAdd() : handleSearch());
 					}}
-					className="w-full h-11 text-base px-4 font-medium"
+					onFocus={() => setFocused(true)}
+					onBlur={() => setFocused(false)}
+					className="w-full h-11 text-base px-4 font-medium bg-white border-primary/30 focus-visible:border-primary"
 				/>
 				{query.length > 0 && !isLoading && (
 					<button
@@ -236,6 +256,13 @@ export function SearchInput() {
 
 			{/* Why the last search failed, with Try again */}
 			<SearchError />
+			{/* Your searches: this workspace's first (with results), then older ones */}
+			{(focused || !hasResults) && (
+				// Over the results while you type; in place when there are none
+				<div className={hasResults ? 'absolute left-0 right-0 top-12 z-30 shadow-lg' : ''}>
+					<RecentSearches onPick={pick} />
+				</div>
+			)}
 		</div>
 	);
 }
