@@ -323,15 +323,15 @@ export default function ContextManagement({
 	);
 
 	return (
-		<div className="flex flex-col min-h-full">
+		<div className="flex h-full min-h-0 flex-col">
 			{/* The tabs are the panel's header, like Search | Filters on the left */}
 			<Tabs
 				value={activeTab}
 				onValueChange={(value) =>
 					setActiveTab(value as 'nodes' | 'analysis' | 'clustering')
 				}
-				className="flex flex-col flex-1">
-				<div data-panel-header="right" className={`${PANEL_HEADER} sticky top-0 z-10 bg-sidebar`}>
+				className="flex min-h-0 flex-1 flex-col">
+				<div data-panel-header="right" className={`${PANEL_HEADER} shrink-0 bg-sidebar`}>
 					{headerStart}
 					{/* Stays a compact group in the middle when the panel is wide */}
 					<TabsList className="grid flex-1 max-w-md mx-auto grid-cols-3 bg-transparent p-0 h-auto gap-0">
@@ -353,7 +353,9 @@ export default function ContextManagement({
 					</TabsList>
 					{headerEnd}
 				</div>
-				<div className="p-4 flex-1">
+				{/* Only what's under the tabs scrolls, so the scrollbar starts below them */}
+				<div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]" data-panel-scroll="right">
+				<div className="p-4">
 
 				{/* Nodes Tab Content */}
 				<TabsContent value="nodes" className="mt-0">
@@ -607,6 +609,7 @@ export default function ContextManagement({
 						allNodes={filteredResults}
 					/>
 				</TabsContent>
+				</div>
 				</div>
 			</Tabs>
 
