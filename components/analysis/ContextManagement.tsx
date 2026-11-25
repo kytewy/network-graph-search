@@ -24,7 +24,7 @@ import { useContextStore } from '@/lib/stores/context-store';
 import { useAppStore } from '@/lib/stores/app-state';
 import DocumentOverlay from '@/components/network/DocumentOverlay';
 import ChatInterface from '@/components/analysis/ChatInterface';
-import { OPEN_CHAT_EVENT } from '@/lib/chat/new-chat';
+import { CLUSTER_CHAT_EVENT, OPEN_CHAT_EVENT } from '@/lib/chat/new-chat';
 import ClusteringInterface from '@/components/analysis/ClusteringInterface';
 import { contextTokens, nodeTokens } from '@/lib/utils/llm-tokens';
 import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
@@ -112,10 +112,20 @@ export default function ContextManagement({
 	const [selectAll, setSelectAll] = useState(false);
 	const [sortByTokens, setSortByTokens] = useState(false);
 	// The graph menus start a chat and ask for the Chat tab
+	// …or for Clusters, clustering the open chat's documents as soon as it opens
+	const [clusterOnOpen, setClusterOnOpen] = useState(false);
 	useEffect(() => {
 		const show = () => setActiveTab('analysis');
+		const cluster = () => {
+			setClusterOnOpen(true);
+			setActiveTab('clustering');
+		};
 		window.addEventListener(OPEN_CHAT_EVENT, show);
-		return () => window.removeEventListener(OPEN_CHAT_EVENT, show);
+		window.addEventListener(CLUSTER_CHAT_EVENT, cluster);
+		return () => {
+			window.removeEventListener(OPEN_CHAT_EVENT, show);
+			window.removeEventListener(CLUSTER_CHAT_EVENT, cluster);
+		};
 	}, []);
 	// Group the context by search (once there are two) or by AI cluster (once clustered)
 	const [grouping, setGrouping] = useState<ContextGrouping | 'none'>('search');
@@ -586,6 +596,8 @@ export default function ContextManagement({
 						contextNodes={contextNodes}
 						rightPanelExpanded={rightPanelExpanded}
 						onSwitchToChat={() => setActiveTab('analysis')}
+						runOnOpen={clusterOnOpen}
+						onRan={() => setClusterOnOpen(false)}
 						allNodes={filteredResults}
 					/>
 				</TabsContent>

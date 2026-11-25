@@ -15,3 +15,14 @@ export function analyzeInNewChat(name: string, nodes: readonly Node[]): string {
 	window.dispatchEvent(new CustomEvent(OPEN_CHAT_EVENT));
 	return id;
 }
+
+/** Asks the analysis panel to show Clusters and cluster the open chat's documents */
+export const CLUSTER_CHAT_EVENT = 'panel:cluster-chat';
+
+/** "Cluster these": a chat with just these documents, clustered straight away */
+export function clusterInNewChat(name: string, nodes: readonly Node[]): string {
+	const id = useContextStore.getState().newChat(name, [...nodes] as never);
+	useAppStore.getState().setRightPanelCollapsed(false);
+	window.dispatchEvent(new CustomEvent(CLUSTER_CHAT_EVENT));
+	return id;
+}

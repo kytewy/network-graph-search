@@ -1,4 +1,4 @@
-import { analyzeInNewChat, OPEN_CHAT_EVENT } from '@/lib/chat/new-chat';
+import { analyzeInNewChat, CLUSTER_CHAT_EVENT, clusterInNewChat, OPEN_CHAT_EVENT } from '@/lib/chat/new-chat';
 import { useAppStore } from '@/lib/stores/app-state';
 import { useContextStore } from '@/lib/stores/context-store';
 
@@ -19,5 +19,14 @@ describe('analyzeInNewChat: a chat about exactly what you pointed at', () => {
 		expect(useAppStore.getState().rightPanelCollapsed).toBe(false);
 		expect(heard).toHaveBeenCalledTimes(1);
 		window.removeEventListener(OPEN_CHAT_EVENT, heard);
+	});
+
+	it('Cluster these: a chat with just those documents, and asks for Clusters to run', () => {
+		const heard = vi.fn();
+		window.addEventListener(CLUSTER_CHAT_EVENT, heard);
+		clusterInNewChat('Selection: 2 documents', [{ id: 'x' } as any, { id: 'y' } as any]);
+		expect(useContextStore.getState().contextNodes.map((n) => n.id)).toEqual(['x', 'y']);
+		expect(heard).toHaveBeenCalledTimes(1);
+		window.removeEventListener(CLUSTER_CHAT_EVENT, heard);
 	});
 });

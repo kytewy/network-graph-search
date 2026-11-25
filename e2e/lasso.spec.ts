@@ -53,3 +53,28 @@ test('lassoing nodes and choosing Analyze in a new chat starts a chat with just 
 	await expect(switcher.getByRole('button', { name: `Chats: Selection: ${caught} documents` })).toBeVisible();
 	await expect(page.getByTestId('documents-strip')).toContainText(`${caught} document`);
 });
+
+test('lassoing nodes and choosing Cluster these clusters just those, in a chat of their own', async ({ page }) => {
+	let clustered: string[] = [];
+	await page.route('**/api/cluster-analysis', (r) => {
+		clustered = r.request().postDataJSON().nodes.map((n: { id: string }) => n.id);
+		return r.fulfill({ json: { clusters: [{ cluster_id: 'cluster_0', label: 'Cluster 0', size: clustered.length, top_terms: [], node_ids: clustered }], cluster_assignments: Object.fromEntries(clustered.map((id) => [id, 'cluster_0'])) } });
+	});
+	await page.route('**/api/analyze-cluster', (r) => r.fulfill({ json: { clusterName: 'Picked', description: 'x' } }));
+	await withoutLabels(page);
+	await search(page);
+	await page.waitForTimeout(2000);
+	const box = await graphNodeCount(page).boundingBox();
+	if (!box) throw new Error('graph not visible');
+	await page.keyboard.down('Shift');
+	await page.mouse.move(box.x + 200, box.y + 90);
+	await page.mouse.down();
+	await page.mouse.move(box.x + box.width - 20, box.y + box.height - 50, { steps: 25 });
+	await page.mouse.up();
+	await page.keyboard.up('Shift');
+	const caught = Number((await page.getByRole('heading', { name: /selected/ }).textContent())?.match(/\d+/)?.[0]);
+
+	await page.getByRole('button', { name: 'Cluster these' }).click();
+	await expect(page.locator('[data-panel-header="right"]').getByRole('tab', { name: 'Clusters' })).toHaveAttribute('data-state', 'active');
+	await expect.poll(() => clustered.length).toBe(caught);
+});

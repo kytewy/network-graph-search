@@ -33,6 +33,9 @@ interface ClusteringInterfaceProps {
 	rightPanelExpanded: boolean;
 	onSwitchToChat: () => void;
 	allNodes?: any[]; // All available nodes from network
+	/** Cluster the documents as soon as the tab opens (the lasso's "Cluster these") */
+	runOnOpen?: boolean;
+	onRan?: () => void;
 }
 
 interface ClusterResult {
@@ -48,6 +51,8 @@ export default function ClusteringInterface({
 	rightPanelExpanded,
 	onSwitchToChat,
 	allNodes = [],
+	runOnOpen = false,
+	onRan,
 }: ClusteringInterfaceProps) {
 	const applyAiClusters = useAppStore((state) => state.applyAiClusters);
 	const clearAiClusters = useAppStore((state) => state.clearAiClusters);
@@ -225,6 +230,14 @@ export default function ClusteringInterface({
 			if (!signal.aborted) setIsAnalyzing(false);
 		}
 	};
+
+	// "Cluster these" from the lasso: run once the chat's documents are here
+	useEffect(() => {
+		if (!runOnOpen || contextNodes.length === 0) return;
+		onRan?.();
+		void handleAnalyzeClusters();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [runOnOpen, contextNodes]);
 
 	const handleClearClusters = () => {
 		clusterRequests.current.cancel();
