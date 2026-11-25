@@ -1,16 +1,17 @@
 import type { ContextLevel } from '@/lib/clustering/cluster-display';
+import { PALETTE } from './palette';
 
 /** Hovered nodes are drawn in this purple. */
-export const HIGHLIGHT_COLOR = '#7c3aed';
+export const HIGHLIGHT_COLOR = PALETTE.primary;
 
 /** A hovered node's label: a darker shade of the usual label colour (#2A6475). */
 export const HIGHLIGHT_LABEL_COLOR = '#133540';
 
 /** Cluster rings, soft purples that deepen as more of the cluster is in context. */
 export const CLUSTER_RING_COLORS: Readonly<Record<ContextLevel, string>> = {
-	none: '#ede9fe', // palest: nothing added yet
-	some: '#c4b5fd', // light: some added
-	all: '#a78bfa', // medium: all added (softer than the node purple)
+	none: '#f4f2fe', // palest: nothing added yet
+	some: '#ddd6fe', // light: some added
+	all: '#c4b5fd', // medium: all added (softer than the node purple)
 };
 
 /** How long a cluster's new name takes to fade in. */
