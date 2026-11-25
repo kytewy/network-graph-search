@@ -95,8 +95,9 @@ test('AI clusters come back after a refresh, without asking the AI again', async
 	await expect(page.getByTestId('cluster-overview').getByRole('button', { name: /EU rules/ })).toBeVisible();
 	await expect(page.getByTestId('cluster-summary')).toContainText('Two clusters');
 	expect(aiCalls).toBe(before);
-	// …and the Context tab can still group by cluster
-	await page.locator('[data-panel-header="right"]').getByRole('tab', { name: /^Context/ }).click();
+	// …and the chat's documents can still be grouped by cluster
+	await page.locator('[data-panel-header="right"]').getByRole('tab', { name: 'Chat' }).click();
+	await page.getByTestId('documents-strip').click();
 	await expect(page.getByRole('group', { name: 'Group context' }).getByRole('button', { name: 'cluster' })).toBeVisible();
 });
 

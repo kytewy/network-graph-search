@@ -35,6 +35,8 @@ interface ChatInterfaceProps {
 	selectedNodesSummary: any;
 	/** One line on what the AI will receive (documents and tokens) */
 	contextSummary?: ReactNode;
+	/** This chat's documents (search, group, remove), opened from the strip under the chat bar */
+	documents?: ReactNode;
 }
 
 /** Saved prompts shown as chips in the box; the rest are behind + */
@@ -53,7 +55,10 @@ const FAILED = 'Sorry, something went wrong while analysing the documents. Try a
  * app (newest at the bottom, box underneath); follow-ups remember the last
  * few turns, and Stop really cancels.
  */
-export default function ChatInterface({ rightPanelExpanded, contextSummary }: ChatInterfaceProps) {
+export default function ChatInterface({ rightPanelExpanded, contextSummary, documents }: ChatInterfaceProps) {
+	// The documents strip: "12 documents ▾" opens this chat's list in place
+	const [docsOpen, setDocsOpen] = useState(false);
+	const docCount = useContextStore((s) => s.contextNodes.length);
 	const [chatInput, setChatInput] = useState('');
 	const savedPrompts = useSavedPrompts((s) => s.prompts);
 	// An answer opened as a document: beside the chat when the panel is wide, over it when narrow
@@ -214,12 +219,33 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 						setReceiptId(null);
 					}}
 				/>
+				<button
+					type="button"
+					onClick={() => setDocsOpen((o) => !o)}
+					aria-expanded={docsOpen}
+					data-testid="documents-strip"
+					className={`mb-2 flex w-full items-center gap-2 rounded-lg border bg-white px-3 py-1.5 text-left text-xs hover:bg-accent/30 ${docsOpen ? 'border-primary' : ''}`}>
+					<span className="text-sm font-medium">
+						{docCount} document{docCount === 1 ? '' : 's'} {docsOpen ? '▴' : '▾'}
+					</span>
+					<span className="text-muted-foreground">{docsOpen ? 'Changes apply to this chat only' : 'in this chat'}</span>
+				</button>
 			</div>
+			{docsOpen && (
+				<div className="mb-3 rounded-lg border border-primary/40 bg-white p-3" aria-label="This chat's documents" role="region">
+					{documents}
+					<div className="mt-2 flex justify-end">
+						<button type="button" onClick={() => setDocsOpen(false)} className="rounded-md px-2 py-1 text-xs text-primary hover:bg-primary/5">
+							Done
+						</button>
+					</div>
+				</div>
+			)}
 			{/* Messages, oldest first */}
 			<div className="flex-1 space-y-4 pb-4 pt-3">
 				{conversations.length === 0 && (
 					<p className="pt-8 text-center text-sm text-muted-foreground">
-						Ask about the documents in context. Follow-up questions remember the last {CHAT_LIMITS.MEMORY_TURNS} answers.
+						Ask about this chat's documents. Follow-up questions remember the last {CHAT_LIMITS.MEMORY_TURNS} answers.
 					</p>
 				)}
 				{conversations.map((turn) => (

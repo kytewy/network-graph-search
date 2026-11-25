@@ -47,4 +47,24 @@ describe('several chats', () => {
 		expect(s.chats).toEqual([MAIN_CHAT]);
 		expect(s.chatConversations).toHaveLength(0);
 	});
+
+	it('gives each chat its own documents: new chats copy them, switching swaps them', () => {
+		const doc = (id: string) => ({ id, label: id }) as any;
+		useContextStore.setState({ contextNodes: [doc('a'), doc('b')] });
+		const first = useContextStore.getState().activeChatId;
+		const copy = useContextStore.getState().newChat();
+		expect(useContextStore.getState().contextNodes.map((n) => n.id)).toEqual(['a', 'b']);
+		useContextStore.getState().removeNodeFromContext('a');
+		// A chat from the graph starts with exactly what was pointed at
+		const cluster = useContextStore.getState().newChat('Cluster: EU rules', [doc('c')]);
+		expect(useContextStore.getState().contextNodes.map((n) => n.id)).toEqual(['c']);
+		useContextStore.getState().selectChat(first);
+		expect(useContextStore.getState().contextNodes.map((n) => n.id)).toEqual(['a', 'b']);
+		useContextStore.getState().selectChat(copy);
+		expect(useContextStore.getState().contextNodes.map((n) => n.id)).toEqual(['b']);
+		// Deleting the open chat opens the one before it, with its documents
+		useContextStore.getState().selectChat(cluster);
+		useContextStore.getState().deleteChat(cluster);
+		expect(useContextStore.getState().contextNodes.map((n) => n.id)).toEqual(['b']);
+	});
 });

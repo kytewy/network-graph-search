@@ -50,6 +50,8 @@ export interface Chat {
 	createdAt: number;
 	/** Named by the app (from the first question, then by the AI), not by you */
 	autoName?: boolean;
+	/** This chat's documents while another chat is open (the open chat's are contextNodes) */
+	nodes?: Node[];
 }
 
 const NEW_CHAT_NAME = 'New chat';
@@ -96,8 +98,8 @@ interface ContextState {
 	addChatConversation: (conversation: ChatConversation) => void;
 	updateChatConversation: (id: string, updates: Partial<ChatConversation>) => void;
 	clearChatConversations: () => void;
-	/** Starts an empty chat and opens it; returns its id */
-	newChat: (name?: string) => string;
+	/** Starts an empty chat and opens it, with these documents (default: a copy of the open chat's); returns its id */
+	newChat: (name?: string, nodes?: Node[]) => string;
 	selectChat: (id: string) => void;
 	/** Removes a chat and its questions; the main chat can only be emptied */
 	deleteChat: (id: string) => void;
@@ -193,16 +195,31 @@ export const useContextStore = create<ContextState>((set) => ({
 	clearChatConversations: () =>
 		set({ chatConversations: [], chats: [MAIN_CHAT], activeChatId: MAIN_CHAT.id }),
 
-	newChat: (name = NEW_CHAT_NAME) => {
-		const chat = { id: `chat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, name, createdAt: Date.now() };
-		set((state) => ({ chats: [...state.chats, chat], activeChatId: chat.id }));
+	newChat: (name = NEW_CHAT_NAME, nodes) => {
+		const chat: Chat = { id: `chat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, name, createdAt: Date.now() };
+		set((state) => ({
+			// The open chat keeps its documents; the new one starts with its own copy
+			chats: [...state.chats.map((c) => (c.id === state.activeChatId ? { ...c, nodes: state.contextNodes } : c)), chat],
+			activeChatId: chat.id,
+			contextNodes: [...(nodes ?? state.contextNodes)],
+		}));
 		return chat.id;
 	},
 
 	nameChatAuto: (id, name) =>
 		set((state) => ({ chats: state.chats.map((c) => (c.id === id && c.autoName && name ? { ...c, name } : c)) })),
 
-	selectChat: (id) => set((state) => (state.chats.some((c) => c.id === id) ? { activeChatId: id } : {})),
+	// Each chat has its own documents: switching puts the open chat's away and brings the other's out
+	selectChat: (id) =>
+		set((state) => {
+			const target = state.chats.find((c) => c.id === id);
+			if (!target || id === state.activeChatId) return {};
+			return {
+				chats: state.chats.map((c) => (c.id === state.activeChatId ? { ...c, nodes: state.contextNodes } : c.id === id ? { ...c, nodes: undefined } : c)),
+				activeChatId: id,
+				contextNodes: target.nodes ?? [],
+			};
+		}),
 
 	deleteChat: (id) =>
 		set((state) => {
@@ -211,8 +228,14 @@ export const useContextStore = create<ContextState>((set) => ({
 			if (id === MAIN_CHAT.id) return { chatConversations, chats: state.chats.map((c) => (c.id === id ? MAIN_CHAT : c)) };
 			const index = state.chats.findIndex((c) => c.id === id);
 			const chats = state.chats.filter((c) => c.id !== id);
-			// Open the chat before it (or the main chat)
-			const activeChatId = state.activeChatId === id ? (chats[Math.max(0, index - 1)] ?? MAIN_CHAT).id : state.activeChatId;
-			return { chatConversations, chats, activeChatId };
+			if (state.activeChatId !== id) return { chatConversations, chats };
+			// Open the chat before it (or the main chat), with its documents
+			const next = chats[Math.max(0, index - 1)] ?? MAIN_CHAT;
+			return {
+				chatConversations,
+				chats: chats.map((c) => (c.id === next.id ? { ...c, nodes: undefined } : c)),
+				activeChatId: next.id,
+				contextNodes: next.nodes ?? [],
+			};
 		}),
 }));

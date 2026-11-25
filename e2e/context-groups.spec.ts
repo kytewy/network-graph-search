@@ -25,7 +25,8 @@ test('context grouped by search (bulk add/remove) and by cluster (ask the chat)'
 	await box.fill('compliance');
 	await box.press('Shift+Enter');
 
-	// Search #1's top 10 into context, from its section
+	// Search #1's top 10 into context, from its section (in the chat's documents strip)
+	await page.getByTestId('documents-strip').click();
 	const groups = page.getByTestId('context-groups');
 	await expect(groups.getByRole('region', { name: '#1 AI regulation' })).toContainText('0 of 6');
 	await groups.getByRole('button', { name: '+ Top 10 #1 AI regulation' }).click();
@@ -55,7 +56,8 @@ test('context grouped by search (bulk add/remove) and by cluster (ask the chat)'
 	await header.getByRole('tab', { name: 'Clusters' }).click();
 	await page.getByRole('button', { name: 'Analyze Clusters' }).click();
 	await expect(page.getByTestId('cluster-summary')).toContainText('ok');
-	await header.getByRole('tab', { name: /^Context/ }).click();
+	await header.getByRole('tab', { name: 'Chat' }).click();
+	await page.getByTestId('documents-strip').click();
 	await page.getByRole('group', { name: 'Group context' }).getByRole('button', { name: 'cluster' }).click();
 	await expect(groups.getByRole('region', { name: 'EU rules' })).toContainText('4');
 	await groups.getByRole('button', { name: 'Ask about this Frameworks' }).click();

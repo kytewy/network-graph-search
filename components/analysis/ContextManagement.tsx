@@ -104,7 +104,7 @@ export default function ContextManagement({
 	const [searchQuery, setSearchQuery] = useState('');
 	const [activeTab, setActiveTab] = useState<
 		'nodes' | 'analysis' | 'clustering'
-	>('nodes');
+	>('analysis');
 	const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
 		new Set()
 	);
@@ -322,43 +322,10 @@ export default function ContextManagement({
 		</p>
 	);
 
-	return (
-		<div className="flex h-full min-h-0 flex-col">
-			{/* The tabs are the panel's header, like Search | Filters on the left */}
-			<Tabs
-				value={activeTab}
-				onValueChange={(value) =>
-					setActiveTab(value as 'nodes' | 'analysis' | 'clustering')
-				}
-				className="flex min-h-0 flex-1 flex-col">
-				<div data-panel-header="right" className={`${PANEL_HEADER} shrink-0 bg-sidebar`}>
-					{headerStart}
-					{/* Stays a compact group in the middle when the panel is wide */}
-					<TabsList className="grid flex-1 max-w-md mx-auto grid-cols-3 bg-transparent p-0 h-auto gap-0">
-						<TabsTrigger value="nodes" className={PANEL_TAB}>
-							<CheckSquare className="h-3 w-3" />
-							<span>Context</span>
-							{contextNodes.length > 0 && (
-								<Badge variant="secondary" className="text-xs">{contextNodes.length}</Badge>
-							)}
-						</TabsTrigger>
-						<TabsTrigger value="analysis" className={PANEL_TAB}>
-							<MessageSquare className="h-3 w-3" />
-							<span>Chat</span>
-						</TabsTrigger>
-						<TabsTrigger value="clustering" className={PANEL_TAB}>
-							<Network className="h-3 w-3" />
-							<span>Clusters</span>
-						</TabsTrigger>
-					</TabsList>
-					{headerEnd}
-				</div>
-				{/* Only what's under the tabs scrolls, so the scrollbar starts below them */}
-				<div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]" data-panel-scroll="right">
-				<div className="p-4">
 
-				{/* Nodes Tab Content */}
-				<TabsContent value="nodes" className="mt-0">
+	// The open chat's documents: shown in the chat's documents strip (no separate Context tab)
+	const documentsList = (
+		<>
 					<div>
 						{/* Search bar */}
 						<div className="flex flex-col gap-2">
@@ -586,7 +553,36 @@ export default function ContextManagement({
 						</div>
 					</div>
 					)}
-				</TabsContent>
+		</>
+	);
+
+	return (
+		<div className="flex h-full min-h-0 flex-col">
+			{/* The tabs are the panel's header, like Search | Filters on the left */}
+			<Tabs
+				value={activeTab}
+				onValueChange={(value) =>
+					setActiveTab(value as 'nodes' | 'analysis' | 'clustering')
+				}
+				className="flex min-h-0 flex-1 flex-col">
+				<div data-panel-header="right" className={`${PANEL_HEADER} shrink-0 bg-sidebar`}>
+					{headerStart}
+					{/* Stays a compact group in the middle when the panel is wide */}
+					<TabsList className="grid flex-1 max-w-xs mx-auto grid-cols-2 bg-transparent p-0 h-auto gap-0">
+						<TabsTrigger value="analysis" className={PANEL_TAB}>
+							<MessageSquare className="h-3 w-3" />
+							<span>Chat</span>
+						</TabsTrigger>
+						<TabsTrigger value="clustering" className={PANEL_TAB}>
+							<Network className="h-3 w-3" />
+							<span>Clusters</span>
+						</TabsTrigger>
+					</TabsList>
+					{headerEnd}
+				</div>
+				{/* Only what's under the tabs scrolls, so the scrollbar starts below them */}
+				<div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]" data-panel-scroll="right">
+				<div className="p-4">
 
 				{/* Analysis Tab Content */}
 				<TabsContent value="analysis" className="mt-0">
@@ -597,6 +593,7 @@ export default function ContextManagement({
 						rightPanelExpanded={rightPanelExpanded}
 						selectedNodesSummary={selectedNodesSummary}
 						contextSummary={budgetLine}
+						documents={documentsList}
 					/>
 				</TabsContent>
 
