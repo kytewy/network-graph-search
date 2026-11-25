@@ -99,7 +99,7 @@ export function SearchInput() {
 	const handleClear = (event: React.MouseEvent<HTMLButtonElement>) => {
 		setQuery('');
 		// Keep the cursor in the box, ready for the next query
-		event.currentTarget.parentElement?.querySelector('input')?.focus();
+		event.currentTarget.parentElement?.querySelector('input')?.focus({ preventScroll: true });
 	};
 
 	// Metadata filter data - Always show these 6 continents for pre-search filtering

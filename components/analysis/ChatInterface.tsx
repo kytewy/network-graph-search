@@ -174,7 +174,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 	/** Puts a saved prompt in the box, ready to edit or send */
 	const fillText = (text: string) => {
 		setChatInput(text);
-		requestAnimationFrame(() => inputRef.current?.focus());
+		requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
 	};
 	const fillBox = (prompt: SavedPrompt) => {
 		touchPrompt(prompt.id);
@@ -285,7 +285,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 									aria-label="Edit question"
 									onClick={() => {
 										setChatInput(turn.prompt);
-										inputRef.current?.focus();
+										inputRef.current?.focus({ preventScroll: true });
 									}}>
 									<Pencil className="h-3.5 w-3.5" />
 								</button>
@@ -408,7 +408,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 				{/* Like Claude's box: the text on top, a toolbar row inside along the bottom */}
 				<div
 					className="rounded-2xl border border-gray-300 bg-white shadow-sm transition-shadow focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10"
-					onClick={() => inputRef.current?.focus()}>
+					onClick={() => inputRef.current?.focus({ preventScroll: true })}>
 					<textarea
 						ref={inputRef}
 						value={chatInput}

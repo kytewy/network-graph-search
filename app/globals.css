@@ -135,3 +135,11 @@
 .chat-dot {
 	animation: chat-dot 1.2s ease-in-out infinite;
 }
+
+/* The graph page fills the window and never scrolls as a whole: only its
+   panels do. clip (not hidden) also stops scripts and focus from scrolling it. */
+html:has([data-page="graph"]),
+html:has([data-page="graph"]) body {
+	height: 100%;
+	overflow: clip;
+}

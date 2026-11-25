@@ -27,12 +27,12 @@ export function GraphPageClient() {
 
 	return (
 		<NetworkGraphProvider>
-			<div className="flex h-screen overflow-hidden bg-background">
+			<div data-page="graph" className="flex h-screen overflow-clip bg-background">
 				{/* Sidebar - Unified Search & Filter Panel */}
 				<SearchPanel />
 
 				{/* Main Graph Area */}
-				<div className="flex-1 relative h-screen overflow-hidden">
+				<div className="flex-1 relative h-screen overflow-clip">
 					<div className="w-full h-full">
 						<NetworkGraphCanvas />
 					</div>
@@ -46,7 +46,7 @@ export function GraphPageClient() {
 				<div
 					className={`${
 						rightPanelExpanded ? `absolute right-0 top-0 ${leftCollapsed ? WIDE_STOPS_AT.right.closed : WIDE_STOPS_AT.right.open} z-10` : `${PANEL_WIDTH.right} shrink-0`
-					} h-screen bg-sidebar border-l border-sidebar-border overflow-hidden transition-all duration-300 flex flex-col`}>
+					} h-screen bg-sidebar border-l border-sidebar-border overflow-clip transition-all duration-300 flex flex-col`}>
 					{/* Context | Chat | Clusters tabs are the header, like the search panel's */}
 					<ContextManagement
 						rightPanelExpanded={rightPanelExpanded}
