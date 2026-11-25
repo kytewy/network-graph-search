@@ -6,6 +6,7 @@ import { VisualizationControls } from '@/components/network/VisualizationControl
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { useGraphView } from '@/hooks/use-graph-view';
 import { NodeContextMenu } from './NodeContextMenu';
+import { ClusterMenu, type ClusterMenuState } from './ClusterMenu';
 import type { Node as DocNode } from '@/lib/config/types';
 import { PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/config/graph-config';
 import { Z_INDEX } from '@/lib/config/graph-config';
@@ -18,7 +19,7 @@ import {
 	clusterDisplayName,
 	namesFromSuggestions,
 } from '@/lib/clustering/cluster-display';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ClusterRendererProps, NodeRendererProps } from 'reagraph';
 import { ClusterRing } from './ClusterRing';
 import { NodeWithRing } from './NodeWithRing';
@@ -75,7 +76,18 @@ export function NetworkGraphCanvasClient() {
 	const layoutOverrides = useLayoutOverrides(Boolean(activeClusterAttribute));
 
 	// Clicking a node adds it to (or takes it out of) the context
-	const toggleContext = useToggleContextOnClick();
+	const toggleContextOnNode = useToggleContextOnClick();
+	// A click on a document inside a cluster also reaches the cluster; remember
+	// when a document was clicked so the cluster menu doesn't open as well
+	const lastNodeClick = useRef(0);
+	const toggleContext = useCallback(
+		(...args: Parameters<typeof toggleContextOnNode>) => {
+			lastNodeClick.current = Date.now();
+			return toggleContextOnNode(...args);
+		},
+		[toggleContextOnNode]
+	);
+	const [clusterMenu, setClusterMenu] = useState<ClusterMenuState | null>(null);
 	const contextNodes = useContextStore((s) => s.contextNodes);
 	const contextIds = useMemo(() => contextNodes.map((n) => n.id), [contextNodes]);
 	const contextIdSet = useMemo(() => new Set(contextIds), [contextIds]);
@@ -128,6 +140,17 @@ export function NetworkGraphCanvasClient() {
 	};
 	const safeGraphEdges = Array.isArray(graphEdges) ? graphEdges : [];
 
+	// Clicking a cluster's shaded area opens its menu where you clicked
+	const onClusterClick = useCallback(
+		(cluster: { label: string; nodes: { data?: unknown }[] }, event: { nativeEvent?: MouseEvent }) => {
+			if (Date.now() - lastNodeClick.current < 300) return;
+			const nodes = cluster.nodes.map((n) => n.data as DocNode).filter(Boolean);
+			if (nodes.length === 0) return;
+			setClusterMenu({ name: clusterDisplayName(cluster.label, clusterNames), nodes, x: event.nativeEvent?.clientX ?? 200, y: event.nativeEvent?.clientY ?? 200 });
+		},
+		[clusterNames]
+	);
+
 
 	return (
 		<div className="flex flex-col h-full">
@@ -155,7 +178,7 @@ export function NetworkGraphCanvasClient() {
 						borderRadius: '4px',
 						fontSize: '12px',
 					}}>
-					<span>Click a node to add or remove it from this chat · Right-click for more · Shift + drag to lasso</span>
+					<span>Click a node to add or remove it from this chat · Click a cluster or right-click a node for more · Shift + drag to lasso</span>
 				</div>
 
 				{safeGraphNodes.length > 0 ? (
@@ -174,6 +197,7 @@ export function NetworkGraphCanvasClient() {
 						onNodePointerOut={onNodePointerOut}
 						theme={GRAPH_THEME}
 						onRenderCluster={renderCluster}
+						onClusterClick={onClusterClick as never}
 						onNodeClick={toggleContext}
 						// Lasso selection for multi-node selection (hold Shift + drag)
 						lassoType="node"
@@ -231,6 +255,7 @@ export function NetworkGraphCanvasClient() {
 
 				{/* Lasso Selection Menu - Gets data from context */}
 				<LassoSelectionMenu className="lasso-menu" />
+				{clusterMenu && <ClusterMenu menu={clusterMenu} onClose={() => setClusterMenu(null)} />}
 			</div>
 		</div>
 	);
