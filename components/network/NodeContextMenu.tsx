@@ -114,7 +114,7 @@ export function NodeContextMenu({
             analyzeInNewChat(node.label, [node]);
             onClose();
           }}>
-          Analyze in a new chat
+          Analyze in new chat
         </button>
         {cluster && cluster.nodes.length > 1 && (
           <>
@@ -128,7 +128,7 @@ export function NodeContextMenu({
                 analyzeInNewChat(`Cluster: ${cluster.name}`, cluster.nodes);
                 onClose();
               }}>
-              Analyze the cluster in a new chat
+              Analyze cluster in new chat
             </button>
             <button
               type="button"

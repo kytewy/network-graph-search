@@ -60,10 +60,10 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 			style={{ top: 72, left: '50%', transform: 'translateX(-50%)', maxWidth: 'calc(100% - 2rem)' }}>
 			<h3 className="whitespace-nowrap font-medium text-foreground">{selectedNodes.length} selected</h3>
 			<Button variant="outline" size="sm" className="h-7 rounded-full px-3 text-xs" onClick={() => { analyzeInNewChat(`Selection: ${selectedNodes.length} documents`, selectedNodes); onClose(); }}>
-				Analyze in a new chat
+				Analyze in new chat
 			</Button>
 			<Button variant="outline" size="sm" className="h-7 rounded-full px-3 text-xs" onClick={() => { clusterInNewChat(`Selection: ${selectedNodes.length} documents`, selectedNodes); onClose(); }}>
-				Cluster these
+				Cluster selection
 			</Button>
 			<Button size="sm" className="h-7 rounded-full px-3 text-xs" onClick={handleSendToContext}>
 				Add to this chat

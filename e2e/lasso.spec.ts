@@ -48,13 +48,13 @@ test('lassoing nodes and choosing Analyze in a new chat starts a chat with just 
 	const heading = page.getByRole('heading', { name: /selected/ });
 	const caught = Number((await heading.textContent())?.match(/\d+/)?.[0]);
 
-	await page.getByRole('button', { name: 'Analyze in a new chat' }).click();
+	await page.getByRole('button', { name: 'Analyze in new chat' }).click();
 	const switcher = page.getByTestId('chat-switcher');
 	await expect(switcher.getByRole('button', { name: `Chats: Selection: ${caught} documents` })).toBeVisible();
 	await expect(page.getByTestId('documents-strip')).toContainText(`${caught} document`);
 });
 
-test('lassoing nodes and choosing Cluster these clusters just those, in a chat of their own', async ({ page }) => {
+test('lassoing nodes and choosing Cluster selection clusters just those, in a chat of their own', async ({ page }) => {
 	let clustered: string[] = [];
 	await page.route('**/api/cluster-analysis', (r) => {
 		clustered = r.request().postDataJSON().nodes.map((n: { id: string }) => n.id);
@@ -74,7 +74,7 @@ test('lassoing nodes and choosing Cluster these clusters just those, in a chat o
 	await page.keyboard.up('Shift');
 	const caught = Number((await page.getByRole('heading', { name: /selected/ }).textContent())?.match(/\d+/)?.[0]);
 
-	await page.getByRole('button', { name: 'Cluster these' }).click();
+	await page.getByRole('button', { name: 'Cluster selection' }).click();
 	await expect(page.locator('[data-panel-header="right"]').getByRole('tab', { name: 'Clusters' })).toHaveAttribute('data-state', 'active');
 	await expect.poll(() => clustered.length).toBe(caught);
 });

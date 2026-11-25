@@ -36,7 +36,7 @@ export function ClusterMenu({ menu, onClose }: { menu: ClusterMenuState; onClose
 				{menu.name} · {menu.nodes.length} document{menu.nodes.length === 1 ? '' : 's'}
 			</p>
 			<button type="button" role="menuitem" className={`${item} font-medium`} onClick={run(() => analyzeInNewChat(`Cluster: ${menu.name}`, menu.nodes))}>
-				Analyze in a new chat
+				Analyze in new chat
 			</button>
 			<button type="button" role="menuitem" className={item} onClick={run(() => useContextStore.getState().addNodesToContext(menu.nodes as never))}>
 				Add all to this chat
