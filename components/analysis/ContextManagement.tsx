@@ -333,70 +333,49 @@ export default function ContextManagement({
 	// The open chat's documents: shown in the chat's documents strip (no separate Context tab)
 	const documentsList = (
 		<>
-					<div>
-						{/* Search bar */}
-						<div className="flex flex-col gap-2">
-							<div className="relative">
-								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-								<Input
-									placeholder="Search nodes..."
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-									className="pl-10"
-								/>
-								{searchQuery && (
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setSearchQuery('')}
-										className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0">
-										<X className="h-3 w-3" />
-									</Button>
-								)}
-							</div>
+					{/* One slim row: search, and sort by size */}
+					<div className="flex items-center gap-2">
+						<div className="relative flex-1">
+							<Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+							<Input
+								placeholder="Search this chat's documents"
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								className="h-8 pl-8 text-sm"
+							/>
+							{searchQuery && (
+								<button
+									type="button"
+									aria-label="Clear search"
+									onClick={() => setSearchQuery('')}
+									className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+									<X className="h-3 w-3" />
+								</button>
+							)}
 						</div>
+						<button
+							type="button"
+							onClick={toggleSortByTokens}
+							aria-pressed={sortByTokens}
+							title={sortByTokens ? 'Sorted by tokens (largest first)' : 'Sort by tokens'}
+							aria-label="Sort by tokens"
+							className={`flex h-8 w-8 items-center justify-center rounded-md border ${sortByTokens ? 'border-primary bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/50'}`}>
+							<ArrowUpDown className="h-3.5 w-3.5" />
+						</button>
 					</div>
 
-					{/* Bulk operations toolbar */}
-					<div className="flex flex-wrap items-center gap-2 mt-4">
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={toggleSelectAll}
-							className="text-xs h-7 px-2">
-							{selectAll ? (
-								<>
-									<Square className="h-3 w-3 mr-1" />
-									Deselect All
-								</>
-							) : (
-								<>
-									<CheckSquare className="h-3 w-3 mr-1" />
-									Select All
-								</>
-							)}
-						</Button>
-
-						{/* Sort by tokens button */}
-						<Button
-							variant={sortByTokens ? 'default' : 'outline'}
-							size="sm"
-							onClick={toggleSortByTokens}
-							className="text-xs h-7 px-2">
-							<ArrowUpDown className="h-3 w-3 mr-1" />
-							{sortByTokens ? 'By Tokens' : 'Sort by Tokens'}
-						</Button>
-
+					{/* Selection, in words: Select all · 3 selected · Remove */}
+					<div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+						<button type="button" onClick={toggleSelectAll} className="hover:text-foreground">
+							{selectAll ? 'Deselect all' : 'Select all'}
+						</button>
 						{selectedNodeIds.size > 0 && (
-							<Button
-								variant="destructive"
-								size="sm"
-								onClick={removeSelectedNodes}
-								className="text-xs h-7 px-2 whitespace-nowrap">
-								<Trash2 className="h-3 w-3 mr-1" />
-								Remove {selectedNodeIds.size}{' '}
-								{selectedNodeIds.size === 1 ? 'Node' : 'Nodes'}
-							</Button>
+							<>
+								<span>{selectedNodeIds.size} selected</span>
+								<button type="button" onClick={removeSelectedNodes} className="text-red-600 hover:text-red-700">
+									Remove from this chat
+								</button>
+							</>
 						)}
 					</div>
 
@@ -509,14 +488,11 @@ export default function ContextManagement({
 							) : (
 								<div className="text-center py-8 text-muted-foreground">
 									{contextNodes.length > 0 ? (
-										<p>No nodes match the search</p>
+										<p>No documents match the search</p>
 									) : (
 										<div className="space-y-2">
-											<p className="font-medium">No nodes in context yet</p>
-											<p className="text-sm">
-												Click nodes on the graph to add them to your analysis
-												context
-											</p>
+											<p className="font-medium">No documents in this chat yet</p>
+											<p className="text-sm">Click documents on the graph, turn on their switch in the results, or right-click to analyze a cluster</p>
 										</div>
 									)}
 								</div>

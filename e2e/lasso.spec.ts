@@ -20,7 +20,7 @@ test('lassoing nodes and sending them puts them in the context table', async ({ 
 	await page.keyboard.up('Shift');
 
 	// The layout differs a little each run, so check what the lasso reports it caught
-	const heading = page.getByRole('heading', { name: /Nodes Selected/ });
+	const heading = page.getByRole('heading', { name: /selected/ });
 	await expect(heading).toBeVisible();
 	const caught = Number((await heading.textContent())?.match(/\d+/)?.[0]);
 	expect(caught).toBeGreaterThan(0);
@@ -45,7 +45,7 @@ test('lassoing nodes and choosing Analyze in a new chat starts a chat with just 
 	await page.mouse.move(box.x + box.width - 20, box.y + box.height - 50, { steps: 25 });
 	await page.mouse.up();
 	await page.keyboard.up('Shift');
-	const heading = page.getByRole('heading', { name: /Nodes Selected/ });
+	const heading = page.getByRole('heading', { name: /selected/ });
 	const caught = Number((await heading.textContent())?.match(/\d+/)?.[0]);
 
 	await page.getByRole('button', { name: 'Analyze in a new chat' }).click();

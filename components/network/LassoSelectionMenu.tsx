@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useRef, useMemo } from 'react';
 import { analyzeInNewChat } from '@/lib/chat/new-chat';
 import { Button } from '@/components/ui/button';
 import { Node } from '@/lib/config/types';
@@ -29,7 +29,6 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 		[filteredResults, lassoSelectedNodes]
 	);
 
-	const [expanded, setExpanded] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 
 	// Use reusable hooks
@@ -51,124 +50,24 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 		return null;
 	}
 
+	// A slim bar centred at the top of the graph, clear of the side panels
 	return (
 		<div
 			ref={menuRef}
-			className={`absolute bg-white border border-gray-200 shadow-xl rounded-lg overflow-hidden z-50 ${
-				className || ''
-			}`}
-			style={{
-				// Centred near the top of the screen, where it's always visible
-				top: 100,
-				left: window.innerWidth / 2 - 200,
-				maxWidth: '400px',
-				maxHeight: '80vh',
-			}}>
-			<div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex justify-between items-center">
-				<h3 className="text-lg font-semibold text-foreground">
-					{selectedNodes.length} Nodes Selected
-				</h3>
-				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={handleClearSelection}
-						className="text-xs px-3 py-1 hover:bg-gray-100">
-						Clear
-					</Button>
-					<Button
-						size="sm"
-						variant="outline"
-						onClick={() => {
-							analyzeInNewChat(`Selection: ${selectedNodes.length} documents`, selectedNodes);
-							onClose();
-						}}
-						className="text-xs px-3 py-1">
-						Analyze in a new chat
-					</Button>
-					<Button
-						size="sm"
-						onClick={handleSendToContext}
-						className="text-xs px-3 py-1 bg-primary hover:bg-primary/90 text-primary-foreground">
-						Add to this chat
-					</Button>
-					<button
-						onClick={onClose}
-						className="p-1 hover:bg-gray-100 rounded-md transition-colors">
-						<svg
-							className="w-4 h-4"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24">
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M6 18L18 6M6 6l12 12"
-							/>
-						</svg>
-					</button>
-				</div>
-			</div>
-
-			<div className="p-3">
-				<button
-					onClick={() => setExpanded(!expanded)}
-					className="w-full flex justify-between items-center cursor-pointer p-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors rounded-md">
-					<span className="font-medium text-foreground">Selected Nodes</span>
-					<svg
-						className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${
-							expanded ? 'rotate-180' : ''
-						}`}
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24">
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M19 9l-7 7-7-7"
-						/>
-					</svg>
-				</button>
-
-				{expanded && (
-					<div className="mt-2 max-h-[300px] overflow-y-auto border border-gray-200 rounded-md">
-						<table className="w-full text-sm">
-							<thead className="bg-gray-50 sticky top-0">
-								<tr>
-									<th className="text-left py-2 px-3 font-medium text-muted-foreground">
-										Label
-									</th>
-									<th className="text-left py-2 px-3 font-medium text-muted-foreground">
-										Type
-									</th>
-									<th className="text-right py-2 px-3 font-medium text-muted-foreground">
-										Chars
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{selectedNodes.map((node) => (
-									<tr
-										key={node.id}
-										className="border-t border-gray-200 hover:bg-gray-50">
-										<td className="py-2 px-3 truncate max-w-[150px]">
-											{node.label}
-										</td>
-										<td className="py-2 px-3 text-muted-foreground">
-											{node.documentType}
-										</td>
-										<td className="py-2 px-3 text-right text-muted-foreground">
-											{(node.content?.length || 0).toLocaleString()} chars
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				)}
-			</div>
+			role="dialog"
+			aria-label="Lasso selection"
+			className={`absolute z-50 flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1.5 pl-4 pr-1.5 text-sm shadow-lg ${className || ''}`}
+			style={{ top: 72, left: '50%', transform: 'translateX(-50%)', maxWidth: 'calc(100% - 2rem)' }}>
+			<h3 className="whitespace-nowrap font-medium text-foreground">{selectedNodes.length} selected</h3>
+			<Button variant="outline" size="sm" className="h-7 rounded-full px-3 text-xs" onClick={() => { analyzeInNewChat(`Selection: ${selectedNodes.length} documents`, selectedNodes); onClose(); }}>
+				Analyze in a new chat
+			</Button>
+			<Button size="sm" className="h-7 rounded-full px-3 text-xs" onClick={handleSendToContext}>
+				Add to this chat
+			</Button>
+			<button type="button" onClick={handleClearSelection} aria-label="Clear selection" className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-gray-100">
+				✕
+			</button>
 		</div>
 	);
 }
