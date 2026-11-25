@@ -40,6 +40,9 @@ interface ChatInterfaceProps {
 /** Saved prompts shown as chips in the box; the rest are behind + */
 const CHIPS_SHOWN = 3;
 
+/** Suggested actions under answers ("Continent: Europe"); off for now, the code stays */
+const SUGGESTIONS = false;
+
 const STOPPED = '_Stopped._';
 /** Tallest the question box grows before it scrolls */
 const MAX_BOX_PX = 200;
@@ -118,7 +121,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 					history: memory,
 					goal: useWorkspaceGoal.getState().goal || undefined,
 					// What the answer may suggest changing, as buttons
-					actionOptions: actionOptionsFromStore(),
+					actionOptions: SUGGESTIONS ? actionOptionsFromStore() : undefined,
 					signal: controller.signal,
 					// Each document the AI opens shows in the thinking bubble as it happens
 					onRead: ({ title, round }) => {
@@ -292,6 +295,15 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 									</div>
 								)}
 								<div className="mt-1 flex items-center gap-0.5">
+									<button type="button" className={tool} title="Copy" aria-label="Copy answer" onClick={() => navigator.clipboard?.writeText(turn.response)}>
+										<Copy className="h-3.5 w-3.5" />
+									</button>
+									<button type="button" className={`${tool} ${turn.feedback === 'up' ? 'text-green-600' : ''}`} title="Good answer" aria-label="Good answer" aria-pressed={turn.feedback === 'up'} onClick={() => updateTurn(turn.id, { feedback: 'up' })}>
+										<ThumbsUp className="h-3.5 w-3.5" />
+									</button>
+									<button type="button" className={`${tool} ${turn.feedback === 'down' ? 'text-red-600' : ''}`} title="Bad answer" aria-label="Bad answer" aria-pressed={turn.feedback === 'down'} onClick={() => updateTurn(turn.id, { feedback: 'down' })}>
+										<ThumbsDown className="h-3.5 w-3.5" />
+									</button>
 									{/* Opens the answer as a document */}
 									{turn.status === 'done' && (
 										<button
@@ -304,15 +316,6 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 											<FileText className="h-3.5 w-3.5" />
 										</button>
 									)}
-									<button type="button" className={tool} title="Copy" aria-label="Copy answer" onClick={() => navigator.clipboard?.writeText(turn.response)}>
-										<Copy className="h-3.5 w-3.5" />
-									</button>
-									<button type="button" className={`${tool} ${turn.feedback === 'up' ? 'text-green-600' : ''}`} title="Good answer" aria-label="Good answer" aria-pressed={turn.feedback === 'up'} onClick={() => updateTurn(turn.id, { feedback: 'up' })}>
-										<ThumbsUp className="h-3.5 w-3.5" />
-									</button>
-									<button type="button" className={`${tool} ${turn.feedback === 'down' ? 'text-red-600' : ''}`} title="Bad answer" aria-label="Bad answer" aria-pressed={turn.feedback === 'down'} onClick={() => updateTurn(turn.id, { feedback: 'down' })}>
-										<ThumbsDown className="h-3.5 w-3.5" />
-									</button>
 									{/* Which of the documents sent the answer cites; opens the receipt */}
 									{turn.status === 'done' && turn.receipt && (
 										<CoverageLink answer={turn.response} receipt={turn.receipt} onOpenReceipt={() => setReceiptId(turn.id)} />

@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { graphNodeCount, RESULT_COUNT, search } from './helpers';
 
-test('answers suggest actions: exact wording with counts, alternatives in ▾, nothing changes until clicked, Undo', async ({ page }) => {
+// Suggestions are switched off for now (SUGGESTIONS in ChatInterface); turn this back on with them
+test.skip('answers suggest actions: exact wording with counts, alternatives in ▾, nothing changes until clicked, Undo', async ({ page }) => {
 	let sentOptions: any;
 	await page.route('**/api/analyze-nodes', (r) => {
 		sentOptions = r.request().postDataJSON().actionOptions;

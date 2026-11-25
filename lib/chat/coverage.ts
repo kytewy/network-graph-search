@@ -5,7 +5,7 @@
 import { findCitations, matchCitation } from './citations';
 import { sentShare, type Receipt, type SentDocument } from './receipt';
 
-/** A cited document the AI saw less than this share of counts as mostly unsent */
+/** A cited document the AI was sent less than this share of counts as cited from an excerpt only */
 export const WEAK_SHARE = 0.5;
 
 export interface Coverage {

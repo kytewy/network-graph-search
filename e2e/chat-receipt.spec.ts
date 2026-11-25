@@ -35,13 +35,13 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 
 	// Coverage sits at the end of the answer's tools: a link to the receipt, a dot when a citation needs a look
 	const coverage = page.getByTestId('coverage');
-	await expect(coverage.getByRole('img')).toHaveAccessibleName(/1 citation matches no document sent: The Made Up Act\. 1 cited but mostly unsent: EU AI Act/);
+	await expect(coverage.getByRole('img')).toHaveAccessibleName(/1 citation matches no document sent: The Made Up Act\. 1 cited from excerpts only \\(the AI got less than half\\): EU AI Act/);
 	await coverage.getByRole('button', { name: '3 sent · 1 cited' }).click();
 	// The popup: the context window, how documents went, and what the answer cited
 	const peek = page.getByRole('dialog', { name: 'Context for this answer' });
 	await expect(peek).toContainText('about 1,234 of 128,000 tokens (1%)');
-	await expect(peek.getByTestId('context-mix')).toHaveText('3 documents: 0 whole · 1 in part · 1 as summary · 1 read in full on request (2 rounds)');
-	await expect(peek.getByTestId('context-cited')).toHaveText('Cited 1 of 3 · 1 cited but mostly unsent · 1 match no document sent');
+	await expect(peek.getByTestId('context-mix')).toHaveText('3 documents: 0 sent whole · 1 as excerpts · 1 as summaries · 1 read in full on request (2 rounds)');
+	await expect(peek.getByTestId('context-cited')).toHaveText('Cited 1 of 3 · 1 cited from excerpts only · 1 match no document sent');
 	await peek.getByRole('button', { name: 'Full receipt' }).click();
 	const dialog = page.getByRole('dialog', { name: 'What was sent' });
 	await expect(dialog.getByTestId('receipt-line')).toHaveText('3 documents · about 1,234 of 128,000 tokens · gpt-4o-mini · 1 cut to 800 characters');

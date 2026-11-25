@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, SquarePen, Trash2 } from 'lucide-react';
+import { ChevronDown, SquarePen, Trash2 } from 'lucide-react';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -11,9 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { chatTurns, MAIN_CHAT, useContextStore } from '@/lib/stores/context-store';
 
-const arrow = 'flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/50 hover:text-foreground disabled:opacity-30';
-
-/** "‹ 2 of 5 › Cluster: High-risk obligations ▾  + New": flip between chats, start one, delete one */
+/** "Cluster: High-risk obligations ▾  + New": pick a chat, start one, delete one */
 export function ChatSwitcher({ onSwitch }: { onSwitch: () => void }) {
 	const { chats, activeChatId, chatConversations, newChat, selectChat, deleteChat } = useContextStore();
 	const [confirming, setConfirming] = useState(false);
@@ -53,15 +51,6 @@ export function ChatSwitcher({ onSwitch }: { onSwitch: () => void }) {
 
 	return (
 		<div className="flex items-center gap-1 border-b py-1.5 text-xs" data-testid="chat-switcher">
-			<button type="button" className={arrow} aria-label="Previous chat" disabled={index === 0} onClick={() => open(chats[index - 1].id)}>
-				<ChevronLeft className="h-4 w-4" />
-			</button>
-			<span className="tabular-nums text-muted-foreground" aria-live="polite">
-				{index + 1} of {chats.length}
-			</span>
-			<button type="button" className={arrow} aria-label="Next chat" disabled={index === chats.length - 1} onClick={() => open(chats[index + 1].id)}>
-				<ChevronRight className="h-4 w-4" />
-			</button>
 			<DropdownMenu>
 				<DropdownMenuTrigger className="flex min-w-0 flex-1 items-center gap-1 rounded-md border bg-white px-2 py-1 text-left hover:bg-accent/30" aria-label={`Chats: ${active.name}`}>
 					<span className="min-w-0 flex-1 truncate">{active.name}</span>

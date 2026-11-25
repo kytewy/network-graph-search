@@ -16,7 +16,7 @@ interface ReceiptDialogProps {
 
 const n = (x: number) => x.toLocaleString('en-US');
 /** One grid for the header and every row, so the columns line up */
-const ROW = 'grid grid-cols-[1rem_minmax(0,1fr)_7.5rem_5rem] items-center gap-x-3';
+const ROW = 'grid grid-cols-[2.5rem_minmax(0,1fr)_7.5rem_5rem] items-center gap-x-3';
 /** A document's own length; receipts saved before lengths were recorded use what was sent from */
 const lengthOf = (d: SentDocument) => d.length || d.total;
 
@@ -56,15 +56,15 @@ export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) 
 							</p>
 						)}
 						<div className={`${ROW} border-b pb-1 text-xs text-muted-foreground`} aria-hidden>
-							<span />
-							<span>Document · cited first ({citedIds.size})</span>
+							<span>Cited</span>
+							<span>Document</span>
 							<span>Sent</span>
 							<span className="text-right">Characters</span>
 						</div>
 						<ul className="divide-y text-sm" aria-label="Documents sent">
 							{[...receipt.documents].sort((a, b) => Number(citedIds.has(b.id)) - Number(citedIds.has(a.id))).map((d) => (
 								<li key={d.id} className={`${ROW} py-1.5`}>
-									<span>{citedIds.has(d.id) && <Check role="img" aria-label="Cited" className="h-3.5 w-3.5 text-teal-700" />}</span>
+									<span className="flex justify-center">{citedIds.has(d.id) && <Check role="img" aria-label="Cited" className="h-3.5 w-3.5 text-teal-700" />}</span>
 									<span className="flex min-w-0 items-baseline gap-2">
 										<span className="truncate" title={d.title}>{d.title}</span>
 										{d.readOnRequest && <span className="shrink-0 text-xs text-violet-700">read in full</span>}
