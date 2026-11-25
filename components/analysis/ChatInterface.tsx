@@ -192,12 +192,21 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 
 	// The highlighted prompt in the "/" list stays in view as the arrows move past the edge
 	useEffect(() => {
-		slashListRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({ block: 'nearest' });
+		// Scrolls only the list itself (scrollIntoView would also move the page)
+		const list = slashListRef.current;
+		const item = list?.querySelector<HTMLElement>('[aria-selected="true"]');
+		if (list && item) {
+			if (item.offsetTop < list.scrollTop) list.scrollTop = item.offsetTop;
+			else if (item.offsetTop + item.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = item.offsetTop + item.offsetHeight - list.clientHeight;
+		}
 	}, [slashIndex, slashOpen]);
 
 	// The newest message stays in view
 	useEffect(() => {
-		endRef.current?.scrollIntoView?.({ block: 'end' });
+		// Scrolls only the panel's own scroll area: scrollIntoView would also scroll
+		// the page and the panel's fixed frame, which pushed the whole screen up
+		const scroller = endRef.current?.closest<HTMLElement>('[data-panel-scroll]');
+		if (scroller) scroller.scrollTop = scroller.scrollHeight;
 	}, [conversations.length, thinking]);
 
 	// Clustering can ask the chat a question ("Analyze this cluster")
@@ -374,7 +383,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 						ref={slashListRef}
 						role="listbox"
 						aria-label="Saved prompts matching"
-						className="max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg">
+						className="relative max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg">
 						{slashMatches.length === 0 ? (
 							<li className="px-3 py-2 text-xs text-muted-foreground">No saved prompt matches. Enter sends it as a question.</li>
 						) : (

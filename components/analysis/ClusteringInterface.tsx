@@ -459,7 +459,12 @@ export default function ClusteringInterface({
 						clusters={clusterResults.clusters}
 						suggestions={clusterSuggestions}
 						namesLoading={loadingSuggestions}
-						onJump={(id) => document.getElementById(`cluster-card-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+						onJump={(id) => {
+							// Scroll only the panel (scrollIntoView would also move the page)
+							const card = document.getElementById(`cluster-card-${id}`);
+							const scroller = card?.closest<HTMLElement>('[data-panel-scroll]');
+							if (card && scroller) scroller.scrollTo({ top: card.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 8, behavior: 'smooth' });
+						}}
 					/>
 
 					{/* Clusters */}
