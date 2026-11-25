@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useMemo } from 'react';
+import { analyzeInNewChat } from '@/lib/chat/new-chat';
 import { Button } from '@/components/ui/button';
 import { Node } from '@/lib/config/types';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -77,9 +78,19 @@ export function LassoSelectionMenu({ className }: LassoSelectionMenuProps) {
 					</Button>
 					<Button
 						size="sm"
+						variant="outline"
+						onClick={() => {
+							analyzeInNewChat(`Selection: ${selectedNodes.length} documents`, selectedNodes);
+							onClose();
+						}}
+						className="text-xs px-3 py-1">
+						Analyze in a new chat
+					</Button>
+					<Button
+						size="sm"
 						onClick={handleSendToContext}
 						className="text-xs px-3 py-1 bg-primary hover:bg-primary/90 text-primary-foreground">
-						Send to Context
+						Add to this chat
 					</Button>
 					<button
 						onClick={onClose}

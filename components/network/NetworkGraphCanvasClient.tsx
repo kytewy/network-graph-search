@@ -6,6 +6,7 @@ import { VisualizationControls } from '@/components/network/VisualizationControl
 import { useNetworkGraph } from '@/lib/contexts/network-graph-context';
 import { useGraphView } from '@/hooks/use-graph-view';
 import { NodeContextMenu } from './NodeContextMenu';
+import type { Node as DocNode } from '@/lib/config/types';
 import { PERFORMANCE_CONFIG, NODE_SIZE } from '@/lib/config/graph-config';
 import { Z_INDEX } from '@/lib/config/graph-config';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -115,6 +116,16 @@ export function NetworkGraphCanvasClient() {
 	);
 
 	const safeGraphNodes = Array.isArray(graphNodes) ? graphNodes : [];
+
+	// The cluster a document sits in on the graph (for "Analyze the cluster in a new chat")
+	const clusterOf = (nodeData: Record<string, unknown>) => {
+		if (!activeClusterAttribute) return undefined;
+		const key = nodeData[activeClusterAttribute];
+		if (key === undefined || key === null || key === '') return undefined;
+		const nodes = safeGraphNodes.filter((g) => (g.data as Record<string, unknown> | undefined)?.[activeClusterAttribute] === key).map((g) => g.data as DocNode);
+		// The same name the cluster ring shows
+		return { name: clusterDisplayName(String(key), clusterNames), nodes };
+	};
 	const safeGraphEdges = Array.isArray(graphEdges) ? graphEdges : [];
 
 
@@ -144,7 +155,7 @@ export function NetworkGraphCanvasClient() {
 						borderRadius: '4px',
 						fontSize: '12px',
 					}}>
-					<span>Click a node to add or remove it from context · Shift + drag to lasso</span>
+					<span>Click a node to add or remove it from this chat · Right-click for more · Shift + drag to lasso</span>
 				</div>
 
 				{safeGraphNodes.length > 0 ? (
@@ -206,6 +217,7 @@ export function NetworkGraphCanvasClient() {
 											size: nodeData.size || NODE_SIZE.default,
 										}}
 										onClose={onClose}
+										cluster={clusterOf(nodeData)}
 									/>
 								</div>
 							);

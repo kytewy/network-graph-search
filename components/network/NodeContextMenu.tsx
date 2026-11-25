@@ -8,6 +8,8 @@ import { Z_INDEX } from '@/lib/config/graph-config';
 import { useClickOutside } from '@/hooks/use-click-outside';
 import { useNodeContextOperations } from '@/hooks/use-node-context-operations';
 import type { Node } from '@/lib/config/types';
+import { analyzeInNewChat } from '@/lib/chat/new-chat';
+import { useContextStore } from '@/lib/stores/context-store';
 
 /**
  * NodeContextMenu Component
@@ -29,12 +31,15 @@ interface NodeContextMenuProps {
   node: Node;
   onClose: () => void;
   className?: string;
+  /** The cluster the node is in on the graph, when the graph is clustered */
+  cluster?: { name: string; nodes: Node[] };
 }
 
 export function NodeContextMenu({
   node,
   onClose,
   className,
+  cluster,
 }: NodeContextMenuProps) {
   const [showReadingMode, setShowReadingMode] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -100,6 +105,44 @@ export function NodeContextMenu({
         </p>
       </div>
 
+      {/* Start a chat about just this document, or its whole cluster */}
+      <div className="flex flex-col border-t border-gray-200 p-1 text-sm" role="group" aria-label="Analyze">
+        <button
+          type="button"
+          className="rounded-md px-3 py-2 text-left hover:bg-gray-100"
+          onClick={() => {
+            analyzeInNewChat(node.label, [node]);
+            onClose();
+          }}>
+          Analyze in a new chat
+        </button>
+        {cluster && cluster.nodes.length > 1 && (
+          <>
+            <p className="px-3 pt-2 text-xs text-gray-500">
+              Its cluster: {cluster.name} · {cluster.nodes.length}
+            </p>
+            <button
+              type="button"
+              className="rounded-md px-3 py-2 text-left font-medium hover:bg-gray-100"
+              onClick={() => {
+                analyzeInNewChat(`Cluster: ${cluster.name}`, cluster.nodes);
+                onClose();
+              }}>
+              Analyze the cluster in a new chat
+            </button>
+            <button
+              type="button"
+              className="rounded-md px-3 py-2 text-left hover:bg-gray-100"
+              onClick={() => {
+                useContextStore.getState().addNodesToContext(cluster.nodes as never);
+                onClose();
+              }}>
+              Add the cluster to this chat
+            </button>
+          </>
+        )}
+      </div>
+
       {/* Footer with buttons */}
       <div className="flex flex-col border-t border-gray-200">
         <div className="flex">
@@ -111,7 +154,7 @@ export function NodeContextMenu({
             } transition-colors`}
             onClick={toggleContext}
           >
-            {isInContext ? 'Remove from Context' : 'Add to Context'}
+            {isInContext ? 'Remove from this chat' : 'Add to this chat'}
           </button>
           <button
             className={`flex-1 py-2 text-sm ${!node.url ? 'text-gray-400 bg-gray-50 cursor-not-allowed' : 'text-gray-700 bg-gray-100 hover:bg-gray-200'} transition-colors border-l border-gray-200`}
