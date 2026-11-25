@@ -18,6 +18,8 @@ Stack: Next.js 15.5 (App Router, client-only graph page), React 18, TypeScript, 
 | Production build | `npm run build` |
 | Task size | `npm run diff:size` |
 | Upload data to Pinecone | `docker compose exec app python3 scripts/upload_all_data.py` |
+| Database (Postgres) | Starts with `docker compose up`; tables are set up by the `migrate` service from `db/migrations/` |
+| Check the database | open `localhost:3000/api/db-health` |
 
 Use `-V` after any dependency change; Docker otherwise keeps old `node_modules`.
 

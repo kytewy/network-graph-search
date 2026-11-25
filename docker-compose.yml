@@ -25,3 +25,45 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=${NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:-}
       - NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST:-https://us.i.posthog.com}
+      - DATABASE_URL=postgres://app:app@db:5432/network_graph
+    # The database is up and its tables are set up before the app starts
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Postgres: the system of record (workstreams, full documents, chats, reports).
+  # Its data lives in the db-data volume, so it survives restarts.
+  db:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=app
+      - POSTGRES_DB=network_graph
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U app -d network_graph']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # Applies new files from db/migrations once the database is ready, then exits
+  migrate:
+    # The app's own image, so it has the same node_modules (built from the lockfile)
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: node scripts/migrate.mjs
+    environment:
+      - DATABASE_URL=postgres://app:app@db:5432/network_graph
+    volumes:
+      - ./db:/app/db:ro
+      - ./scripts:/app/scripts:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
