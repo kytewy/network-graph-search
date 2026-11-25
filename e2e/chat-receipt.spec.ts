@@ -48,10 +48,10 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	const docs = dialog.getByRole('list', { name: 'Documents sent' });
 	// A simple share per document; the exact numbers are in the hover
 	await expect(docs.getByLabel('19% sent')).toHaveAttribute('title', "800 of 4,200 characters of the document's text");
-	await expect(docs.getByText('Cited', { exact: true })).toHaveCount(1);
-	await expect(docs).toContainText('29,960 chars');
-	await expect(docs).toContainText('Read on request');
-	await expect(dialog.getByTestId('read-on-request')).toContainText('The AI read 1 document in full on request (5,000 of 200,000 characters of its reading budget, 2 rounds)');
+	await expect(docs.getByRole('img', { name: 'Cited' })).toHaveCount(1);
+	await expect(docs).toContainText('29,960');
+	await expect(docs).toContainText('read in full');
+	await expect(dialog.getByTestId('read-on-request')).toHaveText('Read 1 in full on request · 5,000 of 200,000 budget characters · 2 rounds');
 	await expect(dialog.getByTestId('receipt-total')).toHaveText('3 documents · 39,160 characters in all · 5,800 sent (15%)');
 	await expect(docs.getByText('Summary', { exact: true })).toHaveAttribute('title', 'Summary sent (310 characters); the document is 29,960 characters');
 

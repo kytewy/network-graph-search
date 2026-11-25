@@ -1,5 +1,6 @@
 'use client';
 
+import { Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { coverage } from '@/lib/chat/coverage';
@@ -14,6 +15,8 @@ interface ReceiptDialogProps {
 }
 
 const n = (x: number) => x.toLocaleString('en-US');
+/** One grid for the header and every row, so the columns line up */
+const ROW = 'grid grid-cols-[1rem_minmax(0,1fr)_7.5rem_5rem] items-center gap-x-3';
 /** A document's own length; receipts saved before lengths were recorded use what was sent from */
 const lengthOf = (d: SentDocument) => d.length || d.total;
 
@@ -47,26 +50,27 @@ export function ReceiptDialog({ receipt, answer, onClose }: ReceiptDialogProps) 
 					</TabsList>
 					<TabsContent value="documents">
 						{readCount > 0 && (
-							<p className="mb-2 rounded-md bg-violet-50 px-3 py-2 text-sm text-violet-900" data-testid="read-on-request">
-								The AI read {readCount} document{readCount === 1 ? '' : 's'} in full on request ({n(readChars)} of {n(BUDGET_CHARS)} characters of its reading budget, {receipt.readRounds ?? 1} round{(receipt.readRounds ?? 1) === 1 ? '' : 's'})
-								{(receipt.readsRefused ?? 0) > 0 && `, and asked for ${receipt.readsRefused} more after the budget ran out`}.
+							<p className="mb-2 text-xs text-violet-800" data-testid="read-on-request">
+								Read {readCount} in full on request · {n(readChars)} of {n(BUDGET_CHARS)} budget characters · {receipt.readRounds ?? 1} round{(receipt.readRounds ?? 1) === 1 ? '' : 's'}
+								{(receipt.readsRefused ?? 0) > 0 && ` · ${receipt.readsRefused} more asked after the budget ran out`}
 							</p>
 						)}
-						{cut > 0 && (
-							<p className="mb-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-								Each document sends at most {n(receipt.charLimit)} characters, about a paragraph. {cut} of {docs} were cut, so the AI saw only their start.
-							</p>
-						)}
-						<p className="mb-1 text-xs text-muted-foreground">
-							Cited {citedIds.size} of {docs}, cited first
-						</p>
+						<div className={`${ROW} border-b pb-1 text-xs text-muted-foreground`} aria-hidden>
+							<span />
+							<span>Document · cited first ({citedIds.size})</span>
+							<span>Sent</span>
+							<span className="text-right">Characters</span>
+						</div>
 						<ul className="divide-y text-sm" aria-label="Documents sent">
 							{[...receipt.documents].sort((a, b) => Number(citedIds.has(b.id)) - Number(citedIds.has(a.id))).map((d) => (
-								<li key={d.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto_6.5rem] items-baseline gap-x-4 py-2">
-									<span className="truncate" title={d.title}>{d.title}</span>
-									<span className="text-xs text-teal-800">{[d.readOnRequest && 'Read on request', citedIds.has(d.id) && 'Cited'].filter(Boolean).join(' · ')}</span>
+								<li key={d.id} className={`${ROW} py-1.5`}>
+									<span>{citedIds.has(d.id) && <Check role="img" aria-label="Cited" className="h-3.5 w-3.5 text-teal-700" />}</span>
+									<span className="flex min-w-0 items-baseline gap-2">
+										<span className="truncate" title={d.title}>{d.title}</span>
+										{d.readOnRequest && <span className="shrink-0 text-xs text-violet-700">read in full</span>}
+									</span>
 									<SentMeter d={d} />
-									<span className="text-right text-xs tabular-nums text-muted-foreground">{n(lengthOf(d))} chars</span>
+									<span className="text-right text-xs tabular-nums text-muted-foreground">{n(lengthOf(d))}</span>
 								</li>
 							))}
 						</ul>
@@ -106,17 +110,17 @@ function SentMeter({ d }: { d: SentDocument }) {
 	const share = sentShare(d);
 	if (share === null)
 		return (
-			<span className="whitespace-nowrap text-muted-foreground" title={sentDetail(d)}>
+			<span className="text-xs text-muted-foreground" title={sentDetail(d)}>
 				Summary
 			</span>
 		);
 	const pct = Math.round(share * 100);
 	return (
 		<span className="flex items-center gap-2 whitespace-nowrap" title={sentDetail(d)} aria-label={`${pct}% sent`}>
-			<span aria-hidden className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-200">
+			<span aria-hidden className="h-1.5 w-14 overflow-hidden rounded-full bg-gray-200">
 				<span className={`block h-full ${pct < 100 ? 'bg-amber-500' : 'bg-teal-600'}`} style={{ width: `${pct}%` }} />
 			</span>
-			<span className={`w-10 text-right tabular-nums ${pct < 100 ? 'text-amber-800' : 'text-muted-foreground'}`}>{pct}%</span>
+			<span className={`w-9 text-right text-xs tabular-nums ${pct < 100 ? 'text-amber-800' : 'text-muted-foreground'}`}>{pct}%</span>
 		</span>
 	);
 }
