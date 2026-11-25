@@ -20,6 +20,9 @@ describe('several chats', () => {
 		expect(chatTurns(s.chatConversations, MAIN_CHAT.id).map((t) => t.id)).toEqual(['1']);
 		expect(chatTurns(s.chatConversations, id).map((t) => t.id)).toEqual(['2', '3']);
 		expect(s.chats.find((c) => c.id === id)!.name).toBe('What obligations does the high-risk clu…');
+		// The AI's name replaces it; a name given by hand never would
+		useContextStore.getState().nameChatAuto(id, 'High-risk provider obligations');
+		expect(useContextStore.getState().chats.find((c) => c.id === id)!.name).toBe('High-risk provider obligations');
 	});
 
 	it('flips between chats and deletes one, opening the one before it', () => {

@@ -48,10 +48,13 @@ export interface Chat {
 	id: string;
 	name: string;
 	createdAt: number;
+	/** Named by the app (from the first question, then by the AI), not by you */
+	autoName?: boolean;
 }
 
-export const MAIN_CHAT: Chat = { id: 'main', name: 'Main chat', createdAt: 0 };
 const NEW_CHAT_NAME = 'New chat';
+/** The first chat; like any new chat it is named from its first question */
+export const MAIN_CHAT: Chat = { id: 'main', name: NEW_CHAT_NAME, createdAt: 0 };
 const NAME_FROM_QUESTION = 40;
 
 /** The questions of one chat, oldest first */
@@ -98,6 +101,8 @@ interface ContextState {
 	selectChat: (id: string) => void;
 	/** Removes a chat and its questions; the main chat can only be emptied */
 	deleteChat: (id: string) => void;
+	/** Gives a chat a better name, unless it was named by hand */
+	nameChatAuto: (id: string, name: string) => void;
 }
 
 export const useContextStore = create<ContextState>((set) => ({
@@ -174,7 +179,7 @@ export const useContextStore = create<ContextState>((set) => ({
 			const name = named.length > NAME_FROM_QUESTION ? `${named.slice(0, NAME_FROM_QUESTION - 1)}…` : named;
 			return {
 				chatConversations: [...state.chatConversations, { ...conversation, chatId }],
-				chats: state.chats.map((c) => (c.id === chatId && first && c.name === NEW_CHAT_NAME && name ? { ...c, name } : c)),
+				chats: state.chats.map((c) => (c.id === chatId && first && c.name === NEW_CHAT_NAME && name ? { ...c, name, autoName: true } : c)),
 			};
 		}),
 	
@@ -194,12 +199,16 @@ export const useContextStore = create<ContextState>((set) => ({
 		return chat.id;
 	},
 
+	nameChatAuto: (id, name) =>
+		set((state) => ({ chats: state.chats.map((c) => (c.id === id && c.autoName && name ? { ...c, name } : c)) })),
+
 	selectChat: (id) => set((state) => (state.chats.some((c) => c.id === id) ? { activeChatId: id } : {})),
 
 	deleteChat: (id) =>
 		set((state) => {
 			const chatConversations = state.chatConversations.filter((t) => (t.chatId ?? MAIN_CHAT.id) !== id);
-			if (id === MAIN_CHAT.id) return { chatConversations };
+			// The main chat is emptied and starts over as a new chat
+			if (id === MAIN_CHAT.id) return { chatConversations, chats: state.chats.map((c) => (c.id === id ? MAIN_CHAT : c)) };
 			const index = state.chats.findIndex((c) => c.id === id);
 			const chats = state.chats.filter((c) => c.id !== id);
 			// Open the chat before it (or the main chat)

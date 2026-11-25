@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ArrowUp, BookmarkPlus, Copy, FileText, Pencil, Plus, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { analyzeNodesLive } from '@/lib/api/analysis-client';
+import { analyzeNodesLive, nameChat } from '@/lib/api/analysis-client';
 import { queryClient } from '@/lib/api/query-client';
 import { ApiError, RETRY, shouldRetry } from '@/lib/api/http';
 import { chatMemory, CHAT_LIMITS } from '@/lib/contracts/analysis';
@@ -105,7 +105,8 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 			const prompt = (text ?? chatInput).trim();
 			if (!prompt || thinking || !canAsk) return;
 			const id = Date.now().toString();
-			addTurn({ id, prompt, response: '', timestamp: new Date(), status: 'thinking' });
+			const chatId = useContextStore.getState().activeChatId;
+			addTurn({ id, prompt, response: '', timestamp: new Date(), status: 'thinking', chatId });
 			setChatInput('');
 			setThinking(true);
 			const controller = new AbortController();
@@ -126,6 +127,13 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 					},
 				});
 				updateTurn(id, { response: summary, actions, receipt, status: 'done' });
+				// A new chat's first answer: the AI gives the chat a short name, as Claude does
+				const chat = useContextStore.getState().chats.find((c) => c.id === chatId);
+				if (chat?.autoName && chatTurns(useContextStore.getState().chatConversations, chatId).length === 1) {
+					nameChat(prompt, summary)
+						.then(({ title }) => useContextStore.getState().nameChatAuto(chatId, title))
+						.catch(() => {}); // keeps the name from the question
+				}
 			} catch (error) {
 				if (controller.signal.aborted) {
 					updateTurn(id, { response: STOPPED, status: 'stopped' });
@@ -196,7 +204,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary }: Ch
 			// Wide: a comfortable reading column in the middle instead of edge to edge
 			className={`flex flex-col min-h-[calc(100vh-5rem)] ${rightPanelExpanded && !split ? 'w-full max-w-3xl mx-auto px-6' : ''}`}>
 			{/* Flip between chats, start one, delete one */}
-			<div className="sticky top-0 z-10 -mx-4 bg-sidebar px-4">
+			<div className="sticky top-0 z-10 -mx-4 -mt-4 bg-sidebar px-4 pt-1">
 				<ChatSwitcher
 					onSwitch={() => {
 						setOpenDocId(null);

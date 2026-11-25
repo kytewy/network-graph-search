@@ -91,3 +91,8 @@ export async function analyzeNodesLive({
 	}
 	throw new ApiError('The answer was cut off. Try again.', 502);
 }
+
+/** A short AI-written name for a new chat, from its first question and answer */
+export function nameChat(question: string, answer: string) {
+	return requestJson<{ title: string }>('/api/chat-title', post({ question, answer }), 'Could not name the chat');
+}
