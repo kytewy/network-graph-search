@@ -20,10 +20,10 @@ describe('AppSidebar', () => {
 		expect(screen.getByRole('link', { name: 'Sources' }).getAttribute('aria-current')).toBeNull();
 	});
 
-	it('shows Workstreams as coming soon, not as a link', () => {
+	it('links to Workstreams, Explore and Sources', () => {
 		render(<AppSidebar />);
-		expect(screen.queryByRole('link', { name: /Workstreams/ })).toBeNull();
-		expect(screen.getByText('Soon')).toBeTruthy();
+		for (const name of ['Workstreams', 'Explore', 'Sources']) expect(screen.getByRole('link', { name })).toBeTruthy();
+		expect(screen.queryByText('Soon')).toBeNull();
 	});
 
 	it('folds to icons and remembers it', () => {
