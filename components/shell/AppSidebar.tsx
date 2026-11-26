@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FileText, Layers, Network, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { LanternMark } from './LanternMark';
+import { PANEL_BUTTON, PANEL_MOTION } from '@/components/layout/PanelChrome';
 import { NAV_ITEMS, SIDEBAR_FOLDED_KEY, isActive, type NavItem } from './nav';
 
 const ICONS: Record<NavItem['icon'], typeof Layers> = { workstreams: Layers, explore: Network, sources: FileText };
@@ -28,8 +29,9 @@ export function AppSidebar() {
 		<nav
 			aria-label="Main"
 			data-folded={folded}
-			className={`${folded ? 'w-14' : 'w-58'} shrink-0 h-screen bg-sidebar text-sidebar-foreground flex flex-col gap-0.5 px-2 py-3 transition-[width] duration-200`}>
-			<div className={`flex items-center ${folded ? 'justify-center' : 'justify-between pl-2'} pb-3`}>
+			className={`${folded ? 'w-14' : 'w-58'} shrink-0 h-screen bg-sidebar text-sidebar-foreground flex flex-col gap-0.5 px-2 pb-3 ${PANEL_MOTION}`}>
+			{/* Same 48px header row and divider as the panels, so the fold buttons line up */}
+			<div className={`-mx-2 mb-2 h-12 shrink-0 border-b border-sidebar-border flex items-center px-2 ${folded ? 'justify-center' : 'justify-between pl-4'}`}>
 				{!folded && (
 					<Link href="/graph" className="flex items-center gap-2 text-[15px] font-semibold">
 						<LanternMark />
@@ -40,7 +42,7 @@ export function AppSidebar() {
 					type="button"
 					onClick={toggle}
 					aria-label={folded ? 'Open sidebar' : 'Fold sidebar'}
-					className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+					className={PANEL_BUTTON}>
 					{folded ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
 				</button>
 			</div>

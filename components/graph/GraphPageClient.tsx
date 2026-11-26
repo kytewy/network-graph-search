@@ -1,6 +1,6 @@
 'use client';
 
-import { PANEL_WIDTH, WIDE_STOPS_AT, PanelCloseButton, PanelRail, widenOnDoubleClick } from '@/components/layout/PanelChrome';
+import { PANEL_WIDTH, WIDE_STOPS_AT, PanelCloseButton, PanelRail, PanelSlot, widenOnDoubleClick } from '@/components/layout/PanelChrome';
 import { ColorLegend } from '@/components/network/ColorLegend';
 import { NetworkGraphCanvas } from '@/components/network/NetworkGraphCanvas';
 import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
@@ -28,8 +28,10 @@ export function GraphPageClient() {
 	return (
 		<NetworkGraphProvider>
 			<div data-page="graph" className="relative flex h-screen overflow-clip bg-background">
-				{/* Sidebar - Unified Search & Filter Panel */}
-				<SearchPanel />
+				{/* Search & filters, sliding to its rail when folded */}
+				<PanelSlot open={!leftCollapsed} width={PANEL_WIDTH.left}>
+					<SearchPanel />
+				</PanelSlot>
 
 				{/* Main Graph Area */}
 				<div className="flex-1 relative h-screen overflow-clip">
@@ -40,13 +42,14 @@ export function GraphPageClient() {
 				</div>
 
 				{/* Right Panel, or its thin rail when closed */}
+				<PanelSlot open={!rightCollapsed} width={PANEL_WIDTH.right}>
 				{rightCollapsed ? (
 					<PanelRail side="right" name="analysis" onOpen={() => setRightCollapsed(false)} />
 				) : (
 				<div
 					className={`${
 						rightPanelExpanded ? `absolute right-0 top-0 ${leftCollapsed ? WIDE_STOPS_AT.right.closed : WIDE_STOPS_AT.right.open} z-10` : `${PANEL_WIDTH.right} shrink-0`
-					} h-screen bg-sidebar border-l border-sidebar-border overflow-clip transition-all duration-300 flex flex-col`}>
+					} h-screen bg-sidebar border-l border-sidebar-border overflow-clip flex flex-col`}>
 					{/* Context | Chat | Clusters tabs are the header, like the search panel's */}
 					<ContextManagement
 						rightPanelExpanded={rightPanelExpanded}
@@ -56,6 +59,7 @@ export function GraphPageClient() {
 					/>
 				</div>
 				)}
+				</PanelSlot>
 			</div>
 		</NetworkGraphProvider>
 	);

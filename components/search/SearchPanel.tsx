@@ -122,7 +122,7 @@ export function SearchPanel() {
 	return (
 		<div
 			data-testid="search-panel"
-			className={`${PANEL_WIDTH.left} shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
+			className={`${PANEL_WIDTH.left} shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen`}>
 
 			{/* Tabbed Content Area */}
 			<div className="flex-1 overflow-hidden">

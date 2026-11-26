@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 
 /**
@@ -30,6 +31,17 @@ export const WIDE_STOPS_AT = {
 } as const;
 
 type Side = 'left' | 'right';
+
+/** How every panel (and the sidebar) folds and opens: a short, eased slide of its width */
+export const PANEL_MOTION = 'transition-[width] duration-200 ease-out';
+
+/**
+ * The space a side panel takes in the row: its width when open, the 40px rail when folded,
+ * sliding between the two. A widened panel floats over the graph, so it isn't clipped here.
+ */
+export function PanelSlot({ open, width, children }: { open: boolean; width: string; children: ReactNode }) {
+	return <div className={`${open ? width : 'w-10'} shrink-0 h-screen overflow-hidden ${PANEL_MOTION}`}>{children}</div>;
+}
 
 /**
  * Panels widen over the graph with a double-click on their header (no button: one fold button
