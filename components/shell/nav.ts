@@ -2,7 +2,7 @@
 export type NavItem = { label: string; href: string; icon: 'workstreams' | 'explore' | 'sources'; soon?: boolean };
 
 export const NAV_ITEMS: readonly NavItem[] = [
-	{ label: 'Workstreams', href: '/workstreams', icon: 'workstreams', soon: true },
+	{ label: 'Workstreams', href: '/workstreams', icon: 'workstreams' },
 	{ label: 'Explore', href: '/graph', icon: 'explore' },
 	{ label: 'Sources', href: '/sources', icon: 'sources' },
 ];
