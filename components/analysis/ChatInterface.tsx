@@ -16,7 +16,7 @@ import { ReceiptDialog } from './ReceiptDialog';
 import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
 import { CoverageLink } from './CoverageLink';
 import { ChatSwitcher } from './ChatSwitcher';
-import { ReadFolded, ReadingNow } from './ReadingNote';
+import { ReadingNow } from './ReadingNote';
 import { DocumentView } from './DocumentView';
 import { documentTitle } from '@/lib/chat/citations';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -305,8 +305,6 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 							</div>
 						) : (
 							<div data-role="assistant" className={turn.status === 'failed' ? 'text-destructive text-sm' : ''}>
-								{/* What it read in full, folded: "Read 3 documents in full ▸" */}
-								{turn.status === 'done' && <ReadFolded turn={turn} />}
 								{/* The AI's own bubble, on the left */}
 								<div className="mr-4 w-fit max-w-full rounded-2xl rounded-bl-sm border border-gray-200 bg-white px-4 py-3 shadow-sm">
 									<div className="prose prose-sm max-w-none text-gray-800 leading-relaxed">

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { search } from './helpers';
 
-test('documents the AI read in full fold into one line above the answer', async ({ page }) => {
+test('once the answer arrives, the reading line goes and no read list is shown (it lives in the receipt)', async ({ page }) => {
 	const lines = [
 		{ type: 'reading', id: 'a', title: 'OSFI Guideline E-23', round: 1 },
 		{ type: 'reading', id: 'b', title: 'Article 6', round: 2 },
@@ -18,8 +18,6 @@ test('documents the AI read in full fold into one line above the answer', async 
 	await box.press('Enter');
 	await expect(page.getByText('E-23 applies from 2027.')).toBeVisible();
 
-	const folded = page.getByTestId('read-folded');
-	await expect(folded.locator('summary')).toHaveText('Read 2 documents in full · 2 rounds');
-	await folded.locator('summary').click();
-	await expect(folded.getByRole('listitem')).toHaveText(['OSFI Guideline E-23', 'Article 6']);
+	await expect(page.getByTestId('reading-now')).toHaveCount(0);
+	await expect(page.getByTestId('read-folded')).toHaveCount(0);
 });
