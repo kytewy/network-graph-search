@@ -38,7 +38,7 @@ export function NewWorkstreamDialog() {
 			<DialogTrigger asChild>
 				<Button><Plus className="size-4" aria-hidden="true" />New workstream</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent className="sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle>New workstream</DialogTitle>
 					<DialogDescription>One piece of research: what it's for, the documents behind it, and the report it ends in.</DialogDescription>
@@ -50,7 +50,7 @@ export function NewWorkstreamDialog() {
 					</label>
 					<label className="block space-y-1">
 						<span className="text-xs text-muted-foreground">Goal (optional)</span>
-						<textarea name="goal" maxLength={500} rows={2} placeholder="Brief the risk committee on which rules are binding, and by when"
+						<textarea name="goal" maxLength={500} rows={3} placeholder="Brief the risk committee on which rules are binding, and by when"
 							className="w-full rounded-lg border border-border bg-card px-3 py-2 text-[13px] outline-none focus:border-primary" />
 					</label>
 					<label className="block space-y-1">
