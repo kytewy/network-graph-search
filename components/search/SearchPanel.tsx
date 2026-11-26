@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SearchInput } from './SearchInput';
+import { AddLinkButton } from '@/components/sources/AddLinkButton';
 import { WorkspaceBar } from './WorkspaceBar';
 import { SearchResults } from './SearchResults';
 import FilterPanel from '@/components/filters/FilterPanel';
@@ -95,6 +96,7 @@ export function SearchPanel() {
 				<div className="px-4 py-3 shrink-0 border-b border-sidebar-border space-y-2">
 					<WorkspaceBar />
 					<SearchInput />
+					<AddLinkButton variant="link" />
 				</div>
 				{searchCount > 0 ? (
 					<div className="flex flex-1 min-h-0">
@@ -171,6 +173,7 @@ export function SearchPanel() {
 						<div className="p-4 space-y-3">
 							<WorkspaceBar />
 							<SearchInput />
+							<AddLinkButton variant="link" />
 							{searchCount > 0 ? (
 								<SearchResults />
 							) : (

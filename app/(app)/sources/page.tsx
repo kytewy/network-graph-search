@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { AddLinkButton } from '@/components/sources/AddLinkButton';
 import { PAGE_SIZE, SOURCES, SOURCE_LABELS, formatAdded, listSources, parseFilters, sourceCounts, type Source, type SourceFilters } from '@/lib/sources/list';
 
 export const metadata: Metadata = { title: 'Sources · Lantern' };
@@ -43,9 +44,12 @@ export default async function SourcesPage({ searchParams }: Props) {
 	return (
 		<main className="h-screen overflow-y-auto bg-background">
 			<div className="mx-auto max-w-6xl px-8 py-7 flex flex-col gap-5">
-				<header>
-					<h1 className="text-2xl font-semibold">Sources</h1>
-					<p className="text-[13px] text-muted-foreground mt-0.5">Every document Lantern can search, and how it got here</p>
+				<header className="flex flex-wrap items-center gap-3">
+					<div className="flex-1">
+						<h1 className="text-2xl font-semibold">Sources</h1>
+						<p className="text-[13px] text-muted-foreground mt-0.5">Every document Lantern can search, and how it got here</p>
+					</div>
+					<AddLinkButton />
 				</header>
 
 				{!data ? (
@@ -76,7 +80,7 @@ export default async function SourcesPage({ searchParams }: Props) {
 						{total === 0 ? (
 							<div className="rounded-xl border border-dashed border-border p-8 text-center text-sm">
 								<p className="font-medium">No documents in the database yet</p>
-								<p className="text-muted-foreground mt-1">The scraped index is still only in Pinecone. Importing it, and adding by link, come next.</p>
+								<p className="text-muted-foreground mt-1">The scraped index is still only in Pinecone. Importing it comes next; meanwhile, add a page with Add a link.</p>
 							</div>
 						) : (
 							<div className="rounded-xl border border-border bg-card overflow-x-auto">
