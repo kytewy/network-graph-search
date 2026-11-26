@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { AddLinkButton } from '@/components/sources/AddLinkButton';
+import { CONTROL } from '@/components/ui/control';
 import { PAGE_SIZE, SOURCES, SOURCE_LABELS, formatAdded, formatAddedExact, formatPublished, listSources, parseFilters, sourceCounts, type Source, type SourceFilters, type SortKey } from '@/lib/sources/list';
 
 export const metadata: Metadata = { title: 'Sources · Lantern' };
@@ -78,7 +79,7 @@ export default async function SourcesPage({ searchParams }: Props) {
 							{filters.dir !== 'desc' && <input type="hidden" name="dir" value={filters.dir} />}
 							<label htmlFor="sources-q" className="sr-only">Search sources</label>
 							<input id="sources-q" name="q" defaultValue={filters.q} placeholder="Search by title or publisher"
-								className="w-full max-w-sm rounded-lg border border-primary/30 bg-card px-3 py-2 text-[13px] outline-none focus:border-primary" />
+								className={`${CONTROL} w-full max-w-sm px-3`} />
 							{(filters.q || filters.source) && <Link href="/sources" className="text-[13px] text-primary">Clear</Link>}
 						</form>
 

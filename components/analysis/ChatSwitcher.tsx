@@ -1,5 +1,6 @@
 'use client';
 
+import { CONTROL } from '@/components/ui/control';
 import { useState } from 'react';
 import { ChevronDown, SquarePen, Trash2 } from 'lucide-react';
 import {
@@ -52,7 +53,7 @@ export function ChatSwitcher({ onSwitch }: { onSwitch: () => void }) {
 	return (
 		<div className="flex items-center gap-1 border-b py-1.5 text-xs" data-testid="chat-switcher">
 			<DropdownMenu>
-				<DropdownMenuTrigger className="flex min-w-0 flex-1 items-center gap-1 rounded-md border bg-white px-2 py-1 text-left hover:bg-accent/30" aria-label={`Chats: ${active.name}`}>
+				<DropdownMenuTrigger className={`${CONTROL} flex min-w-0 flex-1 items-center gap-1 px-3 text-left hover:bg-accent/30`} aria-label={`Chats: ${active.name}`}>
 					<span className="min-w-0 flex-1 truncate">{active.name}</span>
 					<ChevronDown aria-hidden className="h-3.5 w-3.5 shrink-0" />
 				</DropdownMenuTrigger>
@@ -77,7 +78,7 @@ export function ChatSwitcher({ onSwitch }: { onSwitch: () => void }) {
 					setConfirming(false);
 					onSwitch();
 				}}
-				className="flex items-center gap-1 rounded-md px-2 py-1 text-primary hover:bg-primary/5">
+				className="flex h-9 items-center gap-1 rounded-lg px-2 text-primary hover:bg-primary/5">
 				<SquarePen aria-hidden className="h-3.5 w-3.5" /> New
 			</button>
 		</div>

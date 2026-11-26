@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { CONTROL } from '@/components/ui/control';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { addLink, previewLink, type AddedLink, type LinkPreview } from '@/lib/api/sources-client';
 import { DOCUMENT_TYPES, PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { COUNTRY_CONTINENT_MAP } from '@/lib/stores/country_map';
 
 const COUNTRIES = Object.keys(COUNTRY_CONTINENT_MAP).sort();
-const FIELD = 'w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary';
+const FIELD = `${CONTROL} w-full px-3`;
 
 /** Paste a link, check what Lantern found, label it, add it. Two steps in one window. */
 export function AddLinkDialog({ trigger, onAdded }: { trigger: ReactNode; onAdded?: (added: AddedLink) => void }) {

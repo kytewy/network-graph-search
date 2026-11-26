@@ -1,4 +1,5 @@
 'use client';
+import { CONTROL } from '@/components/ui/control';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -243,7 +244,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 					onClick={() => setDocsOpen((o) => !o)}
 					aria-expanded={docsOpen}
 					data-testid="documents-strip"
-					className={`mb-2 flex w-full items-center gap-2 rounded-lg border bg-white px-3 py-1.5 text-left text-xs hover:bg-accent/30 ${docsOpen ? 'border-primary' : ''}`}>
+					className={`${CONTROL} mb-2 flex w-full items-center gap-2 px-3 text-left hover:bg-accent/30 ${docsOpen ? 'border-primary' : ''}`}>
 					<span className="text-sm font-medium">
 						{docCount} document{docCount === 1 ? '' : 's'} {docsOpen ? '▴' : '▾'}
 					</span>
@@ -405,7 +406,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 				)}
 				{/* Like Claude's box: the text on top, a toolbar row inside along the bottom */}
 				<div
-					className="rounded-2xl border border-gray-300 bg-white shadow-sm transition-shadow focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10"
+					className="rounded-xl border border-border bg-card transition-colors focus-within:border-primary"
 					onClick={() => inputRef.current?.focus({ preventScroll: true })}>
 					<textarea
 						ref={inputRef}

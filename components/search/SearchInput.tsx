@@ -1,5 +1,6 @@
 'use client';
 
+import { CONTROL, CONTROL_ICON } from '@/components/ui/control';
 import { SearchError } from './SearchError';
 import { RecentSearches } from './RecentSearches';
 import { useRecentSearches } from '@/lib/stores/recent-searches';
@@ -127,7 +128,7 @@ export function SearchInput() {
 					}}
 					onFocus={() => setFocused(true)}
 					onBlur={() => setFocused(false)}
-					className="w-full h-11 text-base px-4 font-medium bg-white border-primary/30 focus-visible:border-primary"
+					className={`${CONTROL} w-full px-3 pr-9 shadow-none md:text-[13px]`}
 				/>
 				{query.length > 0 && !isLoading && (
 					<button
@@ -149,7 +150,7 @@ export function SearchInput() {
 						<Button
 							variant={geoCount > 0 ? 'default' : 'outline'}
 							size="sm"
-							className="h-7 gap-1 text-xs">
+							className="h-9 rounded-lg gap-1 text-xs">
 							<Globe className="h-3 w-3" />
 							Geography
 							{geoCount > 0 && (
@@ -201,7 +202,7 @@ export function SearchInput() {
 
 				<div className="ml-auto flex items-center gap-2">
 					<div
-						className="flex items-center gap-1 border rounded-md p-0.5"
+						className={`${CONTROL} flex items-center gap-0.5 px-1`}
 						title={SEARCH_CONFIG.RESULTS_TO_FETCH_LABEL}
 						aria-label={SEARCH_CONFIG.RESULTS_TO_FETCH_LABEL}>
 						<Button
@@ -211,7 +212,7 @@ export function SearchInput() {
 								setTopK(SearchConfigHelpers.getNextTopK(topK, false))
 							}
 							disabled={topK <= SEARCH_CONFIG.MIN_TOP_K}
-							className="h-6 w-6">
+							className="h-7 w-7">
 							<Minus className="h-3 w-3" />
 						</Button>
 						<span className="min-w-[2rem] text-center text-sm font-medium">
@@ -224,7 +225,7 @@ export function SearchInput() {
 								setTopK(SearchConfigHelpers.getNextTopK(topK, true))
 							}
 							disabled={topK >= SEARCH_CONFIG.MAX_TOP_K}
-							className="h-6 w-6">
+							className="h-7 w-7">
 							<Plus className="h-3 w-3" />
 						</Button>
 					</div>
@@ -235,8 +236,8 @@ export function SearchInput() {
 						variant="outline"
 						aria-label="Add to workspace"
 						title="Add to workspace (Shift+Enter): keeps what's there and adds these results"
-						className="h-8 w-8">
-						<Plus className="h-5 w-5" />
+						className={CONTROL_ICON}>
+						<Plus className="h-4 w-4" />
 					</Button>
 					<Button
 						onClick={handleSearch}
@@ -244,11 +245,11 @@ export function SearchInput() {
 						size="icon"
 						title="Search (Enter): starts over with these results"
 						aria-label="Search"
-						className="h-8 w-8">
+						className={CONTROL_ICON}>
 						{isLoading ? (
-							<Loader2 className="h-5 w-5 animate-spin" />
+							<Loader2 className="h-4 w-4 animate-spin" />
 						) : (
-							<Search className="h-5 w-5" />
+							<Search className="h-4 w-4" />
 						)}
 					</Button>
 				</div>
