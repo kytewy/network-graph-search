@@ -10,7 +10,7 @@ import FilterPanel from '@/components/filters/FilterPanel';
 import { useAppStore } from '@/lib/stores/app-state';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter } from 'lucide-react';
-import { PANEL_HEADER, PANEL_TAB, PANEL_WIDTH, WIDE_STOPS_AT, PanelCloseButton, PanelRail, PanelWidenButton } from '@/components/layout/PanelChrome';
+import { PANEL_HEADER, PANEL_TAB, PANEL_WIDTH, WIDE_STOPS_AT, PanelCloseButton, PanelRail, widenOnDoubleClick } from '@/components/layout/PanelChrome';
 
 /**
  * SearchPanel - Unified left sidebar for search and filtering
@@ -35,7 +35,7 @@ export function SearchPanel() {
 	const searchResults = useAppStore((state) => state.searchResults);
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	const hasSearched = useAppStore((state) => state.hasSearched);
-	// » opens the panel wide over the graph (like the Analysis Workspace's «)
+	// Double-clicking the header opens the panel wide over the graph (like the chat panel)
 	const expanded = useAppStore((state) => state.searchPanelExpanded);
 	const setExpanded = useAppStore((state) => state.setSearchPanelExpanded);
 	const collapsed = useAppStore((state) => state.searchPanelCollapsed);
@@ -71,11 +71,9 @@ export function SearchPanel() {
 		? filteredResults.length
 		: 0;
 
-	// » / « toggles between the tabbed sidebar and the wide view
-	const expandButton = (
-		<PanelWidenButton side="left" name="search" wide={expanded} onClick={() => setExpanded(!expanded)} />
-	);
-	// Folds the panel to a thin rail on the left edge
+	// Double-clicking the header toggles between the tabbed sidebar and the wide view
+	const widen = widenOnDoubleClick(expanded, () => setExpanded(!expanded));
+	// Folds the panel to a thin rail on the left edge; sits on the graph side of the header
 	const closeButton = <PanelCloseButton side="left" name="search" onClick={() => setCollapsed(true)} />;
 
 	// Wide: no tabs. Search box on top, filters column beside the results grid,
@@ -85,13 +83,12 @@ export function SearchPanel() {
 			<div
 				data-testid="search-panel"
 				className={`absolute left-0 top-0 ${rightCollapsed ? WIDE_STOPS_AT.left.closed : WIDE_STOPS_AT.left.open} z-20 shadow-xl bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
-				<div data-panel-header="left" className={PANEL_HEADER}>
-					{closeButton}
+				<div data-panel-header="left" className={PANEL_HEADER} {...widen}>
 					<span className="flex items-center gap-2 text-sm font-semibold text-primary">
 						<Search className="h-3 w-3" />
 						Search &amp; filters
 					</span>
-					<span className="ml-auto">{expandButton}</span>
+					<span className="ml-auto">{closeButton}</span>
 				</div>
 				<div className="px-4 py-3 shrink-0 border-b border-sidebar-border space-y-2">
 					<WorkspaceBar />
@@ -135,8 +132,7 @@ export function SearchPanel() {
 					className="flex h-full flex-col">
 					{/* Tab Headers */}
 					{/* Divider under the tabs, with the same 16px gap as the line above them */}
-					<div data-panel-header="left" className={`${PANEL_HEADER} bg-sidebar`}>
-						{closeButton}
+					<div data-panel-header="left" className={`${PANEL_HEADER} bg-sidebar`} {...widen}>
 						<TabsList className="grid flex-1 grid-cols-2 bg-transparent p-0 h-auto gap-0">
 							<TabsTrigger
 								value="results"
@@ -162,7 +158,7 @@ export function SearchPanel() {
 								)}
 							</TabsTrigger>
 						</TabsList>
-						{expandButton}
+						{closeButton}
 					</div>
 
 					{/* Results Tab */}

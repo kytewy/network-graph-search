@@ -33,7 +33,7 @@ test('a second search can be added to the workspace: one graph, no duplicates, "
 	await expect(rows.filter({ hasText: 'ISO/IEC 42001' }).getByLabel(/Found by/)).toHaveCount(0);
 
 	// Wide: a Found by column
-	await page.getByRole('button', { name: 'Expand search panel' }).click();
+	await page.locator('[data-panel-header="left"]').dblclick({ position: { x: 2, y: 2 } });
 	await expect(rows.filter({ hasText: 'OSFI Guideline E-23' }).locator('[data-found-by]')).toHaveText('#1 #2');
 	await expect(rows.filter({ hasText: 'OSFI Guideline E-23' }).locator('[data-found-by]').getByLabel('Found by more than one search')).toBeVisible();
 	await expect(rows.filter({ hasText: 'NIST AI RMF' }).locator('[data-found-by]')).toHaveText('#2');

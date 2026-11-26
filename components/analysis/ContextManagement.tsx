@@ -67,6 +67,8 @@ interface ContextManagementProps {
 	/** The panel's own buttons, either side of the tabs (widen, close) */
 	headerStart?: ReactNode;
 	headerEnd?: ReactNode;
+	/** Spread onto the header: double-click to widen or narrow */
+	headerProps?: { onDoubleClick: () => void; title: string };
 	networkState?: any;
 	filterState?: any;
 }
@@ -75,6 +77,7 @@ export default function ContextManagement({
 	rightPanelExpanded,
 	headerStart,
 	headerEnd,
+	headerProps,
 	networkState = {},
 	filterState = {},
 }: ContextManagementProps) {
@@ -558,7 +561,7 @@ export default function ContextManagement({
 					setActiveTab(value as 'nodes' | 'analysis' | 'clustering')
 				}
 				className="flex min-h-0 flex-1 flex-col">
-				<div data-panel-header="right" className={`${PANEL_HEADER} shrink-0 bg-sidebar`}>
+				<div data-panel-header="right" className={`${PANEL_HEADER} shrink-0 bg-sidebar`} {...headerProps}>
 					{headerStart}
 					{/* Stays a compact group in the middle when the panel is wide */}
 					<TabsList className="grid flex-1 max-w-xs mx-auto grid-cols-2 bg-transparent p-0 h-auto gap-0">

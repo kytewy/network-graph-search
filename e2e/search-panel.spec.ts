@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { search } from './helpers';
 
-test('the search panel opens wide, shows results in columns, and folds back', async ({ page }) => {
+test('double-clicking the search header opens it wide, shows results in columns, and folds back', async ({ page }) => {
 	await search(page);
 	const panel = page.getByTestId('search-panel');
 	const narrow = (await panel.boundingBox())!.width;
 
-	await page.getByRole('button', { name: 'Expand search panel' }).click();
+	await page.locator('[data-panel-header="left"]').dblclick({ position: { x: 2, y: 2 } });
 	await expect.poll(async () => (await panel.boundingBox())!.width).toBeGreaterThan(narrow * 2);
 
 	// Wide: no tabs, and the filters sit beside the results
@@ -26,8 +26,8 @@ test('the search panel opens wide, shows results in columns, and folds back', as
 	const [f, c] = [await filters.boundingBox(), await cards.nth(0).boundingBox()];
 	expect(f!.x + f!.width).toBeLessThanOrEqual(c!.x + 1);
 
-	// « folds it back to the tabs
-	await page.getByRole('button', { name: 'Collapse search panel' }).click();
+	// Double-clicking the header again narrows it back to the tabs
+	await page.locator('[data-panel-header="left"]').dblclick({ position: { x: 2, y: 2 } });
 	await expect.poll(async () => (await panel.boundingBox())!.width).toBeLessThan(narrow + 5);
 	await expect(page.getByRole('tab', { name: /^Filters/ })).toBeVisible();
 });

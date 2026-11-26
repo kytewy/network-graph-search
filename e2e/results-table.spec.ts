@@ -31,7 +31,7 @@ test('results switch to a table, sort by column, and the ● adds a document to 
 	await expect(page.getByRole('button', { name: 'Close reading mode' })).toHaveCount(0);
 
 	// Wide adds the summary, tags and cluster columns
-	await page.getByRole('button', { name: 'Expand search panel' }).click();
+	await page.locator('[data-panel-header="left"]').dblclick({ position: { x: 2, y: 2 } });
 	await expect(table.getByRole('columnheader')).toHaveCount(5);
 	await expect(table.getByRole('columnheader', { name: /Cluster/ })).toBeVisible();
 

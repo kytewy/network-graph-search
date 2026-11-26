@@ -1,6 +1,6 @@
 'use client';
 
-import { PANEL_WIDTH, WIDE_STOPS_AT, PanelCloseButton, PanelRail, PanelWidenButton } from '@/components/layout/PanelChrome';
+import { PANEL_WIDTH, WIDE_STOPS_AT, PanelCloseButton, PanelRail, widenOnDoubleClick } from '@/components/layout/PanelChrome';
 import { ColorLegend } from '@/components/network/ColorLegend';
 import { NetworkGraphCanvas } from '@/components/network/NetworkGraphCanvas';
 import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
@@ -50,10 +50,9 @@ export function GraphPageClient() {
 					{/* Context | Chat | Clusters tabs are the header, like the search panel's */}
 					<ContextManagement
 						rightPanelExpanded={rightPanelExpanded}
-						headerStart={
-							<PanelWidenButton side="right" name="analysis" wide={rightPanelExpanded} onClick={() => setRightPanelExpanded(!rightPanelExpanded)} />
-						}
-						headerEnd={<PanelCloseButton side="right" name="analysis" onClick={() => setRightCollapsed(true)} />}
+						// One fold button, on the graph side; double-click the header to widen
+						headerStart={<PanelCloseButton side="right" name="analysis" onClick={() => setRightCollapsed(true)} />}
+						headerProps={widenOnDoubleClick(rightPanelExpanded, () => setRightPanelExpanded(!rightPanelExpanded))}
 					/>
 				</div>
 				)}

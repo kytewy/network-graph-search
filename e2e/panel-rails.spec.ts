@@ -28,3 +28,9 @@ test('both panels close to thin rails, give the graph the room, and stay closed 
 	await expect(page.getByRole('tab', { name: /^Search/ })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Close analysis panel' })).toBeVisible();
 });
+
+test('one fold button per panel, and no widen arrows', async ({ page }) => {
+	await page.goto('/graph');
+	await expect(page.getByRole('button', { name: /^(Close (search|analysis) panel|Fold sidebar)$/ })).toHaveCount(3);
+	await expect(page.getByRole('button', { name: /^(Expand|Collapse) .* panel$/ })).toHaveCount(0);
+});

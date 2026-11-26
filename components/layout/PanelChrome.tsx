@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronsLeft, ChevronsRight, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 
 /**
  * The pieces both side panels share, so they line up: one header height, and
@@ -10,7 +10,7 @@ import { ChevronsLeft, ChevronsRight, PanelLeftClose, PanelLeftOpen, PanelRightC
 /** Every side panel's top bar: same height and divider on both sides */
 export const PANEL_HEADER = 'h-12 shrink-0 border-b border-sidebar-border flex items-center gap-2 px-2';
 
-/** The small ghost buttons in a panel header (» «, close) */
+/** The small ghost buttons in a panel header (fold) */
 export const PANEL_BUTTON =
 	'h-7 min-w-7 px-1.5 rounded-md flex items-center justify-center text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-accent/50';
 
@@ -32,26 +32,14 @@ export const WIDE_STOPS_AT = {
 type Side = 'left' | 'right';
 
 /**
- * Widens a panel over the graph, or narrows it back. Same icon on both sides,
- * mirrored: the arrows point into the graph to widen, back to the edge to narrow.
+ * Panels widen over the graph with a double-click on their header (no button: one fold button
+ * per panel keeps the chrome minimal). Spread onto the header element.
  */
-export function PanelWidenButton({ side, name, wide, onClick }: { side: Side; name: string; wide: boolean; onClick: () => void }) {
-	const towardGraph = side === 'left' ? ChevronsRight : ChevronsLeft;
-	const towardEdge = side === 'left' ? ChevronsLeft : ChevronsRight;
-	const Icon = wide ? towardEdge : towardGraph;
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			aria-label={`${wide ? 'Collapse' : 'Expand'} ${name} panel`}
-			title={wide ? 'Narrow' : 'Widen'}
-			className={PANEL_BUTTON}>
-			<Icon className="h-4 w-4" />
-		</button>
-	);
+export function widenOnDoubleClick(wide: boolean, toggle: () => void) {
+	return { onDoubleClick: toggle, title: wide ? 'Double-click to narrow' : 'Double-click to widen' };
 }
 
-/** Folds a panel to the edge it sits on */
+/** Folds a panel to the edge it sits on. Sits on the header's graph side, like the sidebar's. */
 export function PanelCloseButton({ side, name, onClick }: { side: Side; name: string; onClick: () => void }) {
 	const Icon = side === 'left' ? PanelLeftClose : PanelRightClose;
 	return (
