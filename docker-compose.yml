@@ -59,9 +59,14 @@ services:
     command: node scripts/migrate.mjs
     environment:
       - DATABASE_URL=postgres://app:app@db:5432/network_graph
+      # For scripts run through this service (index-passages.mjs indexes passages in Pinecone)
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-network-graph}
+      - PINECONE_NAMESPACE=${PINECONE_NAMESPACE:-example-namespace}
     volumes:
       - ./db:/app/db:ro
       - ./scripts:/app/scripts:ro
+      - ./lib/passages:/app/lib/passages:ro
     depends_on:
       db:
         condition: service_healthy

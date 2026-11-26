@@ -33,6 +33,7 @@
     "diff:size": "bash scripts/diff-size.sh",
     "db:migrate": "node scripts/migrate.mjs",
     "db:import-index": "node scripts/import-index.mjs",
+    "db:index-passages": "node scripts/index-passages.mjs",
     "docker:build": "docker build -t network-graph-search .",
     "docker:run": "docker run -p 3000:3000 -e NODE_ENV=production -e PYTHON_PATH=/usr/bin/python3 network-graph-search"
   },

@@ -7,6 +7,7 @@ import { Pinecone } from '@pinecone-database/pinecone';
 import { db } from '@/lib/db/client';
 import type { AddLinkRequest } from '@/lib/contracts/sources';
 import type { Article } from './extract';
+import { indexPassages } from '@/lib/passages/store';
 
 /** Pinecone keeps a cut copy: the embedding sees the start, metadata stays under its 40 KB limit */
 export const SEARCH_COPY = { chunkChars: 10_000, contentChars: 15_000, summaryChars: 2_000 } as const;
@@ -54,8 +55,9 @@ export async function saveLink(url: string, article: Article, labels: AddLinkReq
 	}
 	try {
 		await pineconeNamespace().upsertRecords([searchRecord(id, url, title, article, labels)]);
+		await indexPassages({ ...labels, id, title, body: article.text, url, source: 'link' });
 	} catch (error) {
-		// Not searchable means not added: take the row back out so a retry starts clean
+		// Not searchable means not added: take the row (and its passages) back out so a retry starts clean
 		await sql`DELETE FROM documents WHERE id = ${id}`;
 		throw error;
 	}
