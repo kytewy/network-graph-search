@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CSS_TOKENS, PALETTE } from '@/lib/config/palette';
-import { CLUSTER_RING_COLORS, HIGHLIGHT_COLOR } from '@/lib/config/graph-colors';
+import { CLUSTER_RING_COLORS, HIGHLIGHT_COLOR, nodeRingStyle } from '@/lib/config/graph-colors';
 
 const css = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8');
 const root = css.match(/:root \{([\s\S]*?)\n\}/)?.[1] ?? '';
@@ -24,6 +24,11 @@ describe('palette', () => {
 
 	it('the graph highlights in the brand purple', () => {
 		expect(HIGHLIGHT_COLOR).toBe(PALETTE.primary);
+	});
+
+	it('documents in the chat get an amber ("lit") ring, the rest a thin grey one', () => {
+		expect(nodeRingStyle(true).color).toBe(PALETTE.lit);
+		expect(nodeRingStyle(false).strokeWidth).toBeLessThan(nodeRingStyle(true).strokeWidth);
 	});
 
 	it('cluster rings deepen as more of the cluster is in context', () => {

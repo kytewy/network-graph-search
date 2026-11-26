@@ -31,8 +31,8 @@ export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkPro
 			`${unmatched.length} citation${unmatched.length === 1 ? '' : 's'} match${unmatched.length === 1 ? 'es' : ''} no document sent: ${unmatched.join('; ')}`,
 		weak.length > 0 && `${weak.length} cited from excerpts only (the AI got less than half): ${weak.map((d) => d.title).join('; ')}`,
 	].filter(Boolean) as string[];
-	// Red outranks amber: a citation that matches nothing is the bigger worry
-	const dot = unmatched.length > 0 ? 'bg-red-500' : 'bg-amber-500';
+	// Red outranks coral: a citation that matches nothing is the bigger worry. Amber stays for "lit"
+	const dot = unmatched.length > 0 ? 'bg-destructive' : 'bg-warn';
 	return (
 		<span className="ml-auto flex items-center gap-1.5 pl-2" data-testid="coverage">
 			{warnings.length > 0 && (
@@ -45,7 +45,7 @@ export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkPro
 						title="Context for this answer"
 						className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground">
 						<AppWindow aria-hidden className="h-3.5 w-3.5" />
-						{docs.length} sent · {cited.length} cited
+						{docs.length} sent · <span className={cited.length > 0 ? 'text-lit-foreground' : ''}>{cited.length} cited</span>
 					</button>
 				</PopoverTrigger>
 				<PopoverContent align="end" className="w-80 space-y-3 p-3" aria-label="Context for this answer">
@@ -56,8 +56,8 @@ export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkPro
 								about {n(receipt.tokens)} of {n(receipt.contextWindow)} tokens ({used}%)
 							</span>
 						</div>
-						<div aria-hidden className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-200">
-							<div className="h-full bg-primary" style={{ width: `${Math.max(used, 1)}%` }} />
+						<div aria-hidden className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+							<div className="h-full bg-lit" style={{ width: `${Math.max(used, 1)}%` }} />
 						</div>
 						<p className="mt-1 text-xs text-muted-foreground" data-testid="context-mix">
 							{[`${docs.length} documents: ${whole} sent whole`, part > 0 && `${part} as excerpts`, summaries > 0 && `${summaries} as summaries`].filter(Boolean).join(' · ')}
@@ -67,9 +67,9 @@ export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkPro
 						</p>
 					</div>
 					<p className="text-xs" data-testid="context-cited">
-						Cited {cited.length} of {docs.length}
-						{weak.length > 0 && <span className="text-amber-700"> · {weak.length} cited from excerpts only</span>}
-						{unmatched.length > 0 && <span className="text-red-700"> · {unmatched.length} match no document sent</span>}
+						<span className="rounded-md bg-lit-soft px-1.5 py-0.5 text-lit-foreground">Cited {cited.length} of {docs.length}</span>
+						{weak.length > 0 && <span className="text-warn"> · {weak.length} cited from excerpts only</span>}
+						{unmatched.length > 0 && <span className="text-destructive"> · {unmatched.length} match no document sent</span>}
 					</p>
 					<button
 						type="button"

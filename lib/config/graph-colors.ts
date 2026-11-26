@@ -17,10 +17,10 @@ export const CLUSTER_RING_COLORS: Readonly<Record<ContextLevel, string>> = {
 /** How long a cluster's new name takes to fade in. */
 export const CLUSTER_NAME_FADE_MS = 500;
 
-/** The ring around every node: thin grey, or thicker black once it's in context. */
+/** The ring around every node: thin grey, or a thicker lantern amber once it's in the chat ("lit"). */
 export const NODE_RING = {
 	notInContext: { color: '#d1d5db', strokeWidth: 2 },
-	inContext: { color: '#111827', strokeWidth: 4 },
+	inContext: { color: PALETTE.lit, strokeWidth: 4 },
 } as const;
 
 export function nodeRingStyle(inContext: boolean) {

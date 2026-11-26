@@ -53,7 +53,7 @@ export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: Rece
 					</TabsList>
 					<TabsContent value="documents" className="min-h-0 flex-1 overflow-y-auto pr-1">
 						{readCount > 0 && (
-							<p className="mb-2 text-xs text-violet-800" data-testid="read-on-request">
+							<p className="mb-2 text-xs text-lit-foreground" data-testid="read-on-request">
 								Read {readCount} in full on request · {n(readChars)} of {n(BUDGET_CHARS)} budget characters · {receipt.readRounds ?? 1} round{(receipt.readRounds ?? 1) === 1 ? '' : 's'}
 								{(receipt.readsRefused ?? 0) > 0 && ` · ${receipt.readsRefused} more asked after the budget ran out`}
 							</p>
@@ -67,7 +67,7 @@ export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: Rece
 						<ul className="divide-y text-sm" aria-label="Documents sent">
 							{[...receipt.documents].sort((a, b) => Number(citedIds.has(b.id)) - Number(citedIds.has(a.id))).map((d) => (
 								<li key={d.id} className={`${ROW} py-1.5`}>
-									<span className="flex justify-center">{citedIds.has(d.id) && <Check role="img" aria-label="Cited" className="h-3.5 w-3.5 text-teal-700" />}</span>
+									<span className="flex justify-center">{citedIds.has(d.id) && <Check role="img" aria-label="Cited" className="h-4 w-4 rounded-sm bg-lit-soft p-0.5 text-lit-foreground" />}</span>
 									<span className="flex min-w-0 items-baseline gap-2">
 										<button
 											type="button"
@@ -76,7 +76,7 @@ export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: Rece
 											className="truncate text-left underline-offset-2 hover:text-primary hover:underline">
 											{d.title}
 										</button>
-										{d.readOnRequest && <span className="shrink-0 text-xs text-violet-700">read in full</span>}
+										{d.readOnRequest && <span className="shrink-0 rounded-md bg-lit-soft px-1.5 text-[11px] text-lit-foreground">read in full</span>}
 									</span>
 									<SentMeter d={d} />
 									<span className="text-right text-xs tabular-nums text-muted-foreground">{n(lengthOf(d))}</span>
@@ -114,7 +114,7 @@ export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: Rece
 	);
 }
 
-/** How much of one document went: a small bar and a percentage, or "Summary" */
+/** How much of one document the AI saw: an amber bar and a percentage, or "Summary" */
 function SentMeter({ d }: { d: SentDocument }) {
 	const share = sentShare(d);
 	if (share === null)
@@ -126,10 +126,11 @@ function SentMeter({ d }: { d: SentDocument }) {
 	const pct = Math.round(share * 100);
 	return (
 		<span className="flex items-center gap-2 whitespace-nowrap" title={sentDetail(d)} aria-label={`${pct}% sent`}>
-			<span aria-hidden className="h-1.5 w-14 overflow-hidden rounded-full bg-gray-200">
-				<span className={`block h-full ${pct < 100 ? 'bg-amber-500' : 'bg-teal-600'}`} style={{ width: `${pct}%` }} />
+			{/* The amber part is what the AI saw ("lit"); the grey rest stayed dark */}
+			<span aria-hidden className="h-1.5 w-14 overflow-hidden rounded-full bg-muted">
+				<span className="block h-full bg-lit" style={{ width: `${pct}%` }} />
 			</span>
-			<span className={`w-9 text-right text-xs tabular-nums ${pct < 100 ? 'text-amber-800' : 'text-muted-foreground'}`}>{pct}%</span>
+			<span className="w-9 text-right text-xs tabular-nums text-muted-foreground">{pct}%</span>
 		</span>
 	);
 }

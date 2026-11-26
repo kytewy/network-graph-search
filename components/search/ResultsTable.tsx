@@ -82,7 +82,8 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 						title={wide ? undefined : [summaryOf(node), node.tags?.join(', '), cluster].filter(Boolean).join('\n')}
 						// Clicking anywhere on the row opens the document
 						onClick={() => onOpen(node)}
-						className="cursor-pointer border-b last:border-0 hover:bg-accent/50 align-top">
+						// In this chat: a faint amber, the same "lit" as its ring on the graph
+						className={`cursor-pointer border-b last:border-0 hover:bg-accent/50 align-top ${inContext ? 'bg-lit-soft/40' : ''}`}>
 						<td className="px-2 py-2">
 							<Badge className="text-xs font-semibold px-2 py-0.5 text-white border-none" style={{ backgroundColor: scoreColor(node.score) }}>
 								{Math.round(node.score * 100)}
@@ -128,7 +129,7 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 									e.stopPropagation(); // the ● adds to context; it doesn't open the document
 									onToggleContext(node.id);
 								}}
-								className={`inline-block h-3 w-3 rounded-full border-2 ${inContext ? 'bg-gray-900 border-gray-900' : 'border-gray-400 hover:border-gray-900'}`}
+								className={`inline-block h-3 w-3 rounded-full border-2 ${inContext ? 'bg-lit border-lit' : 'border-gray-400 hover:border-lit'}`}
 							/>
 						</td>
 					</tr>
