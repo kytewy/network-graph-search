@@ -18,9 +18,11 @@ export type SourceRow = {
 	country: string | null;
 	bodyLength: number;
 	addedAt: Date;
+	publishedAt: Date | null;
 };
 
-export type SourceFilters = { q: string; source: Source | null };
+export type SortKey = 'added' | 'published';
+export type SourceFilters = { q: string; source: Source | null; sort: SortKey; dir: 'asc' | 'desc' };
 
 export const PAGE_SIZE = 200;
 
@@ -29,7 +31,12 @@ export function parseFilters(params: Record<string, string | string[] | undefine
 	const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? '';
 	const q = one(params.q).trim().slice(0, 200);
 	const s = one(params.source);
-	return { q, source: (SOURCES as readonly string[]).includes(s) ? (s as Source) : null };
+	return {
+		q,
+		source: (SOURCES as readonly string[]).includes(s) ? (s as Source) : null,
+		sort: one(params.sort) === 'published' ? 'published' : 'added',
+		dir: one(params.dir) === 'asc' ? 'asc' : 'desc',
+	};
 }
 
 /** How many documents came from each source (all four, zeros included). */
@@ -42,16 +49,33 @@ export async function sourceCounts(): Promise<Record<Source, number>> {
 }
 
 /** The newest documents matching the filters, at most PAGE_SIZE. */
-export async function listSources({ q, source }: SourceFilters): Promise<SourceRow[]> {
+export async function listSources({ q, source, sort, dir }: SourceFilters): Promise<SourceRow[]> {
 	const sql = db();
 	const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 	return sql<SourceRow[]>`
-		SELECT id, title, url, source, publisher, country, body_length AS "bodyLength", added_at AS "addedAt"
+		SELECT id, title, url, source, publisher, country, body_length AS "bodyLength", added_at AS "addedAt",
+			published_at AS "publishedAt"
 		FROM documents
 		WHERE ${source ? sql`source = ${source}` : sql`true`}
 		  AND ${q ? sql`(title ILIKE ${like} OR publisher ILIKE ${like})` : sql`true`}
-		ORDER BY added_at DESC, title
+		ORDER BY ${sql.unsafe(ORDER[sort][dir])}, title
 		LIMIT ${PAGE_SIZE}`;
+}
+
+// Whitelisted ORDER BY clauses (never built from the request); undated documents always last
+const ORDER: Record<SortKey, Record<'asc' | 'desc', string>> = {
+	added: { asc: 'added_at ASC', desc: 'added_at DESC' },
+	published: { asc: 'published_at ASC NULLS LAST', desc: 'published_at DESC NULLS LAST' },
+};
+
+/** A publication date, e.g. "Jul 12, 2024" (dates are stored without a time, so read them as UTC) */
+export function formatPublished(date: Date | null): string {
+	return date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '—';
+}
+
+/** The exact moment a document was added, for the hover text */
+export function formatAddedExact(date: Date): string {
+	return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 /** "Today", "Yesterday", or a short date like "Nov 20". */

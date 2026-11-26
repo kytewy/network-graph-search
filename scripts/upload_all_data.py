@@ -6,6 +6,7 @@ Uploads all data sources to Pinecone in a single command.
 Usage:
     python scripts/upload_all_data.py           # add or update records
     python scripts/upload_all_data.py --reset   # delete everything in the namespace first
+    python scripts/upload_all_data.py --export  # write the full records for Postgres (no Pinecone)
 
 --reset is permanent: it also deletes tags added in the app, which are stored
 only in Pinecone.
@@ -43,6 +44,12 @@ def load_taxonomy() -> Dict[str, List[str]]:
 
 TAXONOMY = load_taxonomy()
 
+# --export keeps the full text for Postgres; Pinecone uploads cut it to fit metadata limits
+EXPORTING = '--export' in sys.argv
+
+# The EU AI Act (Regulation (EU) 2024/1689) was published in the Official Journal on 12 July 2024
+EU_AI_ACT_PUBLISHED = '2024-07-12'
+
 def load_json_file(file_path: str) -> Any:
     """Load JSON data from a file."""
     try:
@@ -66,6 +73,9 @@ def validate_record(record: Dict[str, Any]) -> Dict[str, Any]:
     if record.get('documentType') not in TAXONOMY['documentTypes']:
         raise ValueError(f"Record {record['_id']}: unknown documentType {record.get('documentType')!r}. Allowed: {TAXONOMY['documentTypes']}")
     
+    if EXPORTING:
+        return record
+
     # Pinecone metadata limit is 40KB (40,960 bytes) for ALL metadata combined
     # This includes JSON serialization overhead, field names, and all fields
     # Being very conservative to account for:
@@ -166,7 +176,10 @@ def load_eu_articles(script_dir: str) -> List[Dict[str, Any]]:
             "publisher": "Government",
             "documentType": "Law",
             "connected_to": article.get('connected_to', []),
-            "url": article.get('url')
+            "url": article.get('url'),
+            "published_at": EU_AI_ACT_PUBLISHED,
+            # When this article starts to apply
+            **({"effective_at": article['active_date']} if article.get('active_date') else {}),
         }
         records.append(validate_record(record))
     
@@ -197,7 +210,8 @@ def load_eu_recitals(script_dir: str) -> List[Dict[str, Any]]:
             "country": 'European Union',
             "publisher": "Government",
             "documentType": "Law",
-            "url": recital.get('url')
+            "url": recital.get('url'),
+            "published_at": EU_AI_ACT_PUBLISHED,
         }
         records.append(validate_record(record))
     
@@ -323,6 +337,18 @@ def upload_records_batch(index, namespace: str, records: List[Dict[str, Any]], s
     
     print(f"   ✅ {source_name} uploaded successfully")
 
+def export_records() -> int:
+    """Writes every record, full text kept, for scripts/import-index.mjs to load into Postgres."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    records = load_eu_articles(script_dir) + load_eu_recitals(script_dir) + load_canadian_data() + load_iapp_data()
+    path = os.path.join(script_dir, 'data', 'index-export.json')
+    with open(path, 'w', encoding='utf-8') as file:
+        json.dump(records, file, ensure_ascii=False)
+    print(f"\n✅ Exported {len(records)} records to {path}")
+    print("   Next: npm run db:import-index")
+    return 0
+
+
 def main():
     """Main upload function."""
     print("=" * 70)
@@ -336,6 +362,9 @@ def main():
         'namespace': os.getenv("PINECONE_NAMESPACE", "example-namespace"),
     }
     
+    if EXPORTING:
+        return export_records()
+
     if not config['api_key']:
         print("❌ PINECONE_API_KEY environment variable not set")
         return 1

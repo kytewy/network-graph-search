@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { AddLinkButton } from '@/components/sources/AddLinkButton';
-import { PAGE_SIZE, SOURCES, SOURCE_LABELS, formatAdded, listSources, parseFilters, sourceCounts, type Source, type SourceFilters } from '@/lib/sources/list';
+import { PAGE_SIZE, SOURCES, SOURCE_LABELS, formatAdded, formatAddedExact, formatPublished, listSources, parseFilters, sourceCounts, type Source, type SourceFilters, type SortKey } from '@/lib/sources/list';
 
 export const metadata: Metadata = { title: 'Sources · Lantern' };
 export const dynamic = 'force-dynamic';
 
-const COLUMNS = ['Document', 'Source', 'Publisher', 'Country', 'Characters', 'Added'];
+const COLUMNS = ['Document', 'Source', 'Publisher', 'Country', 'Characters'];
+const DATE_COLUMNS: [SortKey, string][] = [['published', 'Published'], ['added', 'Added']];
 const COUNT_LABELS: Record<Source, string> = { index: 'From the index', link: 'Added by link', upload: 'Uploaded', web: 'From the web' };
 
 const BADGE: Record<Source, string> = {
@@ -33,10 +34,12 @@ export default async function SourcesPage({ searchParams }: Props) {
 	const filters = parseFilters(await searchParams);
 	const data = await load(filters);
 	const total = data ? SOURCES.reduce((n, s) => n + data.counts[s], 0) : 0;
-	const href = (source: Source | null) => {
+	const href = (source: Source | null, sort: SortKey = filters.sort, dir = filters.dir) => {
 		const p = new URLSearchParams();
 		if (filters.q) p.set('q', filters.q);
 		if (source) p.set('source', source);
+		if (sort !== 'added') p.set('sort', sort);
+		if (dir !== 'desc') p.set('dir', dir);
 		const s = p.toString();
 		return s ? `/sources?${s}` : '/sources';
 	};
@@ -71,6 +74,8 @@ export default async function SourcesPage({ searchParams }: Props) {
 
 						<form action="/sources" className="flex flex-wrap items-center gap-2">
 							{filters.source && <input type="hidden" name="source" value={filters.source} />}
+							{filters.sort !== 'added' && <input type="hidden" name="sort" value={filters.sort} />}
+							{filters.dir !== 'desc' && <input type="hidden" name="dir" value={filters.dir} />}
 							<label htmlFor="sources-q" className="sr-only">Search sources</label>
 							<input id="sources-q" name="q" defaultValue={filters.q} placeholder="Search by title or publisher"
 								className="w-full max-w-sm rounded-lg border border-primary/30 bg-card px-3 py-2 text-[13px] outline-none focus:border-primary" />
@@ -88,6 +93,18 @@ export default async function SourcesPage({ searchParams }: Props) {
 									<thead>
 										<tr className="border-b border-border text-left text-xs text-muted-foreground">
 											{COLUMNS.map((c) => <th key={c} className={`px-3 py-2.5 font-medium ${c === 'Characters' ? 'text-right' : ''}`}>{c}</th>)}
+											{DATE_COLUMNS.map(([key, label]) => {
+												const active = filters.sort === key;
+												// Click a date header to sort by it, newest first; click again for oldest first
+												const next = active && filters.dir === 'desc' ? 'asc' : 'desc';
+												return (
+													<th key={key} className="px-3 py-2.5 font-medium" aria-sort={active ? (filters.dir === 'asc' ? 'ascending' : 'descending') : undefined}>
+														<Link href={href(filters.source, key, next)} className={`hover:text-foreground ${active ? 'text-foreground' : ''}`}>
+															{label}{active ? (filters.dir === 'asc' ? ' ↑' : ' ↓') : ''}
+														</Link>
+													</th>
+												);
+											})}
 										</tr>
 									</thead>
 									<tbody>
@@ -100,7 +117,8 @@ export default async function SourcesPage({ searchParams }: Props) {
 												<td className="px-3 py-2.5 text-muted-foreground">{r.publisher ?? '—'}</td>
 												<td className="px-3 py-2.5 text-muted-foreground">{r.country ?? '—'}</td>
 												<td className="px-3 py-2.5 text-muted-foreground text-right tabular-nums">{r.bodyLength.toLocaleString('en-US')}</td>
-												<td className="px-3 py-2.5 text-muted-foreground">{formatAdded(new Date(r.addedAt))}</td>
+												<td className="px-3 py-2.5 text-muted-foreground tabular-nums whitespace-nowrap">{formatPublished(r.publishedAt && new Date(r.publishedAt))}</td>
+												<td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap" title={`Added ${formatAddedExact(new Date(r.addedAt))}`}>{formatAdded(new Date(r.addedAt))}</td>
 											</tr>
 										))}
 									</tbody>
