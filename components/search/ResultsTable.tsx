@@ -38,6 +38,8 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 	const clusterResults = useContextStore((s) => s.clusterResults);
 	const clusterSuggestions = useContextStore((s) => s.clusterSuggestions);
 	const contextNodes = useContextStore((s) => s.contextNodes);
+	const addNodesToContext = useContextStore((s) => s.addNodesToContext);
+	const removeNodeFromContext = useContextStore((s) => s.removeNodeFromContext);
 
 	const rows = useMemo(() => {
 		const names = namesFromSuggestions(clusterResults?.clusters ?? [], clusterSuggestions);
@@ -48,6 +50,12 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 		}));
 		return sortRows(all, sort.key, sort.direction);
 	}, [results, aiClusters, clusterResults, clusterSuggestions, contextNodes, sort]);
+
+	// The header dot: every listed result in this chat, some, or none. Click to add all, or remove all
+	const inCount = rows.filter((r) => r.inContext).length;
+	const allIn = rows.length > 0 && inCount === rows.length;
+	const toggleAll = () =>
+		allIn ? rows.forEach((r) => removeNodeFromContext(r.node.id)) : addNodesToContext(rows.filter((r) => !r.inContext).map((r) => r.node));
 
 	const header = (key: TableSortKey, label: string, className = '') => (
 		<th
@@ -69,7 +77,22 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 					{wide && <th className="px-2 py-1.5 font-medium w-40">Tags</th>}
 					{wide && found.collected && <th className="px-2 py-1.5 font-medium w-24 whitespace-nowrap">Found by</th>}
 					{wide && header('cluster', 'Cluster', 'w-36')}
-					{header('context', 'Ctx', 'w-10 text-center')}
+					<th className="px-2 py-1.5 font-medium whitespace-nowrap w-14 text-center" aria-sort={sort.key === 'context' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
+						<span className="inline-flex items-center gap-1.5">
+							<button type="button" onClick={() => setSort(nextSort(sort, 'context'))} className="hover:text-foreground">
+								Ctx{sort.key === 'context' && (sort.direction === 'asc' ? ' ↑' : ' ↓')}
+							</button>
+							<button
+								type="button"
+								role="checkbox"
+								aria-checked={allIn ? true : inCount > 0 ? 'mixed' : false}
+								aria-label={allIn ? 'Remove all from this chat' : 'Add all to this chat'}
+								title={allIn ? 'Remove all from this chat' : 'Add all to this chat'}
+								onClick={toggleAll}
+								className={`inline-block h-3 w-3 rounded-full border-2 ${allIn ? 'border-lit bg-lit' : inCount > 0 ? 'border-lit bg-[linear-gradient(90deg,var(--lit)_50%,transparent_50%)]' : 'border-gray-400 hover:border-lit'}`}
+							/>
+						</span>
+					</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -82,8 +105,7 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 						title={wide ? undefined : [summaryOf(node), node.tags?.join(', '), cluster].filter(Boolean).join('\n')}
 						// Clicking anywhere on the row opens the document
 						onClick={() => onOpen(node)}
-						// In this chat: a faint amber, the same "lit" as its ring on the graph
-						className={`cursor-pointer border-b last:border-0 hover:bg-accent/50 align-top ${inContext ? 'bg-lit-soft/40' : ''}`}>
+						className="cursor-pointer border-b last:border-0 hover:bg-accent/50 align-top">
 						<td className="px-2 py-2">
 							<Badge className="text-xs font-semibold px-2 py-0.5 text-white border-none" style={{ backgroundColor: scoreColor(node.score) }}>
 								{Math.round(node.score * 100)}

@@ -49,7 +49,7 @@ export function GraphPageClient() {
 				<div
 					className={`${
 						rightPanelExpanded ? `absolute right-0 top-0 ${leftCollapsed ? WIDE_STOPS_AT.right.closed : WIDE_STOPS_AT.right.open} z-10` : `${PANEL_WIDTH.right} shrink-0`
-					} h-screen bg-sidebar border-l border-sidebar-border overflow-clip flex flex-col`}>
+					} h-screen bg-card border-l border-sidebar-border overflow-clip flex flex-col`}>
 					{/* Context | Chat | Clusters tabs are the header, like the search panel's */}
 					<ContextManagement
 						rightPanelExpanded={rightPanelExpanded}

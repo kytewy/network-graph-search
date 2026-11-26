@@ -561,7 +561,7 @@ export default function ContextManagement({
 					setActiveTab(value as 'nodes' | 'analysis' | 'clustering')
 				}
 				className="flex min-h-0 flex-1 flex-col">
-				<div data-panel-header="right" className={`${PANEL_HEADER} shrink-0 bg-sidebar`} {...headerProps}>
+				<div data-panel-header="right" className={`${PANEL_HEADER} shrink-0 bg-card`} {...headerProps}>
 					{headerStart}
 					{/* Stays a compact group in the middle when the panel is wide */}
 					<TabsList className="grid flex-1 max-w-xs mx-auto grid-cols-2 bg-transparent p-0 h-auto gap-0">

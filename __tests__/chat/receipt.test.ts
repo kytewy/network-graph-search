@@ -1,4 +1,4 @@
-import { buildReceipt, cutCount, describeSent, sentDetail, sentDocument, sentShare } from '@/lib/chat/receipt';
+import { buildReceipt, cutCount, describeSent, readKind, readMix, seenShare, sentDetail, sentDocument, sentShare, type SentDocument } from '@/lib/chat/receipt';
 
 describe('the receipt: what was sent', () => {
 	it('says a document went as its summary when the chat sent the summary', () => {
@@ -35,5 +35,32 @@ describe('the receipt: what was sent', () => {
 		expect(r.tokens).toBe(200);
 		expect(r.question).toBeUndefined();
 		expect(r).toMatchObject({ suggestions: true, memoryTurns: 2, charLimit: 800 });
+	});
+});
+
+describe('what the AI read: one scale', () => {
+	const doc = (d: Partial<SentDocument>): SentDocument => ({ id: 'x', title: 'X', sentAs: 'text', sent: 0, total: 0, length: 0, ...d });
+
+	it('sent whole and read on request are both "in full"', () => {
+		expect(readKind(doc({ sent: 403, total: 403, length: 403 }))).toBe('full');
+		expect(readKind(doc({ sent: 5000, total: 5000, length: 5000, readOnRequest: true }))).toBe('full');
+	});
+
+	it('an excerpt is "partly", with its share seen', () => {
+		const d = doc({ sent: 800, total: 1310, length: 1310 });
+		expect(readKind(d)).toBe('partly');
+		expect(Math.round(seenShare(d) * 100)).toBe(61);
+	});
+
+	it('a summary counts as its size against the whole document', () => {
+		const d = doc({ sentAs: 'summary', sent: 310, total: 310, length: 29960 });
+		expect(readKind(d)).toBe('summary');
+		expect(seenShare(d)).toBeCloseTo(310 / 29960);
+		expect(readKind(doc({ sentAs: 'title' }))).toBe('summary');
+	});
+
+	it('counts each kind', () => {
+		const mix = readMix([doc({ sent: 1, total: 1, length: 1 }), doc({ sent: 1, total: 9, length: 9 }), doc({ sentAs: 'summary', sent: 1, total: 1, length: 9 })]);
+		expect(mix).toEqual({ full: 1, partly: 1, summary: 1 });
 	});
 });

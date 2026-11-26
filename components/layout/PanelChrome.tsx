@@ -75,7 +75,7 @@ export function PanelRail({ side, name, onOpen }: { side: Side; name: string; on
 			aria-label={`Open ${name} panel`}
 			title={`Open ${name}`}
 			data-testid={`${side}-rail`}
-			className={`w-10 shrink-0 h-screen bg-sidebar flex flex-col items-center hover:bg-accent/40 transition-colors ${
+			className={`w-10 shrink-0 h-screen bg-card flex flex-col items-center hover:bg-accent/40 transition-colors ${
 				side === 'left' ? 'border-r' : 'border-l'
 			} border-sidebar-border`}>
 			<span className="h-12 w-full shrink-0 border-b border-sidebar-border flex items-center justify-center text-sidebar-foreground/70">

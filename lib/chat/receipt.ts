@@ -115,3 +115,28 @@ export function sentDetail(d: SentDocument): string {
 	if (d.sentAs === 'title') return 'Only the title was sent';
 	return `${n(d.sent)} of ${n(length)} characters of the document's text`;
 }
+
+/** What kind of reading a document got: all of it, an excerpt, or only its summary (or title) */
+export type ReadKind = 'full' | 'partly' | 'summary';
+
+export const READ_LABELS: Record<ReadKind, string> = { full: 'In full', partly: 'Partly', summary: 'Summary' };
+
+/** How much of a document the AI saw, 0–1, for every row: a summary counts as its size against the whole */
+export function seenShare(d: SentDocument): number {
+	const share = sentShare(d);
+	if (share !== null) return share;
+	const length = d.length || d.total;
+	return length ? Math.min(1, d.sent / length) : 0;
+}
+
+export function readKind(d: SentDocument): ReadKind {
+	if (d.sentAs !== 'text') return 'summary';
+	return seenShare(d) >= 1 ? 'full' : 'partly';
+}
+
+/** How many documents got each kind of reading */
+export function readMix(documents: SentDocument[]): Record<ReadKind, number> {
+	const mix = { full: 0, partly: 0, summary: 0 };
+	for (const d of documents) mix[readKind(d)]++;
+	return mix;
+}

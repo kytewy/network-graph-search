@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AppWindow } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { coverage } from '@/lib/chat/coverage';
-import { sentShare, type Receipt } from '@/lib/chat/receipt';
+import { readMix, type Receipt } from '@/lib/chat/receipt';
 
 interface CoverageLinkProps {
 	answer: string;
@@ -20,11 +20,9 @@ export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkPro
 	const [open, setOpen] = useState(false);
 	const { cited, weak, unmatched } = coverage(answer, receipt);
 	const docs = receipt.documents;
-	const onRequest = docs.filter((d) => d.readOnRequest).length;
-	const shares = docs.filter((d) => !d.readOnRequest).map(sentShare);
-	const whole = shares.filter((s) => s === 1).length;
-	const summaries = shares.filter((s) => s === null).length;
-	const part = shares.length - whole - summaries;
+	// One scale for what the AI saw, however it got there (sent whole or read on request)
+	const mix = readMix(docs);
+	const pct = (k: number) => `${(k / Math.max(docs.length, 1)) * 100}%`;
 	const used = Math.min(100, Math.round((receipt.tokens / receipt.contextWindow) * 100));
 	const warnings = [
 		unmatched.length > 0 &&
@@ -59,11 +57,18 @@ export function CoverageLink({ answer, receipt, onOpenReceipt }: CoverageLinkPro
 						<div aria-hidden className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
 							<div className="h-full bg-lit" style={{ width: `${Math.max(used, 1)}%` }} />
 						</div>
-						<p className="mt-1 text-xs text-muted-foreground" data-testid="context-mix">
-							{[`${docs.length} documents: ${whole} sent whole`, part > 0 && `${part} as excerpts`, summaries > 0 && `${summaries} as summaries`].filter(Boolean).join(' · ')}
-							{onRequest > 0 && ` · ${onRequest} read in full on request`}
-							{(receipt.readRounds ?? 0) > 1 && ` (${receipt.readRounds} rounds)`}
-							{receipt.memoryTurns > 0 && ` · ${receipt.memoryTurns} earlier turns`}
+					</div>
+					<div data-testid="context-mix">
+						<div className="text-xs font-medium">What the AI read · {docs.length} documents</div>
+						<div aria-hidden className="mt-1 flex h-2 overflow-hidden rounded-full bg-muted">
+							<span className="bg-lit" style={{ width: pct(mix.full) }} />
+							<span className="bg-lit/50" style={{ width: pct(mix.partly) }} />
+						</div>
+						<p className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+							<span>In full {mix.full}</span>
+							<span>Partly {mix.partly}</span>
+							<span>Summary only {mix.summary}</span>
+							{receipt.memoryTurns > 0 && <span>{receipt.memoryTurns} earlier turns</span>}
 						</p>
 					</div>
 					<p className="text-xs" data-testid="context-cited">

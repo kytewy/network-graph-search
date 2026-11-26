@@ -60,7 +60,7 @@ export function SearchPanel() {
 
 	if (!isClient) {
 		return (
-			<div className="w-96 bg-sidebar border-r border-sidebar-border p-6">
+			<div className="w-96 bg-card border-r border-sidebar-border p-6">
 				<div className="text-sm text-muted-foreground">Loading...</div>
 			</div>
 		);
@@ -82,7 +82,7 @@ export function SearchPanel() {
 		return (
 			<div
 				data-testid="search-panel"
-				className={`absolute left-0 top-0 ${rightCollapsed ? WIDE_STOPS_AT.left.closed : WIDE_STOPS_AT.left.open} z-20 shadow-xl bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
+				className={`absolute left-0 top-0 ${rightCollapsed ? WIDE_STOPS_AT.left.closed : WIDE_STOPS_AT.left.open} z-20 shadow-xl bg-card border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
 				<div data-panel-header="left" className={PANEL_HEADER} {...widen}>
 					<span className="flex items-center gap-2 text-sm font-semibold text-primary">
 						<Search className="h-3 w-3" />
@@ -122,7 +122,7 @@ export function SearchPanel() {
 	return (
 		<div
 			data-testid="search-panel"
-			className={`${PANEL_WIDTH.left} shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen`}>
+			className={`${PANEL_WIDTH.left} shrink-0 bg-card border-r border-sidebar-border flex flex-col h-screen`}>
 
 			{/* Tabbed Content Area */}
 			<div className="flex-1 overflow-hidden">
@@ -132,7 +132,7 @@ export function SearchPanel() {
 					className="flex h-full flex-col">
 					{/* Tab Headers */}
 					{/* Divider under the tabs, with the same 16px gap as the line above them */}
-					<div data-panel-header="left" className={`${PANEL_HEADER} bg-sidebar`} {...widen}>
+					<div data-panel-header="left" className={`${PANEL_HEADER} bg-card`} {...widen}>
 						<TabsList className="grid flex-1 grid-cols-2 bg-transparent p-0 h-auto gap-0">
 							<TabsTrigger
 								value="results"

@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { coverage } from '@/lib/chat/coverage';
 import { BUDGET_CHARS } from '@/lib/chat/read-document';
-import { cutCount, sentDetail, sentShare, type Receipt, type SentDocument } from '@/lib/chat/receipt';
+import { useState } from 'react';
+import { READ_LABELS, cutCount, readKind, seenShare, sentDetail, type Receipt, type SentDocument } from '@/lib/chat/receipt';
 
 interface ReceiptDialogProps {
 	receipt: Receipt | null;
@@ -18,12 +19,14 @@ interface ReceiptDialogProps {
 
 const n = (x: number) => x.toLocaleString('en-US');
 /** One grid for the header and every row, so the columns line up */
-const ROW = 'grid grid-cols-[2.5rem_minmax(0,1fr)_7.5rem_5rem] items-center gap-x-3';
+const ROW = 'grid grid-cols-[2.5rem_minmax(0,1fr)_5rem_7rem_5rem] items-center gap-x-3';
 /** A document's own length; receipts saved before lengths were recorded use what was sent from */
 const lengthOf = (d: SentDocument) => d.length || d.total;
 
 /** "What was sent": every input to one answer, exactly as the server sent it */
 export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: ReceiptDialogProps) {
+	// Cited first, or by how much the AI saw (click "% seen")
+	const [bySeen, setBySeen] = useState(false);
 	if (!receipt) return null;
 	const citedIds = new Set(coverage(answer, receipt).cited.map((d) => d.id));
 	const readDocs = receipt.documents.filter((d) => d.readOnRequest);
@@ -58,14 +61,19 @@ export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: Rece
 								{(receipt.readsRefused ?? 0) > 0 && ` · ${receipt.readsRefused} more asked after the budget ran out`}
 							</p>
 						)}
-						<div className={`${ROW} border-b pb-1 text-xs text-muted-foreground`} aria-hidden>
+						<div className={`${ROW} border-b pb-1 text-xs text-muted-foreground`}>
 							<span>Cited</span>
 							<span>Document</span>
-							<span>Sent</span>
+							<span>Read</span>
+							<button type="button" onClick={() => setBySeen(!bySeen)} className="text-left hover:text-foreground" aria-pressed={bySeen}>
+								% seen{bySeen ? ' ↓' : ''}
+							</button>
 							<span className="text-right">Characters</span>
 						</div>
 						<ul className="divide-y text-sm" aria-label="Documents sent">
-							{[...receipt.documents].sort((a, b) => Number(citedIds.has(b.id)) - Number(citedIds.has(a.id))).map((d) => (
+							{[...receipt.documents]
+								.sort((a, b) => (bySeen ? seenShare(b) - seenShare(a) : Number(citedIds.has(b.id)) - Number(citedIds.has(a.id))))
+								.map((d) => (
 								<li key={d.id} className={`${ROW} py-1.5`}>
 									<span className="flex justify-center">{citedIds.has(d.id) && <Check role="img" aria-label="Cited" className="h-4 w-4 rounded-sm bg-lit-soft p-0.5 text-lit-foreground" />}</span>
 									<span className="flex min-w-0 items-baseline gap-2">
@@ -76,8 +84,8 @@ export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: Rece
 											className="truncate text-left underline-offset-2 hover:text-primary hover:underline">
 											{d.title}
 										</button>
-										{d.readOnRequest && <span className="shrink-0 rounded-md bg-lit-soft px-1.5 text-[11px] text-lit-foreground">read in full</span>}
 									</span>
+									<ReadBadge d={d} />
 									<SentMeter d={d} />
 									<span className="text-right text-xs tabular-nums text-muted-foreground">{n(lengthOf(d))}</span>
 								</li>
@@ -114,20 +122,20 @@ export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: Rece
 	);
 }
 
-/** How much of one document the AI saw: an amber bar and a percentage, or "Summary" */
+const BADGE = { full: 'bg-lit-soft text-lit-foreground', partly: 'bg-lit-soft/50 text-lit-foreground', summary: 'text-muted-foreground' };
+
+/** The kind of reading: In full, Partly or Summary */
+function ReadBadge({ d }: { d: SentDocument }) {
+	const kind = readKind(d);
+	return <span className={`w-fit rounded-md px-1.5 text-[11px] ${BADGE[kind]}`} title={sentDetail(d)}>{READ_LABELS[kind]}</span>;
+}
+
+/** How much the AI saw, for every row: an amber bar and a percentage (a summary is small, which is the point) */
 function SentMeter({ d }: { d: SentDocument }) {
-	const share = sentShare(d);
-	if (share === null)
-		return (
-			<span className="text-xs text-muted-foreground" title={sentDetail(d)}>
-				Summary
-			</span>
-		);
-	const pct = Math.round(share * 100);
+	const pct = Math.round(seenShare(d) * 100);
 	return (
-		<span className="flex items-center gap-2 whitespace-nowrap" title={sentDetail(d)} aria-label={`${pct}% sent`}>
-			{/* The amber part is what the AI saw ("lit"); the grey rest stayed dark */}
-			<span aria-hidden className="h-1.5 w-14 overflow-hidden rounded-full bg-muted">
+		<span className="flex items-center gap-2 whitespace-nowrap" title={sentDetail(d)} aria-label={`${pct}% seen`}>
+			<span aria-hidden className="h-1.5 w-12 overflow-hidden rounded-full bg-muted">
 				<span className="block h-full bg-lit" style={{ width: `${pct}%` }} />
 			</span>
 			<span className="w-9 text-right text-xs tabular-nums text-muted-foreground">{pct}%</span>

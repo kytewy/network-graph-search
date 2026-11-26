@@ -231,7 +231,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 			// Wide: a comfortable reading column in the middle instead of edge to edge
 			className={`flex flex-col min-h-[calc(100vh-5rem)] ${rightPanelExpanded && !split ? 'w-full max-w-3xl mx-auto px-6' : ''}`}>
 			{/* Flip between chats, start one, delete one */}
-			<div className="sticky top-0 z-10 -mx-4 -mt-4 bg-sidebar px-4 pt-1">
+			<div className="sticky top-0 z-10 -mx-4 -mt-4 bg-card px-4 pt-1">
 				<ChatSwitcher
 					onSwitch={() => {
 						setOpenDocId(null);
@@ -372,7 +372,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 			</div>
 
 			{/* The box stays at the bottom while the conversation scrolls above it */}
-			<div className="sticky bottom-0 -mx-4 px-4 pt-2 pb-3 bg-sidebar space-y-1.5">
+			<div className="sticky bottom-0 -mx-4 px-4 pt-2 pb-3 bg-card space-y-1.5">
 				{contextSummary}
 				{/* The "/" menu, just above the box */}
 				{slashOpen && (

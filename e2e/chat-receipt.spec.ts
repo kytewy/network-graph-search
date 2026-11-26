@@ -40,17 +40,23 @@ test('every answer has a receipt: documents, how much of each, instructions and 
 	// The popup: the context window, how documents went, and what the answer cited
 	const peek = page.getByRole('dialog', { name: 'Context for this answer' });
 	await expect(peek).toContainText('about 1,234 of 128,000 tokens (1%)');
-	await expect(peek.getByTestId('context-mix')).toHaveText('3 documents: 0 sent whole · 1 as excerpts · 1 as summaries · 1 read in full on request (2 rounds)');
+	// One scale for what the AI saw: read on request counts as in full
+	const mix = peek.getByTestId('context-mix');
+	await expect(mix).toContainText('What the AI read · 3 documents');
+	for (const part of ['In full 1', 'Partly 1', 'Summary only 1']) await expect(mix).toContainText(part);
 	await expect(peek.getByTestId('context-cited')).toHaveText('Cited 1 of 3 · 1 cited from excerpts only · 1 match no document sent');
 	await peek.getByRole('button', { name: 'Full receipt' }).click();
 	const dialog = page.getByRole('dialog', { name: 'What was sent' });
 	await expect(dialog.getByTestId('receipt-line')).toHaveText('3 documents · about 1,234 of 128,000 tokens · gpt-4o-mini · 1 cut to 800 characters');
 	const docs = dialog.getByRole('list', { name: 'Documents sent' });
 	// A simple share per document; the exact numbers are in the hover
-	await expect(docs.getByLabel('19% sent')).toHaveAttribute('title', "800 of 4,200 characters of the document's text");
+	await expect(docs.getByLabel('19% seen')).toHaveAttribute('title', "800 of 4,200 characters of the document's text");
+	// A summary's share is its size against the whole document
+	await expect(docs.getByLabel('1% seen')).toBeVisible();
 	await expect(docs.getByRole('img', { name: 'Cited' })).toHaveCount(1);
 	await expect(docs).toContainText('29,960');
-	await expect(docs).toContainText('read in full');
+	await expect(docs.getByText('In full', { exact: true })).toHaveCount(1);
+	await expect(docs.getByText('Partly', { exact: true })).toHaveCount(1);
 	await expect(dialog.getByTestId('read-on-request')).toHaveText('Read 1 in full on request · 5,000 of 200,000 budget characters · 2 rounds');
 	await expect(dialog.getByTestId('receipt-total')).toHaveText('3 documents · 39,160 characters in all · 5,800 sent (15%)');
 	await expect(docs.getByText('Summary', { exact: true })).toHaveAttribute('title', 'Summary sent (310 characters); the document is 29,960 characters');

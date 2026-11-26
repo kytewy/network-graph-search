@@ -41,3 +41,15 @@ test('results switch to a table, sort by column, and the ● adds a document to 
 	await expect(page.locator('[data-result-card]').first()).toBeVisible();
 	await expect(page.getByTestId('results-table')).toHaveCount(0);
 });
+
+test('the Ctx header dot adds every listed result to the chat, then removes them all', async ({ page }) => {
+	await search(page);
+	const rows = page.getByTestId('results-table').locator('[data-result-row]');
+	const all = page.getByRole('checkbox', { name: 'Add all to this chat' });
+	await rows.first().getByRole('switch').click();
+	await expect(all).toHaveAttribute('aria-checked', 'mixed');
+	await all.click();
+	await expect(rows.getByRole('switch', { checked: false })).toHaveCount(0);
+	await page.getByRole('checkbox', { name: 'Remove all from this chat' }).click();
+	await expect(rows.getByRole('switch', { checked: true })).toHaveCount(0);
+});
