@@ -12,7 +12,7 @@ vi.mock('posthog-js', () => ({ __esModule: true, get default() { return mockPost
 const posthog = mockPosthog;
 
 import { captureClientError, reportError } from '@/lib/observability/capture-client';
-import GraphError from '@/app/graph/error';
+import GraphError from '@/app/(app)/graph/error';
 import GlobalError from '@/app/global-error';
 
 beforeEach(() => {

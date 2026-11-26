@@ -9,7 +9,7 @@ const redirect = vi.fn();
 vi.mock('next/navigation', () => ({ redirect: (path: string) => redirect(path) }));
 
 import Home from '@/app/page';
-import GraphError from '@/app/graph/error';
+import GraphError from '@/app/(app)/graph/error';
 
 describe('/', () => {
 	it('sends visitors to the graph', () => {

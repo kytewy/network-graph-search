@@ -8,9 +8,8 @@ import { QueryProvider } from "@/components/providers/query-provider"
 import { NuqsAdapter } from "nuqs/adapters/next/app"
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.app",
+  title: "Lantern",
+  description: "See what the AI was sent, read and cited",
 }
 
 export default function RootLayout({

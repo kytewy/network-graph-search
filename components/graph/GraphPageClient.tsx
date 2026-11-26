@@ -27,7 +27,7 @@ export function GraphPageClient() {
 
 	return (
 		<NetworkGraphProvider>
-			<div data-page="graph" className="flex h-screen overflow-clip bg-background">
+			<div data-page="graph" className="relative flex h-screen overflow-clip bg-background">
 				{/* Sidebar - Unified Search & Filter Panel */}
 				<SearchPanel />
 
