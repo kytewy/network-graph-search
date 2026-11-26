@@ -31,3 +31,12 @@ test('double-clicking the search header opens it wide, shows results in columns,
 	await expect.poll(async () => (await panel.boundingBox())!.width).toBeLessThan(narrow + 5);
 	await expect(page.getByRole('tab', { name: /^Filters/ })).toBeVisible();
 });
+
+test('only the results list scrolls: the search box and column headers stay in view', async ({ page }) => {
+	await search(page);
+	const box = page.getByPlaceholder(/Search across/);
+	const before = (await box.boundingBox())!.y;
+	await page.getByTestId('results-scroll').evaluate((el) => el.scrollTo(0, el.scrollHeight));
+	expect((await box.boundingBox())!.y).toBe(before);
+	await expect(page.getByTestId('results-table').getByRole('columnheader', { name: /Score/ })).toBeInViewport();
+});

@@ -118,9 +118,10 @@ export function SearchResults() {
 
 	return (
 		<>
-		<div className="flex flex-col gap-2">
+		{/* The count row stays put; only the list below it scrolls (its column headers stick too) */}
+		<div className="flex h-full min-h-0 flex-col gap-2">
 			{/* One row: count and sort (no card around the list) */}
-			<div className="flex items-center justify-between">
+			<div className="flex shrink-0 items-center justify-between">
 					<h3 className="text-base font-semibold">
 						{/* After two or more searches the list is the whole workspace */}
 						{found.collected ? `Workspace (${processedResults.length}) · ${found.rounds} searches` : `Results (${processedResults.length})`}
@@ -161,6 +162,7 @@ export function SearchResults() {
 					</div>
 			</div>
 
+			<div className="min-h-0 flex-1 overflow-y-auto" data-testid="results-scroll">
 			{view === 'table' ? (
 				<ResultsTable
 					results={processedResults as Node[]}
@@ -254,6 +256,7 @@ export function SearchResults() {
 				)}
 			</div>
 			)}
+			</div>
 		</div>
 		{/* Document Overlay */}
 		{showDocumentOverlay && selectedNode && (

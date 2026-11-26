@@ -164,12 +164,14 @@ export function SearchPanel() {
 					{/* Results Tab */}
 					<TabsContent
 						value="results"
-						className="flex-1 overflow-y-auto data-[state=inactive]:hidden">
-						{/* The search box sits in the Search tab; 16px gaps throughout */}
-						<div className="p-4 space-y-3">
+						className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
+						{/* The search box stays put; only the results list scrolls. 16px gaps throughout */}
+						<div className="shrink-0 space-y-3 p-4 pb-3">
 							<WorkspaceBar />
 							<SearchInput />
 							<AddLinkButton variant="link" />
+						</div>
+						<div className="min-h-0 flex-1 px-4 pb-4">
 							{searchCount > 0 ? (
 								<SearchResults />
 							) : (

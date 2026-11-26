@@ -70,7 +70,7 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 
 	return (
 		<table className="w-full text-sm" data-testid="results-table">
-			<thead className="text-xs text-muted-foreground text-left border-b">
+			<thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground text-left shadow-[inset_0_-1px_0_var(--border)]">
 				<tr>
 					{header('score', 'Score', 'w-14')}
 					{header('title', wide ? 'Title · summary' : 'Title')}
