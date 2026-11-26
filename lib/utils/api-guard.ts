@@ -42,6 +42,8 @@ export const RATE_LIMITS = {
 	cluster: { limit: 10, windowMs: 60_000 },
 	search: { limit: 60, windowMs: 60_000 },
 	tags: { limit: 30, windowMs: 60_000 },
+	/** Add by link fetches other websites */
+	sources: { limit: 10, windowMs: 60_000 },
 } as const;
 
 type Bucket = { count: number; resetAt: number };
