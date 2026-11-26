@@ -14,7 +14,7 @@ function setup(searchParams = '') {
 const reset = () => {
 	useAppStore.setState({
 		selectedContinents: [], selectedCountries: [], selectedPublishers: [], selectedTags: [],
-		selectedSimilarityRanges: [], colorMode: 'continent', nodeSizeMode: 'none', clusterMode: 'none',
+		selectedSimilarityRanges: [], colorMode: 'similarityRange', nodeSizeMode: 'none', clusterMode: 'none',
 		searchResults: [], filteredResults: [],
 	});
 	useAppStore.setState({ layoutType: 'forceDirected2d' });
@@ -48,7 +48,8 @@ describe('filters and view settings in the web address', () => {
 
 	it('ignores an unknown setting in a link', () => {
 		setup('?color=rainbow&layout=spiral');
-		expect(useAppStore.getState().colorMode).toBe('continent');
+		// Similarity is the default colouring
+		expect(useAppStore.getState().colorMode).toBe('similarityRange');
 		expect(useAppStore.getState().layoutType).toBe('forceDirected2d');
 	});
 
@@ -67,7 +68,7 @@ describe('filters and view settings in the web address', () => {
 
 	it('leaves defaults out, so a plain view keeps a short address', async () => {
 		const updates = setup('?color=publisher');
-		await act(async () => useAppStore.getState().setColorMode('continent'));
+		await act(async () => useAppStore.getState().setColorMode('similarityRange'));
 		await act(() => new Promise((r) => setTimeout(r, 100)));
 		expect(updates.at(-1)?.searchParams.has('color')).toBe(false);
 	});

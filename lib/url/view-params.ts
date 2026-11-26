@@ -18,7 +18,7 @@ const filterParams = Object.fromEntries(URL_FILTERS.map((f) => [f.urlKey, list])
 export const viewUrlParams = {
 	...filterParams,
 	// An unknown value in a link falls back to the default
-	color: parseAsStringLiteral(ids(COLOR_MODES)).withDefault('continent'),
+	color: parseAsStringLiteral(ids(COLOR_MODES)).withDefault('similarityRange'),
 	size: parseAsStringLiteral(ids(SIZE_MODES)).withDefault('none'),
 	cluster: parseAsStringLiteral(ids(CLUSTER_MODES)).withDefault('none'),
 	layout: parseAsStringLiteral(LAYOUT_IDS).withDefault('forceDirected2d'),

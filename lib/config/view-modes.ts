@@ -83,7 +83,7 @@ export const COLOR_MODES = [
 	},
 	{
 		id: 'similarityRange',
-		label: 'Similarity range',
+		label: 'Similarity',
 		colorOf: (n) => {
 			if (n.score === undefined) return UNKNOWN_COLOR;
 			const percent = Math.round(n.score * 100);
