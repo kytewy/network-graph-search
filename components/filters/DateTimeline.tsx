@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-state';
 import { periodLabel, timelineBars } from '@/lib/filters/date-range';
 
-// Purple for what's kept, pale purple for the rest, like the Similarity filter (green means high similarity on the graph)
-const IN_RANGE = 'bg-primary';
-const OUT_OF_RANGE = 'bg-primary/20';
+// Soft purple for what's kept, paler for the rest, like the Similarity filter's bars (green means high similarity on the graph)
+const IN_RANGE = 'bg-primary/35';
+const OUT_OF_RANGE = 'bg-primary/10';
 // Two range sliders on one track: only their handles take the pointer
 const HANDLE =
 	'pointer-events-none absolute inset-x-0 top-0 h-4 w-full appearance-none bg-transparent ' +
@@ -21,7 +21,8 @@ const FIELDS = {
 		noun: 'published',
 		range: (s: ReturnType<typeof useAppStore.getState>) => s.selectedPublished,
 		set: (s: ReturnType<typeof useAppStore.getState>) => s.setPublishedRange,
-		quick: [['Last year', () => ago(365).slice(0, 7)], ['Since EU AI Act', () => '2024-07']] as [string, () => string][],
+		// Quick ranges for publication dates may come back later
+		quick: [] as [string, () => string][],
 	},
 	added: {
 		noun: 'added',
