@@ -29,6 +29,8 @@ export interface Node {
   /** Its best matching passages from the search (heading, text, where it sits), and how many matched */
   passages?: import('@/lib/contracts/search').PassageMatch[];
   matches?: number;
+  /** When it was published, YYYY-MM-DD (missing when undated) */
+  published?: string;
   /** Which searches in the workspace found it (#1, #2, …), set when results merge */
   foundBy?: number[];
   

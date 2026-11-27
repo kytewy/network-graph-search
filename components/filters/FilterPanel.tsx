@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter, Target, Globe, Tag, Building2, Info, Search, type LucideIcon } from 'lucide-react';
+import { Filter, Target, Globe, Tag, Building2, Info, Search, CalendarRange, type LucideIcon } from 'lucide-react';
 import { SearchesFilter } from './SearchesFilter';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -11,6 +11,7 @@ import { SimilarityHistogram } from '@/components/filters/SimilarityHistogram';
 import { GeographicFilters } from './GeographicFilters';
 import { PublisherFilters } from './PublisherFilters';
 import { TagFilters } from './TagFilters';
+import { PublishedTimeline } from './PublishedTimeline';
 
 /**
  * FilterPanel - Main coordinator for filtering options
@@ -117,6 +118,7 @@ const FilterPanel = () => {
 	// The workspace's searches (the Searches filter shows once there are two or more)
 	const rounds = useAppStore((s) => s.rounds.length);
 	const selectedSearches = useAppStore((s) => s.selectedSearches);
+	const publishedSet = useAppStore((s) => s.selectedPublished.length > 0);
 
 	if (!isClient) {
 		return (
@@ -142,6 +144,7 @@ const FilterPanel = () => {
 		clearTagFilters();
 		clearSimilarityRanges();
 		clearPublisherFilters();
+		useAppStore.getState().setPublishedRange([]);
 	};
 
 	// Derived data
@@ -155,7 +158,8 @@ const FilterPanel = () => {
 		selectedTags.length +
 		selectedPublishers.length +
 		selectedSimilarityRanges.length +
-		selectedSearches.length;
+		selectedSearches.length +
+		(publishedSet ? 1 : 0);
 
 	return (
 		<div className="space-y-3">
@@ -187,6 +191,10 @@ const FilterPanel = () => {
 			)}
 			<FilterSection icon={Target} title="Similarity Score" about="How closely each result matches your search. Tick a band to keep only those results.">
 				<SimilarityHistogram />
+			</FilterSection>
+
+			<FilterSection icon={CalendarRange} title="Published" about="When each result was published. Drag the handles, tap a bar, or pick a range to keep only those dates.">
+				<PublishedTimeline />
 			</FilterSection>
 
 			{/* Geographic Filters Card */}

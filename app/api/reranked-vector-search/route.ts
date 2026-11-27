@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchDocuments, searchPassages, searchPinecone } from '@/lib/services/vector_search';
 import { groupPassages, rankDocuments } from '@/lib/search/passage-results';
+import { publishedDates } from '@/lib/search/published';
 import { buildPineconeFilter, logFilterExpression } from '@/lib/utils/pinecone-filters';
 import { badRequest, rateLimit, serverError } from '@/lib/utils/api-guard';
 import { parseSearchRequest, type SearchResponse } from '@/lib/contracts/search';
@@ -42,11 +43,15 @@ export async function POST(request: NextRequest) {
 		for (const hit of await fetchDocuments(ranked.map(([id]) => id).filter((id) => !byId.has(id)))) byId.set(hit._id, hit);
 		const hits = ranked.filter(([id]) => byId.has(id)).map(([id, score]) => ({ ...byId.get(id)!, _score: score }));
 
+		// Publication dates live in Postgres, for the Published timeline
+		const dates = await publishedDates(hits.map((h) => h._id ?? h.id ?? ''));
+
 		const reply: SearchResponse = {
 			nodes: hits.map((hit) => {
 				const node = toApiNode(hit);
 				const group = groups.get(node.id);
-				return group ? { ...node, passages: group.passages, matches: group.matches } : node;
+				const published = dates.get(node.id);
+				return { ...node, ...(group && { passages: group.passages, matches: group.matches }), ...(published && { published }) };
 			}),
 			edges: toApiEdges(hits),
 		};

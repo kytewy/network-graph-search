@@ -65,6 +65,8 @@ export const apiNodeSchema = z.object({
 	/** Its best matching passages (at most 3), and how many matched in all */
 	passages: z.array(passageMatchSchema).optional(),
 	matches: z.number().optional(),
+	/** When it was published, YYYY-MM-DD (from Postgres; missing when undated) */
+	published: z.string().optional(),
 });
 
 /** A link between two documents in the results. */

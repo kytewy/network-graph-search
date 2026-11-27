@@ -9,6 +9,7 @@
 import type { Node } from '@/lib/config/types';
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { SEARCH_CONFIG } from '@/lib/config/search-config';
+import { inPublishedRange } from '@/lib/filters/published-range';
 import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from '@/lib/stores/country_map';
 
 interface FilterDef {
@@ -84,6 +85,15 @@ export const FILTERS = [
 			SEARCH_CONFIG.SIMILARITY_RANGES.some((r) => s.includes(r.range) && percentOf(n) >= r.min && percentOf(n) <= r.max),
 		inPinecone: false,
 		knownValues: () => SEARCH_CONFIG.SIMILARITY_RANGES.map((r) => r.range),
+	},
+	{
+		// A range of months [from, to], YYYY-MM, set on the Published timeline; only the page has the dates
+		id: 'published',
+		urlKey: 'published',
+		storeKey: 'selectedPublished',
+		group: 'published',
+		matches: (n, s) => inPublishedRange(n.published, s),
+		inPinecone: false,
 	},
 	{
 		// Which searches in the workspace found it; "2+" = found by more than one

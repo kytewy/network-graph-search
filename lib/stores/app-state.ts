@@ -72,6 +72,9 @@ interface SearchState {
 	// Tag filtering state
 	selectedTags: string[]; // e.g., ['important', 'regulations']
 	selectedPublishers: string[]; // e.g., ['Law firm', 'Government']
+	/** Published between these months, [from, to] as YYYY-MM; empty = any date */
+	selectedPublished: string[];
+	setPublishedRange: (range: string[]) => void;
 
 	// Location filtering actions
 	toggleContinent: (continent: string) => void; // Smart toggle: selects continent, deselects its individual countries
@@ -148,6 +151,7 @@ export const useAppStore = create<AppState>()(
 		// Tag filtering state
 		selectedTags: [],
 		selectedPublishers: [],
+		selectedPublished: [],
 
 		// Basic actions
 		setQuery: (query) => set({ query }),
@@ -404,6 +408,11 @@ export const useAppStore = create<AppState>()(
 					? state.selectedPublishers.filter((p) => p !== publisher)
 					: [...state.selectedPublishers, publisher],
 			}));
+			get().applyFilters();
+		},
+
+		setPublishedRange: (range) => {
+			set({ selectedPublished: range });
 			get().applyFilters();
 		},
 
