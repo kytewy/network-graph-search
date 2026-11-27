@@ -1,36 +1,31 @@
 import { expect, test } from '@playwright/test';
 import { search } from './helpers';
 
-test('both panels close to thin rails, give the graph the room, and stay closed after a refresh', async ({ page }) => {
+test('one button per panel: maximize over the graph, and restore', async ({ page }) => {
 	await search(page);
-	const graph = page.getByTestId('graph');
-	const before = (await graph.boundingBox())!.width;
-
 	// The two header bars line up: same top and same height
-	const leftHeader = page.locator('[data-panel-header="left"]');
-	const rightHeader = page.locator('[data-panel-header="right"]');
-	const [l, r] = [await leftHeader.boundingBox(), await rightHeader.boundingBox()];
+	const [l, r] = [await page.locator('[data-panel-header="left"]').boundingBox(), await page.locator('[data-panel-header="right"]').boundingBox()];
 	expect(Math.abs(l!.y - r!.y)).toBeLessThan(1);
 	expect(Math.abs(l!.height - r!.height)).toBeLessThan(1);
+	await expect(page.getByRole('button', { name: /^(Maximize (search|analysis) panel|Fold sidebar)$/ })).toHaveCount(3);
+	await expect(page.getByRole('button', { name: /^Close .* panel$/ })).toHaveCount(0);
 
-	await page.getByRole('button', { name: 'Close search panel' }).click();
-	await page.getByRole('button', { name: 'Close analysis panel' }).click();
-	await expect(page.getByTestId('left-rail')).toBeVisible();
-	await expect(page.getByTestId('right-rail')).toBeVisible();
-	await expect.poll(async () => (await graph.boundingBox())!.width).toBeGreaterThan(before + 600);
-
-	await page.reload();
-	await expect(page.getByTestId('left-rail')).toBeVisible();
-
-	// The rails open the panels again
-	await page.getByRole('button', { name: 'Open search panel' }).click();
-	await page.getByRole('button', { name: 'Open analysis panel' }).click();
-	await expect(page.getByRole('tab', { name: /^Search/ })).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Close analysis panel' })).toBeVisible();
+	// Maximized, a panel covers the graph; the graph keeps its size underneath
+	const graph = page.getByTestId('graph');
+	const before = (await graph.boundingBox())!.width;
+	await page.getByRole('button', { name: 'Maximize analysis panel' }).click();
+	await expect(page.getByRole('button', { name: 'Restore analysis panel' })).toBeVisible();
+	expect((await graph.boundingBox())!.width).toBe(before);
 });
 
-test('one fold button per panel, and no widen arrows', async ({ page }) => {
+test('the search panel maximizes over the graph and restores', async ({ page }) => {
 	await page.goto('/graph');
-	await expect(page.getByRole('button', { name: /^(Close (search|analysis) panel|Fold sidebar)$/ })).toHaveCount(3);
-	await expect(page.getByRole('button', { name: /^(Expand|Collapse) .* panel$/ })).toHaveCount(0);
+	const panel = page.getByTestId('search-panel');
+	const narrow = (await panel.boundingBox())!.width;
+	await page.getByRole('button', { name: 'Maximize search panel' }).click();
+	await expect.poll(async () => (await panel.boundingBox())!.width).toBeGreaterThan(narrow * 1.5);
+	await page.getByRole('button', { name: 'Restore search panel' }).click();
+	await expect.poll(async () => (await panel.boundingBox())!.width).toBeLessThan(narrow + 5);
+	await page.getByRole('button', { name: 'Maximize analysis panel' }).click();
+	await expect(page.getByRole('button', { name: 'Restore analysis panel' })).toBeVisible();
 });

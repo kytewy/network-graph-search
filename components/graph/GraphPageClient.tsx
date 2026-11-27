@@ -1,6 +1,6 @@
 'use client';
 
-import { PANEL_WIDTH, PanelCloseButton, PanelRail, PanelSlot, widenOnDoubleClick } from '@/components/layout/PanelChrome';
+import { PANEL_WIDTH, WIDE_STOPS_AT, PanelMaximizeButton, PanelRail, PanelSlot, widenOnDoubleClick } from '@/components/layout/PanelChrome';
 import { ColorLegend } from '@/components/network/ColorLegend';
 import { NetworkGraphCanvas } from '@/components/network/NetworkGraphCanvas';
 import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
@@ -17,9 +17,8 @@ export function GraphPageClient() {
 	);
 	const rightCollapsed = useAppStore((state) => state.rightPanelCollapsed);
 	const setRightCollapsed = useAppStore((state) => state.setRightPanelCollapsed);
+	// Maximized, the chat covers the graph up to the search panel (or its rail)
 	const leftCollapsed = useAppStore((state) => state.searchPanelCollapsed);
-	// A widened panel grows in place; only one is wide at a time
-	const leftWide = useAppStore((state) => state.searchPanelExpanded);
 
 	// The search, filters and graph settings in the web address
 	// (refresh, shared link, Back/Forward)
@@ -30,7 +29,7 @@ export function GraphPageClient() {
 		<NetworkGraphProvider>
 			<div data-page="graph" className="relative flex h-screen overflow-clip bg-background">
 				{/* Search & filters, sliding to its rail when folded */}
-				<PanelSlot open={!leftCollapsed} wide={leftWide} width={PANEL_WIDTH.left}>
+				<PanelSlot open={!leftCollapsed} width={PANEL_WIDTH.left}>
 					<SearchPanel />
 				</PanelSlot>
 
@@ -43,19 +42,19 @@ export function GraphPageClient() {
 				</div>
 
 				{/* Right Panel, or its thin rail when closed */}
-				<PanelSlot open={!rightCollapsed} wide={rightPanelExpanded} width={PANEL_WIDTH.right}>
+				<PanelSlot open={!rightCollapsed} width={PANEL_WIDTH.right}>
 				{rightCollapsed ? (
 					<PanelRail side="right" name="analysis" onOpen={() => setRightCollapsed(false)} />
 				) : (
 				<div
 					className={`${
-						rightPanelExpanded ? 'w-full' : `${PANEL_WIDTH.right} shrink-0`
+						rightPanelExpanded ? `absolute inset-y-0 right-0 ${leftCollapsed ? WIDE_STOPS_AT.right.closed : WIDE_STOPS_AT.right.open} z-20 shadow-xl` : `${PANEL_WIDTH.right} shrink-0`
 					} h-screen bg-card border-l border-sidebar-border overflow-clip flex flex-col`}>
 					{/* Context | Chat | Clusters tabs are the header, like the search panel's */}
 					<ContextManagement
 						rightPanelExpanded={rightPanelExpanded}
-						// One fold button, on the graph side; double-click the header to widen
-						headerStart={<PanelCloseButton side="right" name="analysis" onClick={() => setRightCollapsed(true)} />}
+						// One button, on the graph side: maximize over the graph, or restore (double-clicking the header does the same)
+						headerStart={<PanelMaximizeButton name="analysis" wide={rightPanelExpanded} onClick={() => setRightPanelExpanded(!rightPanelExpanded)} />}
 						headerProps={widenOnDoubleClick(rightPanelExpanded, () => setRightPanelExpanded(!rightPanelExpanded))}
 					/>
 				</div>

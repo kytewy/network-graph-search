@@ -10,7 +10,7 @@ import FilterPanel from '@/components/filters/FilterPanel';
 import { useAppStore } from '@/lib/stores/app-state';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter } from 'lucide-react';
-import { PANEL_HEADER, PANEL_TAB, PANEL_WIDTH, PanelCloseButton, PanelRail, widenOnDoubleClick } from '@/components/layout/PanelChrome';
+import { PANEL_HEADER, PANEL_TAB, PANEL_WIDTH, WIDE_STOPS_AT, PanelMaximizeButton, PanelRail, widenOnDoubleClick } from '@/components/layout/PanelChrome';
 
 /**
  * SearchPanel - Unified left sidebar for search and filtering
@@ -39,6 +39,8 @@ export function SearchPanel() {
 	const expanded = useAppStore((state) => state.searchPanelExpanded);
 	const setExpanded = useAppStore((state) => state.setSearchPanelExpanded);
 	const collapsed = useAppStore((state) => state.searchPanelCollapsed);
+	// Maximized, it covers the graph up to the chat panel (or its rail)
+	const rightCollapsed = useAppStore((state) => state.rightPanelCollapsed);
 	const setCollapsed = useAppStore((state) => state.setSearchPanelCollapsed);
 
 	useEffect(() => {
@@ -71,8 +73,8 @@ export function SearchPanel() {
 
 	// Double-clicking the header toggles between the tabbed sidebar and the wide view
 	const widen = widenOnDoubleClick(expanded, () => setExpanded(!expanded));
-	// Folds the panel to a thin rail on the left edge; sits on the graph side of the header
-	const closeButton = <PanelCloseButton side="left" name="search" onClick={() => setCollapsed(true)} />;
+	// One button per panel: maximize over the graph, or restore
+	const closeButton = <PanelMaximizeButton name="search" wide={expanded} onClick={() => setExpanded(!expanded)} />;
 
 	// Wide: no tabs. Search box on top, filters column beside the results grid,
 	// so ticking a filter changes the results right next to it.
@@ -80,7 +82,7 @@ export function SearchPanel() {
 		return (
 			<div
 				data-testid="search-panel"
-				className="w-full bg-card border-r border-sidebar-border flex flex-col h-screen">
+				className={`absolute inset-y-0 left-0 ${rightCollapsed ? WIDE_STOPS_AT.left.closed : WIDE_STOPS_AT.left.open} z-20 shadow-xl bg-card border-r border-sidebar-border flex flex-col`}>
 				<div data-panel-header="left" className={PANEL_HEADER} {...widen}>
 					<span className="flex items-center gap-2 text-sm font-semibold text-primary">
 						<Search className="h-3 w-3" />

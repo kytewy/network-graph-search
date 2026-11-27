@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Maximize2, Minimize2, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 
 /**
  * The pieces both side panels share, so they line up: one header height, and
@@ -25,8 +25,14 @@ export const PANEL_TAB =
  * panel's edge (or its 40px rail).
  */
 export const PANEL_WIDTH = { left: 'w-96', right: 'w-[26rem]' } as const;
-/** A widened panel: it grows in place (the graph makes room) rather than floating over it */
-export const PANEL_WIDE = 'w-[min(48rem,55vw)]';
+/**
+ * A maximized panel covers the graph, from its own edge to the other panel's (or that panel's
+ * 40px rail when it's folded). Written out in full so Tailwind finds them.
+ */
+export const WIDE_STOPS_AT = {
+	left: { open: 'right-[26rem]', closed: 'right-10' },
+	right: { open: 'left-96', closed: 'left-10' },
+} as const;
 
 type Side = 'left' | 'right';
 
@@ -34,11 +40,11 @@ type Side = 'left' | 'right';
 export const PANEL_MOTION = 'transition-[width] duration-200 ease-out';
 
 /**
- * The space a side panel takes in the row: its width when open, wider when widened, the 40px
- * rail when folded, sliding between them. The panel stays in place; the graph makes room.
+ * The space a side panel takes in the row: its width when open, the 40px rail when folded,
+ * sliding between the two. A maximized panel floats over the graph from here (WIDE_STOPS_AT).
  */
-export function PanelSlot({ open, wide = false, width, children }: { open: boolean; wide?: boolean; width: string; children: ReactNode }) {
-	return <div className={`${!open ? 'w-10' : wide ? PANEL_WIDE : width} shrink-0 h-screen overflow-hidden ${PANEL_MOTION}`}>{children}</div>;
+export function PanelSlot({ open, width, children }: { open: boolean; width: string; children: ReactNode }) {
+	return <div className={`${open ? width : 'w-10'} shrink-0 h-screen overflow-hidden ${PANEL_MOTION}`}>{children}</div>;
 }
 
 /**
@@ -47,6 +53,16 @@ export function PanelSlot({ open, wide = false, width, children }: { open: boole
  */
 export function widenOnDoubleClick(wide: boolean, toggle: () => void) {
 	return { onDoubleClick: toggle, title: wide ? 'Double-click to narrow' : 'Double-click to widen' };
+}
+
+/** Widens a panel in place, or restores it: the button beside each fold button */
+export function PanelMaximizeButton({ name, wide, onClick }: { name: string; wide: boolean; onClick: () => void }) {
+	const Icon = wide ? Minimize2 : Maximize2;
+	return (
+		<button type="button" onClick={onClick} aria-label={`${wide ? 'Restore' : 'Maximize'} ${name} panel`} title={wide ? 'Restore' : 'Maximize'} className={PANEL_BUTTON}>
+			<Icon className="h-4 w-4" />
+		</button>
+	);
 }
 
 /** Folds a panel to the edge it sits on. Sits on the header's graph side, like the sidebar's. */
