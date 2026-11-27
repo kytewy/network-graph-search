@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef } from 'react';
  * The stretch follows quickly, and lets go almost at once with a fast ease-out that doesn't overshoot.
  */
 /** maxPx: the furthest the end can ever move, however hard you scroll (the box height is far too loose on a tall list) */
-export const RUBBER_BAND = { coefficient: 0.55, wheelShare: 0.15, followMs: 90, settleMs: 380, idleMs: 50, maxPx: 48 } as const;
+export const RUBBER_BAND = { coefficient: 0.55, wheelShare: 0.15, followMs: 90, settleMs: 220, idleMs: 30, maxPx: 48 } as const;
 
 /** How far the list shows stretched after pulling `pulled` pixels past its end, in a box `height` tall */
 export function stretch(pulled: number, height: number): number {
