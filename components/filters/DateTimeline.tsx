@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-state';
 import { periodLabel, timelineBars } from '@/lib/filters/date-range';
 
-// Bars inside the range are green, like the similarity colours; the rest stay pale
-const IN_RANGE = 'bg-[#97c459]';
-const OUT_OF_RANGE = 'bg-[#cfe6e2]';
+// Purple for what's kept, pale purple for the rest, like the Similarity filter (green means high similarity on the graph)
+const IN_RANGE = 'bg-primary';
+const OUT_OF_RANGE = 'bg-primary/20';
 // Two range sliders on one track: only their handles take the pointer
 const HANDLE =
 	'pointer-events-none absolute inset-x-0 top-0 h-4 w-full appearance-none bg-transparent ' +
