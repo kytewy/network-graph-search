@@ -2,6 +2,7 @@
 
 import { CONTROL, CONTROL_ICON } from '@/components/ui/control';
 import { SearchError } from './SearchError';
+import { FilterDropdowns } from './FilterDropdowns';
 import { RecentSearches } from './RecentSearches';
 import { useRecentSearches } from '@/lib/stores/recent-searches';
 import { useSearch } from '@/hooks/use-search';
@@ -54,6 +55,8 @@ export function SearchInput() {
 	const selectedContinents = useAppStore((state) => state.selectedContinents);
 	const selectedCountries = useAppStore((state) => state.selectedCountries);
 	const toggleContinent = useAppStore((state) => state.toggleContinent);
+	// The wide search panel has no filters column: its filters sit in this row instead
+	const wide = useAppStore((state) => state.searchPanelExpanded);
 	const clearLocationFilters = useAppStore((state) => state.clearLocationFilters);
 
 	useEffect(() => {
@@ -142,8 +145,8 @@ export function SearchInput() {
 				)}
 			</div>
 
-			{/* One row under the box: Geography, then how many results, then search */}
-			<div className="flex items-center gap-2">
+			{/* One row under the box: Geography (and, when wide, the other filters), then how many results, then search */}
+			<div className="flex flex-wrap items-center gap-2">
 				{/* Geography Filter */}
 				<Popover>
 					<PopoverTrigger asChild>
@@ -199,6 +202,7 @@ export function SearchInput() {
 						</div>
 					</PopoverContent>
 				</Popover>
+				{wide && <FilterDropdowns />}
 
 				<div className="ml-auto flex items-center gap-2">
 					<div

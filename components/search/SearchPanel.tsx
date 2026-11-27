@@ -74,8 +74,7 @@ export function SearchPanel() {
 	// One button per panel: maximize over the graph, or restore
 	const closeButton = <PanelMaximizeButton name="search" wide={expanded} onClick={() => setExpanded(!expanded)} />;
 
-	// Wide: no tabs. Search box on top, filters column beside the results grid,
-	// so ticking a filter changes the results right next to it.
+	// Wide: no tabs. Search box on top with every filter as a dropdown in its row, results below at full width
 	if (expanded) {
 		return (
 			<div
@@ -94,16 +93,8 @@ export function SearchPanel() {
 					<AddLinkButton variant="link" />
 				</div>
 				{searchCount > 0 ? (
-					<div className="flex flex-1 min-h-0">
-						<aside
-							aria-label="Filters"
-							className="w-72 shrink-0 overflow-y-auto border-r border-sidebar-border p-4">
-							
-							<FilterPanel />
-						</aside>
-						<div className="flex-1 min-w-0 overflow-y-auto p-4">
-							<SearchResults />
-						</div>
+					<div className="flex-1 min-h-0 min-w-0 overflow-y-auto p-4">
+						<SearchResults />
 					</div>
 				) : (
 					<div className="flex flex-1 flex-col items-center justify-center">

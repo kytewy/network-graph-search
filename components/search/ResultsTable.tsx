@@ -75,7 +75,6 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 				<tr>
 					{header('score', 'Score', 'w-14')}
 					{header('title', wide ? 'Title · summary' : 'Title')}
-					{wide && <th className="px-2 py-1.5 font-medium w-40">Tags</th>}
 					{wide && found.collected && <th className="px-2 py-1.5 font-medium w-24 whitespace-nowrap">Found by</th>}
 					{wide && header('cluster', 'Cluster', 'w-36')}
 					<th className="px-2 py-1.5 font-medium whitespace-nowrap w-14 text-center" aria-sort={sort.key === 'context' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
@@ -125,16 +124,6 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 							{/* One quiet line about the passages that matched */}
 							{node.passages?.[0] && <p className="text-[11.5px] text-muted-foreground/80 line-clamp-1" data-match-line>{matchLine(node.matches ?? 1, node.passages[0].heading, node.passages[0].text)}</p>}
 						</td>
-						{wide && (
-							<td className="px-2 py-2">
-								<div className="flex flex-wrap gap-1">
-									{(node.tags ?? []).slice(0, 2).map((tag) => (
-										<Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
-									))}
-									{(node.tags?.length ?? 0) > 2 && <Badge variant="outline" className="text-xs">+{node.tags!.length - 2}</Badge>}
-								</div>
-							</td>
-						)}
 						{wide && found.collected && (
 							<td className="px-2 py-2 text-xs whitespace-nowrap" data-found-by>
 								<span className="inline-flex items-center gap-1">

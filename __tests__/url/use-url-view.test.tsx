@@ -24,7 +24,7 @@ describe('cleanView', () => {
 	it('drops values a link might contain that the app does not know', () => {
 		const view = cleanView({
 			continent: ['Europe', 'Atlantis'], country: ['Canada', 'Narnia'], publisher: ['Regulator', 'Wizard'],
-			tag: ['risk'], similarity: ['81-100', '200-300'],
+			tag: ['risk'], similarity: ['81-100', '200-300'], published: [],
 			color: 'publisher', size: 'none', cluster: 'none', layout: 'circular2d',
 		});
 		expect(view).toMatchObject({
