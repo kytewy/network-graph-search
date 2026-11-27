@@ -49,8 +49,8 @@ test('lassoing nodes and choosing Analyze in a new chat starts a chat with just 
 	const caught = Number((await heading.textContent())?.match(/\d+/)?.[0]);
 
 	await page.getByRole('button', { name: 'Analyze in new chat' }).click();
-	const switcher = page.getByTestId('chat-switcher');
-	await expect(switcher.getByRole('button', { name: `Chats: Selection: ${caught} documents` })).toBeVisible();
+	const tabs = page.getByRole('tablist', { name: 'Chats' });
+	await expect(tabs.getByRole('tab', { name: `Selection: ${caught} documents` })).toHaveAttribute('aria-selected', 'true');
 	await expect(page.getByTestId('documents-strip')).toContainText(`${caught} document`);
 });
 
