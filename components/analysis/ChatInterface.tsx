@@ -232,8 +232,9 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 			// Wide: a comfortable reading column in the middle instead of edge to edge
 			className={`flex flex-col min-h-[calc(100vh-5rem)] ${rightPanelExpanded && !split ? 'w-full max-w-3xl mx-auto px-6' : ''}`}>
 			{/* Flip between chats, start one, delete one */}
-			{/* A thin line underneath shows where messages slide under */}
-			<div className="sticky top-0 z-10 -mx-4 -mt-4 border-b border-border/70 bg-card px-4 pt-1">
+			{/* A thin line underneath shows where messages slide under; it runs edge to edge across
+			    the panel (clipped by it), even when the chat is a centred column */}
+			<div className="sticky top-0 z-10 -mx-4 -mt-4 bg-card px-4 pt-1 after:absolute after:-inset-x-[100vw] after:bottom-0 after:h-px after:bg-border/70 after:content-['']">
 				<ChatSwitcher
 					onSwitch={() => {
 						setOpenDocId(null);

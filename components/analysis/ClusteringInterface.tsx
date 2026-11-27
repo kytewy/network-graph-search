@@ -422,7 +422,8 @@ export default function ClusteringInterface({
 
 
 	return (
-		<div className="space-y-4">
+		// Maximized: the same comfortable reading column as the chat, not edge to edge
+		<div className={`space-y-4 ${rightPanelExpanded ? 'mx-auto w-full max-w-3xl px-6' : ''}`}>
 			{/* What clustering does, in one line (the count is on the Context tab) */}
 			<p className="text-xs text-muted-foreground">Groups documents by similar content (TF-IDF + KMeans).</p>
 

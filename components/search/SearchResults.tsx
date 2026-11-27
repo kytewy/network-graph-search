@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/lib/stores/app-state';
 import { contentPreview } from '@/lib/utils/text-preview';
 import { Highlighted } from './Highlighted';
+import { useRubberBand } from '@/hooks/use-rubber-band';
 import { ArrowUpDown, LayoutGrid, Rows3 } from 'lucide-react';
 import { ResultsTable } from './ResultsTable';
 import { foundByLabel, useFoundBy } from '@/hooks/use-found-by';
@@ -46,6 +47,9 @@ export function SearchResults() {
 	// Get state from app store
 	const searchResults = useAppStore((state) => state.searchResults);
 	const filteredResults = useAppStore((state) => state.filteredResults);
+	// The list stretches and springs back at its ends
+	const scrollRef = useRef<HTMLDivElement>(null);
+	useRubberBand(scrollRef);
 	// The words the results were found with (every search in the workspace), for highlighting
 	const query = useAppStore((state) => state.rounds.map((r) => r.query).join(' ') || state.query);
 	const wide = useAppStore((state) => state.searchPanelExpanded);
@@ -165,7 +169,7 @@ export function SearchResults() {
 					</div>
 			</div>
 
-			<div className="min-h-0 flex-1 overflow-y-auto" data-testid="results-scroll">
+			<div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto" data-testid="results-scroll">
 			{view === 'table' ? (
 				<ResultsTable
 					results={processedResults as Node[]}
