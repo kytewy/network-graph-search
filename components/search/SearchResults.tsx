@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/lib/stores/app-state';
 import { contentPreview } from '@/lib/utils/text-preview';
 import { Highlighted } from './Highlighted';
-import { useRubberBand } from '@/hooks/use-rubber-band';
+import { useScrollActivity } from '@/hooks/use-scroll-activity';
 import { ArrowUpDown, LayoutGrid, Rows3 } from 'lucide-react';
 import { ResultsTable } from './ResultsTable';
 import { foundByLabel, useFoundBy } from '@/hooks/use-found-by';
@@ -48,7 +48,7 @@ export function SearchResults() {
 	const searchResults = useAppStore((state) => state.searchResults);
 	const filteredResults = useAppStore((state) => state.filteredResults);
 	// The list stretches and springs back at its ends
-	const scrollRef = useRubberBand();
+	const scrollRef = useScrollActivity();
 	// The words the results were found with (every search in the workspace), for highlighting
 	const query = useAppStore((state) => state.rounds.map((r) => r.query).join(' ') || state.query);
 	const wide = useAppStore((state) => state.searchPanelExpanded);

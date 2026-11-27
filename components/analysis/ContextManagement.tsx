@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, type ReactNode } from 'react';
-import { useRubberBand } from '@/hooks/use-rubber-band';
+import { useScrollActivity } from '@/hooks/use-scroll-activity';
 import { PANEL_HEADER, PANEL_TAB } from '@/components/layout/PanelChrome';
 import { ContextGroups, type ContextGrouping } from './ContextGroups';
 import { useHasAiClusters } from '@/hooks/use-ai-clusters';
@@ -66,7 +66,7 @@ export default function ContextManagement({
 	filterState = {},
 }: ContextManagementProps) {
 	// Chat and clusters stretch and spring back at their ends
-	const panelScrollRef = useRubberBand();
+	const panelScrollRef = useScrollActivity();
 	const [isClient, setIsClient] = useState(false);
 
 	// Get all store state - MUST be called before conditional returns
