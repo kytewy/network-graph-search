@@ -10,7 +10,7 @@ import FilterPanel from '@/components/filters/FilterPanel';
 import { useAppStore } from '@/lib/stores/app-state';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter } from 'lucide-react';
-import { PANEL_HEADER, PANEL_TAB, PANEL_WIDTH, WIDE_STOPS_AT, PanelCloseButton, PanelRail, widenOnDoubleClick } from '@/components/layout/PanelChrome';
+import { PANEL_HEADER, PANEL_TAB, PANEL_WIDTH, PanelCloseButton, PanelRail, widenOnDoubleClick } from '@/components/layout/PanelChrome';
 
 /**
  * SearchPanel - Unified left sidebar for search and filtering
@@ -40,8 +40,6 @@ export function SearchPanel() {
 	const setExpanded = useAppStore((state) => state.setSearchPanelExpanded);
 	const collapsed = useAppStore((state) => state.searchPanelCollapsed);
 	const setCollapsed = useAppStore((state) => state.setSearchPanelCollapsed);
-	// The wide view stops at the other panel, which may be folded to its rail
-	const rightCollapsed = useAppStore((state) => state.rightPanelCollapsed);
 
 	useEffect(() => {
 		setIsClient(true);
@@ -82,7 +80,7 @@ export function SearchPanel() {
 		return (
 			<div
 				data-testid="search-panel"
-				className={`absolute left-0 top-0 ${rightCollapsed ? WIDE_STOPS_AT.left.closed : WIDE_STOPS_AT.left.open} z-20 shadow-xl bg-card border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}>
+				className="w-full bg-card border-r border-sidebar-border flex flex-col h-screen">
 				<div data-panel-header="left" className={PANEL_HEADER} {...widen}>
 					<span className="flex items-center gap-2 text-sm font-semibold text-primary">
 						<Search className="h-3 w-3" />

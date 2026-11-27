@@ -25,10 +25,8 @@ export const PANEL_TAB =
  * panel's edge (or its 40px rail).
  */
 export const PANEL_WIDTH = { left: 'w-96', right: 'w-[26rem]' } as const;
-export const WIDE_STOPS_AT = {
-	left: { open: 'right-[26rem]', closed: 'right-10' },
-	right: { open: 'left-96', closed: 'left-10' },
-} as const;
+/** A widened panel: it grows in place (the graph makes room) rather than floating over it */
+export const PANEL_WIDE = 'w-[min(48rem,55vw)]';
 
 type Side = 'left' | 'right';
 
@@ -36,11 +34,11 @@ type Side = 'left' | 'right';
 export const PANEL_MOTION = 'transition-[width] duration-200 ease-out';
 
 /**
- * The space a side panel takes in the row: its width when open, the 40px rail when folded,
- * sliding between the two. A widened panel floats over the graph, so it isn't clipped here.
+ * The space a side panel takes in the row: its width when open, wider when widened, the 40px
+ * rail when folded, sliding between them. The panel stays in place; the graph makes room.
  */
-export function PanelSlot({ open, width, children }: { open: boolean; width: string; children: ReactNode }) {
-	return <div className={`${open ? width : 'w-10'} shrink-0 h-screen overflow-hidden ${PANEL_MOTION}`}>{children}</div>;
+export function PanelSlot({ open, wide = false, width, children }: { open: boolean; wide?: boolean; width: string; children: ReactNode }) {
+	return <div className={`${!open ? 'w-10' : wide ? PANEL_WIDE : width} shrink-0 h-screen overflow-hidden ${PANEL_MOTION}`}>{children}</div>;
 }
 
 /**

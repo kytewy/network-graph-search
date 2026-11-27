@@ -7,7 +7,7 @@ test('double-clicking the search header opens it wide, shows results in columns,
 	const narrow = (await panel.boundingBox())!.width;
 
 	await page.locator('[data-panel-header="left"]').dblclick({ position: { x: 2, y: 2 } });
-	await expect.poll(async () => (await panel.boundingBox())!.width).toBeGreaterThan(narrow * 2);
+	await expect.poll(async () => (await panel.boundingBox())!.width).toBeGreaterThan(narrow * 1.5);
 
 	// Wide: no tabs, and the filters sit beside the results
 	await expect(page.getByRole('tab', { name: /^Filters/ })).toHaveCount(0);
