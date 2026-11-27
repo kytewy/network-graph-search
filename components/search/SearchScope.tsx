@@ -73,6 +73,8 @@ const summary = (picked: string[]) => (picked.length <= 1 ? (picked[0] ?? '') : 
 export function SearchScope() {
 	const scope = useAppStore((s) => s.searchScope);
 	const setScope = useAppStore((s) => s.setSearchScope);
+	// Dates only in the wide panel (the narrow one has no room); still shown there if some are picked
+	const wide = useAppStore((s) => s.searchPanelExpanded);
 	const continents = scope.continents ?? [];
 	const publishers = scope.publishers ?? [];
 	const [from = '', to = ''] = scope.published ?? [];
@@ -88,6 +90,7 @@ export function SearchScope() {
 			<ScopeButton icon={Building2} label="Publisher" picked={summary(publishers)} onClear={() => setScope('publishers', [])}>
 				<Ticks options={PUBLISHERS.map((p) => ({ value: p.value, label: p.value }))} picked={publishers} onChange={(v) => setScope('publishers', v)} />
 			</ScopeButton>
+			{(wide || datesLabel) && (
 			<ScopeButton icon={CalendarRange} label="Published" picked={datesLabel} onClear={() => setScope('published', [])}>
 				<div className="grid grid-cols-2 gap-2 text-xs">
 					<label className="space-y-1">
@@ -101,6 +104,7 @@ export function SearchScope() {
 				</div>
 				<p className="text-xs text-muted-foreground">Undated documents are left out once you set dates.</p>
 			</ScopeButton>
+			)}
 		</div>
 	);
 }
