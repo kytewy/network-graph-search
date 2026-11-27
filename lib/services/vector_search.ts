@@ -5,6 +5,7 @@ import { debugLog } from '@/lib/utils/debug';
  */
 
 import { Pinecone } from '@pinecone-database/pinecone';
+import { passagesNamespace } from '@/lib/passages/passages.mjs';
 
 // Not exported from the package root, so derive it from the client
 type SearchRecordsOptions = Parameters<ReturnType<Pinecone['index']>['searchRecords']>[0];
@@ -133,4 +134,40 @@ export async function searchPinecone(
 		console.error('Error searching Pinecone:', error);
 		throw new Error(`Pinecone search failed: ${error}`);
 	}
+}
+
+function pineconeIndex() {
+	if (!PINECONE_API_KEY) throw new Error('PINECONE_API_KEY is not set');
+	const pc = new Pinecone({ apiKey: PINECONE_API_KEY });
+	return PINECONE_INDEX_HOST ? pc.index(PINECONE_INDEX_NAME, PINECONE_INDEX_HOST) : pc.index(PINECONE_INDEX_NAME);
+}
+
+/**
+ * Searches the passages (their own namespace, see lib/passages) with the same reranker, asking for
+ * a few per document so each result can say how many matched. Returns [] when there are none yet.
+ */
+export async function searchPassages(query: string, topK: number, filters?: Record<string, any>) {
+	// Tags live only on document records, so a tag filter can't apply to passages
+	if (filters && JSON.stringify(filters).includes('"tags"')) return [];
+	const candidates = Math.min(RERANK.maxCandidates, Math.max(RERANK.minCandidates, topK * 3));
+	const request: SearchRecordsOptions = {
+		query: { topK: candidates, inputs: { text: query }, ...(filters && Object.keys(filters).length ? { filter: filters } : {}) },
+		fields: ['chunk_text', 'document_id', 'position', 'heading', 'start'],
+		rerank: { model: RERANK.model, topN: candidates, rankFields: ['chunk_text'], parameters: { truncate: 'END' } },
+	};
+	try {
+		const response = await pineconeIndex().namespace(passagesNamespace()).searchRecords(request);
+		return response.result?.hits ?? [];
+	} catch (error) {
+		// Passages not indexed yet (or the namespace is missing): search works as before
+		debugLog('[Vector Search] Passage search skipped:', String(error));
+		return [];
+	}
+}
+
+/** Document records by id, for documents that only their passages found */
+export async function fetchDocuments(ids: string[]) {
+	if (ids.length === 0) return [];
+	const response = await pineconeIndex().namespace(PINECONE_NAMESPACE).fetch(ids);
+	return Object.entries(response.records ?? {}).map(([id, record]) => ({ _id: id, metadata: record.metadata ?? {} }));
 }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/lib/stores/app-state';
 import { contentPreview } from '@/lib/utils/text-preview';
+import { Highlighted } from './Highlighted';
 import { ArrowUpDown, LayoutGrid, Rows3 } from 'lucide-react';
 import { ResultsTable } from './ResultsTable';
 import { foundByLabel, useFoundBy } from '@/hooks/use-found-by';
@@ -45,6 +46,8 @@ export function SearchResults() {
 	// Get state from app store
 	const searchResults = useAppStore((state) => state.searchResults);
 	const filteredResults = useAppStore((state) => state.filteredResults);
+	// The words the results were found with (every search in the workspace), for highlighting
+	const query = useAppStore((state) => state.rounds.map((r) => r.query).join(' ') || state.query);
 	const wide = useAppStore((state) => state.searchPanelExpanded);
 	const found = useFoundBy();
 	const view = useAppStore((state) => state.resultsView);
@@ -220,12 +223,18 @@ export function SearchResults() {
 
 							</div>
 
-							{/* Content Preview */}
-							<div className="mt-2">
-								<p className="text-xs text-muted-foreground leading-relaxed">
-									{previewContent}
-								</p>
-							</div>
+							{/* The passage that matched, with the search words in amber; else the opening */}
+							{result.passages?.[0] ? (
+								<div className="mt-2 rounded-md bg-muted/60 px-2 py-1.5 text-xs leading-relaxed" data-best-passage>
+									{result.passages[0].heading && <p className="mb-0.5 font-medium text-foreground">{result.passages[0].heading}</p>}
+									<p className="line-clamp-3 text-muted-foreground"><Highlighted text={result.passages[0].text} query={query} /></p>
+									{(result.matches ?? 1) > 1 && <p className="mt-1 text-primary">+ {(result.matches ?? 1) - 1} more</p>}
+								</div>
+							) : (
+								<div className="mt-2">
+									<p className="text-xs text-muted-foreground leading-relaxed">{previewContent}</p>
+								</div>
+							)}
 
 							{/* Tags */}
 							{result.tags && result.tags.length > 0 && (

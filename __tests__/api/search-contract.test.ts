@@ -15,8 +15,8 @@ import {
 	searchResponseSchema,
 } from '@/lib/contracts/search';
 
-vi.mock('@/lib/services/vector_search', () => ({ searchPinecone: vi.fn() }));
-import { searchPinecone } from '@/lib/services/vector_search';
+vi.mock('@/lib/services/vector_search', () => ({ searchPinecone: vi.fn(), searchPassages: vi.fn(async () => []), fetchDocuments: vi.fn(async () => []) }));
+import { fetchDocuments, searchPassages, searchPinecone } from '@/lib/services/vector_search';
 import { POST as search } from '@/app/api/reranked-vector-search/route';
 import { resetRateLimits } from '@/lib/utils/api-guard';
 
@@ -108,5 +108,27 @@ describe('search route', () => {
 describe('searchResponseSchema', () => {
 	it('rejects a reply without nodes, so the app can show a clear error', () => {
 		expect(searchResponseSchema.safeParse({ edges: [] }).success).toBe(false);
+	});
+});
+
+describe('search by passage', () => {
+	beforeEach(() => {
+		resetRateLimits();
+		mockSearch.mockReset();
+	});
+
+	it('brings in a document only its passages found, with its best passages and match count', async () => {
+		mockSearch.mockResolvedValue({ results: { result: { hits: [{ _id: 'a', _score: 0.4, fields: { label: 'A' } }] } } });
+		(searchPassages as Mock).mockResolvedValueOnce([
+			{ _id: 'e23#p14', _score: 0.9, fields: { document_id: 'e23', position: 14, heading: 'Model Inventory', start: 9000, chunk_text: 'E-23 · Model Inventory\nKeep a complete inventory.' } },
+			{ _id: 'e23#p22', _score: 0.7, fields: { document_id: 'e23', position: 22, heading: 'Model Review', start: 15000, chunk_text: 'E-23 · Model Review\nReview models.' } },
+		]);
+		(fetchDocuments as Mock).mockResolvedValueOnce([{ _id: 'e23', metadata: { label: 'OSFI E-23', content: 'Full text' } }]);
+		const res = await post(JSON.stringify({ query: 'model inventory', topK: 10 }));
+		const { nodes } = searchResponseSchema.parse(await res.json());
+		expect(nodes.map((n) => n.id)).toEqual(['e23', 'a']);
+		expect(nodes[0]).toMatchObject({ label: 'OSFI E-23', score: 0.9, matches: 2 });
+		expect(nodes[0].passages?.[0]).toMatchObject({ heading: 'Model Inventory', text: 'Keep a complete inventory.' });
+		expect(nodes[1].passages).toBeUndefined();
 	});
 });

@@ -38,6 +38,15 @@ export const searchRequestSchema = z.object({
 	filters: z.record(z.string(), z.unknown()).optional(),
 });
 
+/** A passage of a document that matched the search: where it sits, its heading and its text */
+export const passageMatchSchema = z.object({
+	position: z.number(),
+	heading: z.string().nullable(),
+	start: z.number(),
+	text: z.string(),
+	score: z.number(),
+});
+
 /** One document as the search route sends it. */
 export const apiNodeSchema = z.object({
 	id: z.string(),
@@ -53,6 +62,9 @@ export const apiNodeSchema = z.object({
 	size: z.number(),
 	url: z.string().optional(),
 	tags: z.array(z.string()),
+	/** Its best matching passages (at most 3), and how many matched in all */
+	passages: z.array(passageMatchSchema).optional(),
+	matches: z.number().optional(),
 });
 
 /** A link between two documents in the results. */
@@ -72,6 +84,7 @@ export const searchResponseSchema = z.object({
 
 export type SearchRequest = z.input<typeof searchRequestSchema>;
 export type ApiNode = z.infer<typeof apiNodeSchema>;
+export type PassageMatch = z.infer<typeof passageMatchSchema>;
 export type ApiEdge = z.infer<typeof apiEdgeSchema>;
 export type SearchResponse = z.infer<typeof searchResponseSchema>;
 

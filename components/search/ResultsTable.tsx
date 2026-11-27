@@ -10,6 +10,7 @@ import { clusterDisplayName, namesFromSuggestions } from '@/lib/clustering/clust
 import { contentPreview } from '@/lib/utils/text-preview';
 import { foundByLabel, useFoundBy } from '@/hooks/use-found-by';
 import { OverlapIcon } from './OverlapIcon';
+import { matchLine } from './Highlighted';
 import { nextSort, sortRows, type ResultRow, type TableSortKey } from '@/lib/search/results-table';
 
 interface ResultsTableProps {
@@ -102,7 +103,7 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 						data-result-row
 						{...highlight(node.id)}
 						// Narrow has no room for the extra columns, so they show on hover
-						title={wide ? undefined : [summaryOf(node), node.tags?.join(', '), cluster].filter(Boolean).join('\n')}
+						title={wide ? undefined : [node.tags?.join(', '), cluster].filter(Boolean).join('\n') || undefined}
 						// Clicking anywhere on the row opens the document
 						onClick={() => onOpen(node)}
 						className="cursor-pointer border-b last:border-0 hover:bg-accent/50 align-top">
@@ -120,7 +121,9 @@ export function ResultsTable({ results, wide, scoreColor, onToggleContext, onOpe
 								{/* Narrow: the overlap icon when more than one search found it */}
 								{!wide && (found.byDoc[node.id]?.length ?? 0) > 1 && <OverlapIcon label={`Found by ${foundByLabel(found.byDoc[node.id])}`} />}
 							</div>
-							{wide && <p className="text-xs text-muted-foreground line-clamp-1">{summaryOf(node)}</p>}
+							<p className="text-xs text-muted-foreground line-clamp-1">{summaryOf(node)}</p>
+							{/* One quiet line about the passages that matched */}
+							{node.passages?.[0] && <p className="text-[11.5px] text-muted-foreground/80 line-clamp-1" data-match-line>{matchLine(node.matches ?? 1, node.passages[0].heading, node.passages[0].text)}</p>}
 						</td>
 						{wide && (
 							<td className="px-2 py-2">
