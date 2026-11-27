@@ -19,8 +19,8 @@ export function Highlighted({ text, query }: { text: string; query: string }) {
 	);
 }
 
-/** "3 matches · best: Model inventory" (or the passage's first words when it has no heading) */
+/** "3 key sections · start: Model Inventory" (or the passage's first words when it has no heading) */
 export function matchLine(matches: number, heading: string | null, text: string): string {
 	const best = heading ?? `${text.split(/\s+/).slice(0, 5).join(' ')}…`;
-	return `${matches} match${matches === 1 ? '' : 'es'} · best: ${best}`;
+	return matches > 1 ? `${matches} key sections · start: ${best}` : `Key section: ${best}`;
 }

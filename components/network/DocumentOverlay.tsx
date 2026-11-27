@@ -373,14 +373,18 @@ export default function DocumentOverlay({
 					</div>
 				</div>
 				{passages.length > 0 && (
-					<aside aria-label="Matches" className="w-64 shrink-0 space-y-2 overflow-y-auto border-l border-border bg-muted/40 p-3">
-						<p className="text-xs font-semibold">{documentItem.matches ?? passages.length} match{(documentItem.matches ?? passages.length) === 1 ? '' : 'es'}</p>
+					<aside aria-label="Key sections" className="w-64 shrink-0 space-y-2 overflow-y-auto border-l border-border bg-muted/40 p-3">
 						{passages.map((m, i) => (
-							<button key={m.position} type="button" onClick={() => setActive(i)} aria-pressed={i === active}
-								className={`block w-full rounded-lg border px-2.5 py-2 text-left text-xs ${i === active ? 'border-lit bg-lit-soft' : 'border-border bg-card hover:border-lit/60'}`}>
-								<span className="block font-medium text-foreground">{matchLabel(m)}</span>
-								<span className="mt-0.5 block line-clamp-2 text-muted-foreground">{m.text}</span>
-							</button>
+							<div key={m.position}>
+								{i === 0 && <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-lit-foreground">Start here</p>}
+								{i === 1 && <p className="mb-1 mt-3 text-xs text-muted-foreground">Also relevant</p>}
+								<button type="button" onClick={() => setActive(i)} aria-pressed={i === active}
+									className={`w-full rounded-lg border px-2.5 py-2 text-left text-xs ${i === active ? 'border-lit bg-lit-soft' : 'border-border bg-card hover:border-lit/60'}`}>
+									<span className="block font-medium text-foreground">{matchLabel(m)}</span>
+									{/* line-clamp sets its own display, so no "block" here */}
+									<span className="mt-0.5 line-clamp-2 text-muted-foreground">{m.text}</span>
+								</button>
+							</div>
 						))}
 					</aside>
 				)}

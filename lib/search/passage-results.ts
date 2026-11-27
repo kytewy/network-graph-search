@@ -5,13 +5,16 @@
 import type { PineconeHit } from '@/lib/contracts/node';
 import type { PassageMatch } from '@/lib/contracts/search';
 
-/** How many of a document's matching passages travel with it (the card shows the best, "+ N more") */
+/** A document's key sections: at most this many of its passages travel with it */
 export const PASSAGES_PER_DOCUMENT = 3;
+
+/** A passage is "key" when it scores at least this share of the document's best passage */
+export const STRONG_SHARE = 0.5;
 
 const fieldsOf = (hit: PineconeHit) => hit.fields ?? hit.metadata ?? {};
 const scoreOf = (hit: PineconeHit) => hit._score ?? hit.score ?? 0;
 
-/** Passage hits → each document's matches, best first, with how many matched in all */
+/** Passage hits → each document's key sections (strong ones only, at most three), best first */
 export function groupPassages(hits: readonly PineconeHit[]): Map<string, { matches: number; passages: PassageMatch[] }> {
 	const groups = new Map<string, { matches: number; passages: PassageMatch[] }>();
 	for (const hit of hits) {
@@ -33,7 +36,10 @@ export function groupPassages(hits: readonly PineconeHit[]): Map<string, { match
 	}
 	for (const group of groups.values()) {
 		group.passages.sort((a, b) => b.score - a.score);
-		group.passages.splice(PASSAGES_PER_DOCUMENT);
+		const best = group.passages[0]?.score ?? 0;
+		group.passages = group.passages.filter((p) => p.score >= best * STRONG_SHARE).slice(0, PASSAGES_PER_DOCUMENT);
+		// Only the key sections count: "3 key sections", never "44 matches"
+		group.matches = group.passages.length;
 	}
 	return groups;
 }

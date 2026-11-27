@@ -228,7 +228,7 @@ export function SearchResults() {
 								<div className="mt-2 rounded-md bg-muted/60 px-2 py-1.5 text-xs leading-relaxed" data-best-passage>
 									{result.passages[0].heading && <p className="mb-0.5 font-medium text-foreground">{result.passages[0].heading}</p>}
 									<p className="line-clamp-3 text-muted-foreground"><Highlighted text={result.passages[0].text} query={query} /></p>
-									{(result.matches ?? 1) > 1 && <p className="mt-1 text-primary">+ {(result.matches ?? 1) - 1} more</p>}
+									{result.passages.length > 1 && <p className="mt-1 text-primary">+ {result.passages.length - 1} more section{result.passages.length > 2 ? 's' : ''}</p>}
 								</div>
 							) : (
 								<div className="mt-2">

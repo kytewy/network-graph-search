@@ -12,7 +12,7 @@ const node = {
 	],
 };
 
-test('reading mode lists the matches on the right and lights the one you pick', async ({ page }) => {
+test('reading mode points to where to start, lists the key sections and lights the one you pick', async ({ page }) => {
 	await page.route('**/api/reranked-vector-search', (r) => r.fulfill({ json: { nodes: [node], edges: [] } }));
 	// No database in the test: reading mode uses the text it already has
 	await page.route('**/api/documents/*/text', (r) => r.fulfill({ status: 503, json: { error: 'Unavailable' } }));
@@ -23,8 +23,9 @@ test('reading mode lists the matches on the right and lights the one you pick', 
 	await expect(graphNodeCount(page)).toHaveAttribute('data-node-count', '1');
 	await page.getByRole('button', { name: 'OSFI E-23' }).first().click();
 
-	const matches = page.getByRole('complementary', { name: 'Matches' });
-	await expect(matches).toContainText('2 matches');
+	const matches = page.getByRole('complementary', { name: 'Key sections' });
+	await expect(matches).toContainText('Start here');
+	await expect(matches).toContainText('Also relevant');
 	await expect(matches.getByRole('button', { name: /Model Inventory/ })).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.locator('[data-passage="0"]').first()).toHaveText('Model Inventory');
 

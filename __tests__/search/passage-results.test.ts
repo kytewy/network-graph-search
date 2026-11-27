@@ -9,13 +9,19 @@ const passage = (doc: string, position: number, score: number, heading: string |
 });
 
 describe('groupPassages', () => {
-	it('groups passages by document, best first, keeps at most three and counts them all', () => {
-		const groups = groupPassages([passage('e23', 4, 0.5), passage('e23', 14, 0.9, 'Model Inventory'), passage('e23', 22, 0.7), passage('e23', 31, 0.6), passage('kpmg', 3, 0.8)]);
+	it('keeps each document’s key sections: strong ones only, at most three, best first', () => {
+		const groups = groupPassages([passage('e23', 4, 0.5), passage('e23', 14, 0.9, 'Model Inventory'), passage('e23', 22, 0.7), passage('e23', 31, 0.6), passage('e23', 40, 0.2), passage('kpmg', 3, 0.8)]);
 		const e23 = groups.get('e23')!;
-		expect(e23.matches).toBe(4);
+		// Five matched, but only three are key and only those are counted
+		expect(e23.matches).toBe(PASSAGES_PER_DOCUMENT);
 		expect(e23.passages).toHaveLength(PASSAGES_PER_DOCUMENT);
 		expect(e23.passages[0]).toMatchObject({ position: 14, heading: 'Model Inventory', start: 14000, text: 'Text of 14', score: 0.9 });
 		expect(groups.get('kpmg')!.matches).toBe(1);
+	});
+
+	it('drops passages far weaker than the document’s best', () => {
+		const groups = groupPassages([passage('d', 1, 0.8), passage('d', 2, 0.3)]);
+		expect(groups.get('d')!.passages.map((p) => p.position)).toEqual([1]);
 	});
 });
 
@@ -33,9 +39,9 @@ describe('rankDocuments', () => {
 });
 
 describe('match line and highlighting', () => {
-	it('says how many matched and the best heading, or its first words', () => {
-		expect(matchLine(3, 'Model Inventory', 'x')).toBe('3 matches · best: Model Inventory');
-		expect(matchLine(1, null, 'Institutions should maintain a complete inventory')).toBe('1 match · best: Institutions should maintain a complete…');
+	it('says how many key sections and where to start, by heading or first words', () => {
+		expect(matchLine(3, 'Model Inventory', 'x')).toBe('3 key sections · start: Model Inventory');
+		expect(matchLine(1, null, 'Institutions should maintain a complete inventory')).toBe('Key section: Institutions should maintain a complete…');
 	});
 
 	it('highlights the words of the search, not little ones', () => {
