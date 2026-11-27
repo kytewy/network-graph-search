@@ -10,7 +10,7 @@ test('the analysis panel has Chat and Clusters tabs; each chat shows its documen
 	await page.getByTestId('results-table').locator('[data-result-row]').first().getByRole('switch').click();
 	const strip = page.getByTestId('documents-strip');
 	await expect(strip).toContainText('1 document');
-	await expect(page.getByTestId('context-budget')).toContainText('1 document');
+	await expect(page.getByTestId('context-budget')).toHaveCount(0);
 
 	// The strip opens the chat's document list in place, and closes again
 	await strip.click();

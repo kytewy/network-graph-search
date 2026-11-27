@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef } from 'react';
 
 /**
  * Apple's rubber band: b = (1 - 1 / (x·c/d + 1))·d, with c = 0.55 (UIScrollView's constant) and d the
- * box's height, so pulling further gives less and less. A wheel step counts half (it isn't a finger).
+ * box's height, so pulling further gives less and less. A wheel step counts 0.15 of a pull (it isn't a finger), so it stays tight.
  * The stretch follows quickly, and lets go almost at once with a fast ease-out that doesn't overshoot.
  */
-export const RUBBER_BAND = { coefficient: 0.55, wheelShare: 0.5, followMs: 90, settleMs: 380, idleMs: 50 } as const;
+export const RUBBER_BAND = { coefficient: 0.55, wheelShare: 0.15, followMs: 90, settleMs: 380, idleMs: 50 } as const;
 
 /** How far the list shows stretched after pulling `pulled` pixels past its end, in a box `height` tall */
 export function stretch(pulled: number, height: number): number {

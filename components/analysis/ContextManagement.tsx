@@ -27,7 +27,7 @@ import DocumentOverlay from '@/components/network/DocumentOverlay';
 import ChatInterface from '@/components/analysis/ChatInterface';
 import { CLUSTER_CHAT_EVENT, OPEN_CHAT_EVENT } from '@/lib/chat/new-chat';
 import ClusteringInterface from '@/components/analysis/ClusteringInterface';
-import { contextTokens, nodeTokens } from '@/lib/utils/llm-tokens';
+import { nodeTokens } from '@/lib/utils/llm-tokens';
 import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 import { useHighlightOnHover } from '@/hooks/use-highlight-on-hover';
 
@@ -44,23 +44,6 @@ interface Node {
 	color?: string;
 	similarity?: number;
 	stateProvince?: string;
-}
-
-interface NodeTypeStats {
-	type: string;
-	count: number;
-	totalChars: number;
-	totalTokens: number;
-}
-
-interface ContextStats {
-	totalNodes: number;
-	totalChars: number;
-	totalTokens: number;
-	averageCharsPerNode: number;
-	averageTokensPerNode: number;
-	typeDistribution: NodeTypeStats[];
-	countryDistribution: { country: string; count: number }[];
 }
 
 interface ContextManagementProps {
@@ -156,44 +139,6 @@ export default function ContextManagement({
 
 	// ALL COMPUTED VALUES - MUST be called before conditional returns
 	const itemsPerPage = 10; // Show 10 nodes per page
-
-	// Calculate context statistics
-	const calculateContextStats = useMemo((): ContextStats => {
-		// Calculate total characters and tokens
-		const totalChars = contextNodes.reduce(
-			(sum, node) => sum + (node.content?.length || 0),
-			0
-		);
-
-		// Tokens of the prompt the AI actually receives (excerpts + instructions)
-		const estimatedTokens = contextTokens(contextNodes);
-
-		// Count nodes by document type
-		const nodesByType = contextNodes.reduce((acc, node) => {
-			const type = node.documentType || 'unknown';
-			acc[type] = (acc[type] || 0) + 1;
-			return acc;
-		}, {} as Record<string, number>);
-
-		// Calculate average content length
-		const avgContentLength =
-			contextNodes.length > 0
-				? Math.round(totalChars / contextNodes.length)
-				: 0;
-
-		return {
-			totalNodes: contextNodes.length,
-			totalChars,
-			totalTokens: estimatedTokens,
-			averageCharsPerNode: avgContentLength,
-			averageTokensPerNode:
-				contextNodes.length > 0
-					? Math.round(estimatedTokens / contextNodes.length)
-					: 0,
-			typeDistribution: [], // Will be implemented later if needed
-			countryDistribution: [], // Will be implemented later if needed
-		};
-	}, [contextNodes]);
 
 	// Filter and sort nodes based on search query and sort options
 	const filteredNodes = useMemo(() => {
@@ -336,14 +281,12 @@ export default function ContextManagement({
 		count: contextNodes.length,
 	};
 
-	// What the AI will receive, in one line above the chat box (was its own box)
-	const budgetLine = (
-		<p className={`text-xs ${overLimit ? 'text-destructive' : 'text-muted-foreground'}`} data-testid="context-budget">
-			{overLimit
-				? `${contextNodes.length} documents: the AI takes up to ${MAX_NODES}. Remove ${contextNodes.length - MAX_NODES} to ask.`
-				: `${contextNodes.length} ${contextNodes.length === 1 ? 'document' : 'documents'} · ~${calculateContextStats.totalTokens.toLocaleString()} of ${PROMPT_CONFIG.CONTEXT_WINDOW_TOKENS.toLocaleString()} tokens`}
+	// Only when there are too many documents: one line above the chat box says how many to remove
+	const budgetLine = overLimit ? (
+		<p className="text-xs text-destructive" data-testid="context-budget">
+			{`${contextNodes.length} documents: the AI takes up to ${MAX_NODES}. Remove ${contextNodes.length - MAX_NODES} to ask.`}
 		</p>
-	);
+	) : null;
 
 
 	// The open chat's documents: shown in the chat's documents strip (no separate Context tab)

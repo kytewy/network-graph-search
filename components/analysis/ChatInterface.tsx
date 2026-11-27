@@ -35,7 +35,7 @@ interface ChatInterfaceProps {
 	filterState: any;
 	rightPanelExpanded: boolean;
 	selectedNodesSummary: any;
-	/** One line on what the AI will receive (documents and tokens) */
+	/** A warning above the chat box (too many documents), when there is one */
 	contextSummary?: ReactNode;
 	/** This chat's documents (search, group, remove), opened from the strip under the chat bar */
 	documents?: ReactNode;
@@ -50,6 +50,8 @@ const SUGGESTIONS = false;
 const STOPPED = '_Stopped._';
 /** Tallest the question box grows before it scrolls */
 const MAX_BOX_PX = 200;
+/** Two lines tall at rest, so typing "/" doesn't shrink it */
+const MIN_BOX_PX = 62;
 const FAILED = 'Sorry, something went wrong while analysing the documents. Try again.';
 
 /**
@@ -182,12 +184,12 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 		fillText(prompt.text);
 	};
 
-	// The box grows upward with what you type, up to about 8 lines, then scrolls inside
+	// The box keeps at least two lines and grows upward with what you type, up to about 8 lines, then scrolls inside
 	useEffect(() => {
 		const box = inputRef.current;
 		if (!box) return;
 		box.style.height = 'auto';
-		box.style.height = `${Math.min(box.scrollHeight, MAX_BOX_PX)}px`;
+		box.style.height = `${Math.min(Math.max(box.scrollHeight, MIN_BOX_PX), MAX_BOX_PX)}px`;
 		box.style.overflowY = box.scrollHeight > MAX_BOX_PX ? 'auto' : 'hidden';
 	}, [chatInput]);
 
@@ -392,7 +394,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 			</div>
 
 			{/* The box stays at the bottom while the conversation scrolls above it */}
-			<div className="sticky bottom-0 -mx-4 px-4 pt-2 pb-3 bg-card space-y-1.5">
+			<div className="sticky bottom-0 -mx-4 px-4 pt-3 pb-3 bg-card space-y-1.5 after:absolute after:-inset-x-[100vw] after:top-0 after:h-px after:bg-border/70 after:content-['']">
 				{contextSummary}
 				{/* The "/" menu, just above the box */}
 				{slashOpen && (
