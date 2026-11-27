@@ -162,3 +162,37 @@ html:has([data-page="graph"]) body {
 	height: 100%;
 	overflow: clip;
 }
+
+/* Scrollbars that fade in while you scroll or hover, like VS Code: a thin rounded bar, no arrows.
+   The bar is drawn in the box's own (animated) text colour; the content keeps its normal colour.
+   --track-top starts the bar below a header that stays put (the chat sets it). */
+.fade-scroll {
+	color: transparent;
+	transition: color 300ms ease;
+	scrollbar-width: thin;
+	scrollbar-color: transparent transparent;
+}
+.fade-scroll > * {
+	color: var(--foreground);
+}
+.fade-scroll:hover,
+.fade-scroll[data-scrolling] {
+	color: color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+	scrollbar-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent) transparent;
+}
+.fade-scroll::-webkit-scrollbar {
+	width: 10px;
+}
+.fade-scroll::-webkit-scrollbar-button {
+	display: none;
+}
+.fade-scroll::-webkit-scrollbar-track {
+	background: transparent;
+	margin-top: var(--track-top, 0px);
+}
+.fade-scroll::-webkit-scrollbar-thumb {
+	border: 3px solid transparent;
+	border-radius: 999px;
+	background-clip: padding-box;
+	box-shadow: inset 0 0 0 10px;
+}

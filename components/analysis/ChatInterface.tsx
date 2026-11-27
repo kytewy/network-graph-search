@@ -223,6 +223,23 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 
 	const tool = 'h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50';
 
+	// The panel's scrollbar starts under this header (the chat list, New and the documents), which stays put
+	const headerRef = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		const header = headerRef.current;
+		const scroller = header?.closest<HTMLElement>('[data-panel-scroll]');
+		if (!header || !scroller) return;
+		const fit = () => scroller.style.setProperty('--track-top', `${header.offsetHeight}px`);
+		if (typeof ResizeObserver === 'undefined') return fit();
+		const watch = new ResizeObserver(fit);
+		watch.observe(header);
+		fit();
+		return () => {
+			watch.disconnect();
+			scroller.style.removeProperty('--track-top');
+		};
+	}, []);
+
 	const openTurn = conversations.find((c) => c.id === openDocId && c.status === 'done');
 	const split = Boolean(openTurn) && rightPanelExpanded && !docFull;
 
@@ -234,7 +251,7 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 			{/* Flip between chats, start one, delete one */}
 			{/* A thin line underneath shows where messages slide under; it runs edge to edge across
 			    the panel (clipped by it), even when the chat is a centred column */}
-			<div className="sticky top-0 z-10 -mx-4 -mt-4 bg-card px-4 pt-1 after:absolute after:-inset-x-[100vw] after:bottom-0 after:h-px after:bg-border/70 after:content-['']">
+			<div ref={headerRef} className="sticky top-0 z-10 -mx-4 -mt-4 bg-card px-4 pt-1 after:absolute after:-inset-x-[100vw] after:bottom-0 after:h-px after:bg-border/70 after:content-['']">
 				<ChatSwitcher
 					onSwitch={() => {
 						setOpenDocId(null);

@@ -16,3 +16,17 @@ describe('rubber-band stretch', () => {
 		expect(offset).toBeLessThanOrEqual(RUBBER_BAND.maxPx);
 	});
 });
+
+describe('attachRubberBand', () => {
+	it('stretches the list when you scroll past the top, and lets go when taken off', async () => {
+		const { attachRubberBand } = await import('@/hooks/use-rubber-band');
+		const box = document.createElement('div');
+		const list = document.createElement('div');
+		box.appendChild(list);
+		const detach = attachRubberBand(box);
+		box.dispatchEvent(new WheelEvent('wheel', { deltaY: -100 }));
+		expect(list.style.transform).toMatch(/translateY\(2\d(\.\d+)?px\)/);
+		detach();
+		expect(list.style.transform).toBe('');
+	});
+});

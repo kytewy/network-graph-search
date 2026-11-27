@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useMemo, useEffect, type ReactNode } from 'react';
 import { useRubberBand } from '@/hooks/use-rubber-band';
 import { PANEL_HEADER, PANEL_TAB } from '@/components/layout/PanelChrome';
 import { ContextGroups, type ContextGrouping } from './ContextGroups';
@@ -83,8 +83,7 @@ export default function ContextManagement({
 	filterState = {},
 }: ContextManagementProps) {
 	// Chat and clusters stretch and spring back at their ends
-	const panelScrollRef = useRef<HTMLDivElement>(null);
-	useRubberBand(panelScrollRef);
+	const panelScrollRef = useRubberBand();
 	const [isClient, setIsClient] = useState(false);
 
 	// Get all store state - MUST be called before conditional returns
@@ -581,7 +580,7 @@ export default function ContextManagement({
 					{headerEnd}
 				</div>
 				{/* Only what's under the tabs scrolls, so the scrollbar starts below them */}
-				<div ref={panelScrollRef} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]" data-panel-scroll="right">
+				<div ref={panelScrollRef} className="fade-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]" data-panel-scroll="right">
 				<div className="p-4">
 
 				{/* Analysis Tab Content */}
