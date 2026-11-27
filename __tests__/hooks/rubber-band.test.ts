@@ -1,19 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { RUBBER_BAND, stretch } from '@/hooks/use-rubber-band';
+import { stretch } from '@/hooks/use-rubber-band';
 
-describe('rubber-band stretch', () => {
-	it('pulls the list down past the top and up past the bottom', () => {
-		expect(stretch(0, -40)).toBeGreaterThan(0);
-		expect(stretch(0, 40)).toBeLessThan(0);
+describe('rubber-band stretch (Apple’s formula)', () => {
+	it('matches b = (1 - 1/(x·0.55/d + 1))·d', () => {
+		expect(stretch(100, 960)).toBeCloseTo(52.02, 1);
+		expect(stretch(400, 960)).toBeCloseTo(178.98, 1);
 	});
 
-	it('gets stiffer the further it goes, and never past the limit', () => {
-		const first = stretch(0, -40);
-		const later = stretch(40, -40) - 40;
-		expect(later).toBeLessThan(first);
-		let offset = 0;
-		for (let i = 0; i < 100; i++) offset = stretch(offset, -400);
-		expect(offset).toBeLessThanOrEqual(RUBBER_BAND.maxPx);
+	it('pulls down past the top and up past the bottom', () => {
+		expect(stretch(50, 700)).toBeGreaterThan(0);
+		expect(stretch(-50, 700)).toBeLessThan(0);
+	});
+
+	it('gives less and less the further you pull, never more than the box', () => {
+		expect(stretch(200, 700) - stretch(100, 700)).toBeLessThan(stretch(100, 700));
+		expect(stretch(1e9, 700)).toBeLessThan(700);
 	});
 });
 
@@ -25,7 +26,7 @@ describe('attachRubberBand', () => {
 		box.appendChild(list);
 		const detach = attachRubberBand(box);
 		box.dispatchEvent(new WheelEvent('wheel', { deltaY: -100 }));
-		expect(list.style.transform).toMatch(/translateY\(2\d(\.\d+)?px\)/);
+		expect(list.style.transform).toMatch(/translateY\(\d+(\.\d+)?px\)/);
 		detach();
 		expect(list.style.transform).toBe('');
 	});

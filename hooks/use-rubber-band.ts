@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 
-/** How far a list stretches past its end, at most, and how quickly it settles back */
-export const RUBBER_BAND = { maxPx: 56, pull: 0.25, settleMs: 320, idleMs: 110 } as const;
+/**
+ * Apple's rubber band: b = (1 - 1 / (x·c/d + 1))·d, with c = 0.55 (UIScrollView's constant) and d the
+ * box's height, so pulling further gives less and less. A wheel step counts half (it isn't a finger).
+ * The stretch follows quickly, and lets go almost at once with a fast ease-out that doesn't overshoot.
+ */
+export const RUBBER_BAND = { coefficient: 0.55, wheelShare: 0.5, followMs: 90, settleMs: 380, idleMs: 50 } as const;
 
-/** The next stretch for one wheel step: it gets stiffer the further it has gone */
-export function stretch(offset: number, deltaY: number): number {
-	const room = 1 - Math.min(1, Math.abs(offset) / RUBBER_BAND.maxPx);
-	const next = offset - deltaY * RUBBER_BAND.pull * room;
-	return Math.max(-RUBBER_BAND.maxPx, Math.min(RUBBER_BAND.maxPx, next));
+/** How far the list shows stretched after pulling `pulled` pixels past its end, in a box `height` tall */
+export function stretch(pulled: number, height: number): number {
+	const d = Math.max(1, height);
+	return (1 - 1 / ((Math.abs(pulled) * RUBBER_BAND.coefficient) / d + 1)) * d * Math.sign(pulled);
 }
 
 /** Adds the stretch-and-settle to one scroll box; returns how to take it off again */
@@ -17,14 +20,15 @@ export function attachRubberBand(box: HTMLElement): () => void {
 	if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return () => {};
 	// The browser's own bounce (Mac) would double ours
 	box.style.overscrollBehaviorY = 'none';
-	let offset = 0;
+	let pulled = 0;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const content = () => box.firstElementChild as HTMLElement | null;
 	const settle = () => {
 		const c = content();
-		offset = 0;
+		pulled = 0;
 		if (!c) return;
-		c.style.transition = `transform ${RUBBER_BAND.settleMs}ms cubic-bezier(0.2, 0.8, 0.2, 1)`;
+		// Fast at first, then gently into place: like a critically damped spring, no bounce past it
+		c.style.transition = `transform ${RUBBER_BAND.settleMs}ms cubic-bezier(0.22, 1, 0.36, 1)`;
 		c.style.transform = '';
 	};
 	const onWheel = (e: WheelEvent) => {
@@ -32,9 +36,9 @@ export function attachRubberBand(box: HTMLElement): () => void {
 		const atBottom = Math.ceil(box.scrollTop + box.clientHeight) >= box.scrollHeight - 1 && e.deltaY > 0;
 		const c = content();
 		if (!c || !(atTop || atBottom)) return;
-		offset = stretch(offset, e.deltaY);
-		c.style.transition = 'none';
-		c.style.transform = `translateY(${offset}px)`;
+		pulled -= e.deltaY * RUBBER_BAND.wheelShare;
+		c.style.transition = `transform ${RUBBER_BAND.followMs}ms ease-out`;
+		c.style.transform = `translateY(${stretch(pulled, box.clientHeight)}px)`;
 		clearTimeout(timer);
 		timer = setTimeout(settle, RUBBER_BAND.idleMs);
 	};
