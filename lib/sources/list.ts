@@ -19,6 +19,8 @@ export type SourceRow = {
 	bodyLength: number;
 	addedAt: Date;
 	publishedAt: Date | null;
+	/** Who set the date: the index, the page, an AI first pass, or you */
+	publishedBy: 'index' | 'page' | 'ai' | 'you' | null;
 };
 
 export type SortKey = 'added' | 'published';
@@ -54,7 +56,7 @@ export async function listSources({ q, source, sort, dir }: SourceFilters): Prom
 	const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 	return sql<SourceRow[]>`
 		SELECT id, title, url, source, publisher, country, body_length AS "bodyLength", added_at AS "addedAt",
-			published_at AS "publishedAt"
+			published_at AS "publishedAt", published_by AS "publishedBy"
 		FROM documents
 		WHERE ${source ? sql`source = ${source}` : sql`true`}
 		  AND ${q ? sql`(title ILIKE ${like} OR publisher ILIKE ${like})` : sql`true`}

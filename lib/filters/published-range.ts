@@ -20,14 +20,21 @@ export interface TimelineBar {
 	count: number;
 }
 
+/** At least this many months show, so one date doesn't fill the whole chart */
+export const MIN_MONTHS = 12;
+
 /** Bars from the earliest to the latest date: by month up to 10 years, by quarter up to 30, else by year */
 export function timelineBars(dates: readonly string[]): TimelineBar[] {
 	if (dates.length === 0) return [];
 	const months = dates.map(toIndex);
-	const span = Math.max(...months) - Math.min(...months) + 1;
+	let [lo, hi] = [Math.min(...months), Math.max(...months)];
+	// A short span is widened evenly on both sides
+	const short = MIN_MONTHS - (hi - lo + 1);
+	if (short > 0) [lo, hi] = [lo - Math.floor(short / 2), hi + Math.ceil(short / 2)];
+	const span = hi - lo + 1;
 	const step = span <= 120 ? 1 : span <= 360 ? 3 : 12;
-	const first = Math.floor(Math.min(...months) / step) * step;
-	const last = Math.floor(Math.max(...months) / step) * step;
+	const first = Math.floor(lo / step) * step;
+	const last = Math.floor(hi / step) * step;
 	const bars: TimelineBar[] = [];
 	for (let at = first; at <= last; at += step) {
 		bars.push({ from: toMonth(at), to: toMonth(at + step - 1), count: months.filter((m) => m >= at && m < at + step).length });

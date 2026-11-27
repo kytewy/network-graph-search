@@ -40,7 +40,7 @@ describe('searchRecord', () => {
 
 	it('is shaped like the index records and cut to Pinecone’s limits', () => {
 		const text = 'a'.repeat(30_000);
-		const r = searchRecord('link-1', 'https://x.org', 'T', { title: 'T', text, excerpt: 'e', siteName: null }, labels);
+		const r = searchRecord('link-1', 'https://x.org', 'T', { title: 'T', text, excerpt: 'e', siteName: null, published: null }, labels);
 		expect(r).toMatchObject({ _id: 'link-1', label: 'T', publisher: 'Regulator', documentType: 'Guidance', country: 'Canada', source: 'link' });
 		expect(r.chunk_text.length).toBe(SEARCH_COPY.chunkChars);
 		expect(r.content.endsWith('[Content truncated]')).toBe(true);

@@ -14,8 +14,15 @@ describe('inPublishedRange', () => {
 
 describe('timelineBars', () => {
 	it('uses months for a short span, with empty months in between', () => {
-		const bars = timelineBars(['2024-01-05', '2024-03-01', '2024-03-20']);
-		expect(bars.map((b) => [b.from, b.count])).toEqual([['2024-01', 1], ['2024-02', 0], ['2024-03', 2]]);
+		const bars = timelineBars(['2023-01-05', '2023-03-01', '2023-03-20', '2024-02-01']);
+		expect(bars.slice(0, 3).map((b) => [b.from, b.count])).toEqual([['2023-01', 1], ['2023-02', 0], ['2023-03', 2]]);
+		expect(bars).toHaveLength(14);
+	});
+	it('shows at least a year, centred on a single date', () => {
+		const bars = timelineBars(['2024-07-12']);
+		expect(bars).toHaveLength(12);
+		expect([bars[0].from, bars[11].to]).toEqual(['2024-02', '2025-01']);
+		expect(bars.find((b) => b.count)?.from).toBe('2024-07');
 	});
 	it('uses months up to ten years, quarters up to thirty, and calendar years beyond', () => {
 		expect(timelineBars(['2016-02-01', '2024-11-01'])).toHaveLength(106);

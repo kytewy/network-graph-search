@@ -33,7 +33,8 @@ export function PublishedTimeline() {
 	const dated = nodes.flatMap((n) => (n.published ? [n.published] : []));
 	const bars = timelineBars(dated);
 
-	if (bars.length === 0) return <p className="text-xs text-muted-foreground">None of these results has a date yet.</p>;
+	const undated = nodes.length - dated.length;
+	if (bars.length === 0) return <p className="text-xs text-muted-foreground">None of these {undated} results has a date yet. Find missing dates on the Sources page.</p>;
 
 	const last = bars.length - 1;
 	const indexOf = (month: string) => {
@@ -48,7 +49,6 @@ export function PublishedTimeline() {
 		setRange(from === 0 && to === last ? [] : [bars[from].from, bars[to].to]);
 	};
 	const inside = bars.slice(lo, hi + 1).reduce((n, b) => n + b.count, 0);
-	const undated = nodes.length - dated.length;
 	// Square roots keep small bars visible next to a tall one (many EU records share one date)
 	const tallest = Math.sqrt(Math.max(...bars.map((b) => b.count), 1));
 	const years = [...new Set(bars.map((b) => b.from.slice(0, 4)))];
@@ -58,7 +58,11 @@ export function PublishedTimeline() {
 		<div className="space-y-1.5" data-testid="published-timeline">
 			<p className="text-xs text-muted-foreground" aria-live="polite">
 				{monthLabel(bars[lo].from)} – {monthLabel(bars[hi].to)} · {inside} document{inside === 1 ? '' : 's'}
-				{range.length === 2 && undated > 0 && ` · ${undated} undated hidden`}
+				{undated > 0 && (
+					<span title="No publication date: set one on the Sources page">
+						{` · ${undated} undated${range.length === 2 ? ', hidden' : ''}`}
+					</span>
+				)}
 			</p>
 			<div className="flex h-16 items-end gap-px">
 				{bars.map((b, i) => (

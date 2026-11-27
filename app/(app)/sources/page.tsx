@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { AddLinkButton } from '@/components/sources/AddLinkButton';
+import { FindDatesButton } from '@/components/sources/FindDatesButton';
+import { undatedCounts } from '@/lib/sources/dates';
 import { CONTROL } from '@/components/ui/control';
 import { PAGE_SIZE, SOURCES, SOURCE_LABELS, formatAdded, formatAddedExact, formatPublished, listSources, parseFilters, sourceCounts, type Source, type SourceFilters, type SortKey } from '@/lib/sources/list';
 
@@ -21,8 +23,8 @@ const BADGE: Record<Source, string> = {
 /** Counts and rows, or null when the database can't be reached. */
 async function load(filters: SourceFilters) {
 	try {
-		const [counts, rows] = await Promise.all([sourceCounts(), listSources(filters)]);
-		return { counts, rows };
+		const [counts, rows, dates] = await Promise.all([sourceCounts(), listSources(filters), undatedCounts()]);
+		return { counts, rows, dates };
 	} catch {
 		return null;
 	}
@@ -53,6 +55,7 @@ export default async function SourcesPage({ searchParams }: Props) {
 						<h1 className="text-2xl font-semibold">Sources</h1>
 						<p className="text-[13px] text-muted-foreground mt-0.5">Every document Lantern can search, and how it got here</p>
 					</div>
+					{data && <FindDatesButton unchecked={data.dates.unchecked} />}
 					<AddLinkButton />
 				</header>
 
@@ -118,7 +121,8 @@ export default async function SourcesPage({ searchParams }: Props) {
 												<td className="px-3 py-2.5 text-muted-foreground">{r.publisher ?? '—'}</td>
 												<td className="px-3 py-2.5 text-muted-foreground">{r.country ?? '—'}</td>
 												<td className="px-3 py-2.5 text-muted-foreground text-right tabular-nums">{r.bodyLength.toLocaleString('en-US')}</td>
-												<td className="px-3 py-2.5 text-muted-foreground tabular-nums whitespace-nowrap">{formatPublished(r.publishedAt && new Date(r.publishedAt))}</td>
+												<td className="px-3 py-2.5 text-muted-foreground tabular-nums whitespace-nowrap">{formatPublished(r.publishedAt && new Date(r.publishedAt))}
+													{r.publishedAt && r.publishedBy === 'ai' && <span className="ml-1.5 rounded bg-lit-soft px-1 py-px text-[10px] font-medium text-lit-foreground" title="Found by AI: worth a check">AI</span>}</td>
 												<td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap" title={`Added ${formatAddedExact(new Date(r.addedAt))}`}>{formatAdded(new Date(r.addedAt))}</td>
 											</tr>
 										))}
