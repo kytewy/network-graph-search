@@ -50,33 +50,13 @@ export function ColorLegend() {
 					<div className="space-y-1">
 						{nodeSizeMode === 'contentLength' && (
 							<>
-								<div className="flex items-center gap-2">
-									<div
-										className="w-2 h-2 rounded-full"
-										style={{ backgroundColor: nodeColors.neutral }}
-									/>
-									<span className="text-xs text-gray-600">
-										Small (Under 500 chars)
-									</span>
-								</div>
-								<div className="flex items-center gap-2">
-									<div
-										className="w-3 h-3 rounded-full"
-										style={{ backgroundColor: nodeColors.neutral }}
-									/>
-									<span className="text-xs text-gray-600">
-										Medium (501-1000 chars)
-									</span>
-								</div>
-								<div className="flex items-center gap-2">
-									<div
-										className="w-4 h-4 rounded-full"
-										style={{ backgroundColor: nodeColors.neutral }}
-									/>
-									<span className="text-xs text-gray-600">
-										Large (1000+ chars)
-									</span>
-								</div>
+								{/* Biggest on top, like the colour legend */}
+								{([['w-4 h-4', 'Long (over 3k characters)'], ['w-3 h-3', 'Medium (1k–3k)'], ['w-2 h-2', 'Short (under 1k)']] as const).map(([size, label]) => (
+									<div key={label} className="flex items-center gap-2">
+										<div className={`${size} rounded-full`} style={{ backgroundColor: nodeColors.neutral }} />
+										<span className="text-xs text-gray-600">{label}</span>
+									</div>
+								))}
 							</>
 						)}
 						{nodeSizeMode === 'summaryLength' && (
@@ -112,45 +92,13 @@ export function ColorLegend() {
 						)}
 						{nodeSizeMode === 'similarity' && (
 							<>
-								<div className="flex items-center gap-2">
-									<div
-										className="w-1 h-1 rounded-full"
-										style={{ backgroundColor: nodeColors.neutral }}
-									/>
-									<span className="text-xs text-gray-600">
-										Very Low (0-19%)
-									</span>
-								</div>
-								<div className="flex items-center gap-2">
-									<div
-										className="w-2 h-2 rounded-full"
-										style={{ backgroundColor: nodeColors.neutral }}
-									/>
-									<span className="text-xs text-gray-600">Low (20-40%)</span>
-								</div>
-								<div className="flex items-center gap-2">
-									<div
-										className="w-3 h-3 rounded-full"
-										style={{ backgroundColor: nodeColors.neutral }}
-									/>
-									<span className="text-xs text-gray-600">Medium (41-60%)</span>
-								</div>
-								<div className="flex items-center gap-2">
-									<div
-										className="w-4 h-4 rounded-full"
-										style={{ backgroundColor: nodeColors.neutral }}
-									/>
-									<span className="text-xs text-gray-600">High (61-80%)</span>
-								</div>
-								<div className="flex items-center gap-2">
-									<div
-										className="w-5 h-5 rounded-full"
-										style={{ backgroundColor: nodeColors.neutral }}
-									/>
-									<span className="text-xs text-gray-600">
-										Very High (81-100%)
-									</span>
-								</div>
+								{/* Biggest (highest scores) on top, like the colour legend */}
+								{([['w-5 h-5', 'Very High (81-100%)'], ['w-4 h-4', 'High (61-80%)'], ['w-3 h-3', 'Medium (41-60%)'], ['w-2 h-2', 'Low (20-40%)'], ['w-1 h-1', 'Very Low (0-19%)']] as const).map(([size, label]) => (
+									<div key={label} className="flex items-center gap-2">
+										<div className={`${size} rounded-full`} style={{ backgroundColor: nodeColors.neutral }} />
+										<span className="text-xs text-gray-600">{label}</span>
+									</div>
+								))}
 							</>
 						)}
 					</div>

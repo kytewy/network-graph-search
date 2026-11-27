@@ -106,7 +106,8 @@ export function SimilarityHistogram() {
 	return (
 		<div className="w-full">
 			<div className="space-y-1">
-				{histogramData.map((bar) => (
+				{/* Highest scores on top, like the colour and size legends */}
+				{[...histogramData].reverse().map((bar) => (
 					<div key={bar.range} className="flex items-center gap-2">
 						<div className="w-14 text-xs text-muted-foreground text-right">
 							{bar.range}%

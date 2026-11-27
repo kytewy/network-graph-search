@@ -35,7 +35,7 @@ export interface ViewSlice {
 
 export const createViewSlice: StateCreator<AppState, [['zustand/devtools', never], ['zustand/persist', unknown]], [], ViewSlice> = (set) => ({
 	colorMode: 'similarityRange',
-	nodeSizeMode: 'none',
+	nodeSizeMode: 'contentLength',
 	clusterMode: 'none',
 	layoutType: 'forceDirected2d',
 	showLabels: true,

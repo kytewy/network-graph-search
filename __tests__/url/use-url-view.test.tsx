@@ -14,7 +14,7 @@ function setup(searchParams = '') {
 const reset = () => {
 	useAppStore.setState({
 		selectedContinents: [], selectedCountries: [], selectedPublishers: [], selectedTags: [],
-		selectedSimilarityRanges: [], colorMode: 'similarityRange', nodeSizeMode: 'none', clusterMode: 'none',
+		selectedSimilarityRanges: [], colorMode: 'similarityRange', nodeSizeMode: 'contentLength', clusterMode: 'none',
 		searchResults: [], filteredResults: [],
 	});
 	useAppStore.setState({ layoutType: 'forceDirected2d' });
@@ -47,9 +47,10 @@ describe('filters and view settings in the web address', () => {
 	});
 
 	it('ignores an unknown setting in a link', () => {
-		setup('?color=rainbow&layout=spiral');
-		// Similarity is the default colouring
+		setup('?color=rainbow&layout=spiral&size=huge');
+		// By default: coloured by similarity, sized by how long the document is
 		expect(useAppStore.getState().colorMode).toBe('similarityRange');
+		expect(useAppStore.getState().nodeSizeMode).toBe('contentLength');
 		expect(useAppStore.getState().layoutType).toBe('forceDirected2d');
 	});
 

@@ -40,6 +40,13 @@ const SIZES = {
  * Content length thresholds
  */
 const CONTENT_THRESHOLDS = {
+  // Set from the library: about 4 in 10 documents are short, 1 in 6 long
+  large: 3000,
+  medium: 1000,
+} as const;
+
+/** Summaries are much shorter than documents, so they keep their own thresholds */
+const SUMMARY_THRESHOLDS = {
   large: 1000,
   medium: 500,
 } as const;
@@ -109,9 +116,9 @@ export class NodeSizeCalculator {
   private static getContentLengthSize(node: Node): number {
     const contentLength = (node.content || '').length;
     
-    if (contentLength > CONTENT_THRESHOLDS.large) return SIZES.large;   // 1000+ chars
-    if (contentLength > CONTENT_THRESHOLDS.medium) return SIZES.medium; // 501-1000 chars
-    return SIZES.small;                                                  // Under 500 chars
+    if (contentLength > CONTENT_THRESHOLDS.large) return SIZES.large;   // over 3k characters
+    if (contentLength > CONTENT_THRESHOLDS.medium) return SIZES.medium; // 1k–3k
+    return SIZES.small;                                                  // under 1k
   }
 
   /**
@@ -121,8 +128,8 @@ export class NodeSizeCalculator {
   private static getSummaryLengthSize(node: Node): number {
     const summaryLength = (node.summary || '').length;
     
-    if (summaryLength > CONTENT_THRESHOLDS.large) return SIZES.large;   // 1000+ chars
-    if (summaryLength > CONTENT_THRESHOLDS.medium) return SIZES.medium; // 501-1000 chars
+    if (summaryLength > SUMMARY_THRESHOLDS.large) return SIZES.large;   // 1000+ chars
+    if (summaryLength > SUMMARY_THRESHOLDS.medium) return SIZES.medium; // 501-1000 chars
     return SIZES.small;                                                  // Under 500 chars
   }
 

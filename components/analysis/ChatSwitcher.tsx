@@ -29,7 +29,7 @@ export function ChatSwitcher({ onSwitch }: { onSwitch: () => void }) {
 	if (confirming) {
 		const n = questions(active.id);
 		return (
-			<div className="flex items-center gap-2 border-b py-1.5 text-xs" role="group" aria-label="Confirm delete">
+			<div className="flex items-center gap-2 py-1.5 text-xs" role="group" aria-label="Confirm delete">
 				<span className="min-w-0 flex-1 truncate">
 					{isMain ? 'Clear' : 'Delete'} “{active.name}” and its {n} question{n === 1 ? '' : 's'}?
 				</span>
@@ -51,7 +51,7 @@ export function ChatSwitcher({ onSwitch }: { onSwitch: () => void }) {
 	}
 
 	return (
-		<div className="flex items-center gap-1 border-b py-1.5 text-xs" data-testid="chat-switcher">
+		<div className="flex items-center gap-1 py-1.5 text-xs" data-testid="chat-switcher">
 			<DropdownMenu>
 				<DropdownMenuTrigger className={`${CONTROL} flex min-w-0 flex-1 items-center gap-1 px-3 text-left hover:bg-accent/30`} aria-label={`Chats: ${active.name}`}>
 					<span className="min-w-0 flex-1 truncate">{active.name}</span>
