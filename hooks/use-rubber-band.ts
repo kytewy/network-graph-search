@@ -7,7 +7,8 @@ import { useCallback, useEffect, useRef } from 'react';
  * box's height, so pulling further gives less and less. A wheel step counts 0.15 of a pull (it isn't a finger), so it stays tight.
  * The stretch follows quickly, and lets go almost at once with a fast ease-out that doesn't overshoot.
  */
-export const RUBBER_BAND = { coefficient: 0.55, wheelShare: 0.15, followMs: 90, settleMs: 380, idleMs: 50 } as const;
+/** maxPx: the furthest the end can ever move, however hard you scroll (the box height is far too loose on a tall list) */
+export const RUBBER_BAND = { coefficient: 0.55, wheelShare: 0.15, followMs: 90, settleMs: 380, idleMs: 50, maxPx: 48 } as const;
 
 /** How far the list shows stretched after pulling `pulled` pixels past its end, in a box `height` tall */
 export function stretch(pulled: number, height: number): number {
@@ -38,7 +39,7 @@ export function attachRubberBand(box: HTMLElement): () => void {
 		if (!c || !(atTop || atBottom)) return;
 		pulled -= e.deltaY * RUBBER_BAND.wheelShare;
 		c.style.transition = `transform ${RUBBER_BAND.followMs}ms ease-out`;
-		c.style.transform = `translateY(${stretch(pulled, box.clientHeight)}px)`;
+		c.style.transform = `translateY(${stretch(pulled, Math.min(box.clientHeight, RUBBER_BAND.maxPx))}px)`;
 		clearTimeout(timer);
 		timer = setTimeout(settle, RUBBER_BAND.idleMs);
 	};
