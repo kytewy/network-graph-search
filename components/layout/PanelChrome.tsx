@@ -25,14 +25,9 @@ export const PANEL_TAB =
  * panel's edge (or its 40px rail).
  */
 export const PANEL_WIDTH = { left: 'w-96', right: 'w-[26rem]' } as const;
-/**
- * A maximized panel covers the graph, from its own edge to the other panel's (or that panel's
- * 40px rail when it's folded). Written out in full so Tailwind finds them.
- */
-export const WIDE_STOPS_AT = {
-	left: { open: 'right-[26rem]', closed: 'right-10' },
-	right: { open: 'left-96', closed: 'left-10' },
-} as const;
+/** The open widths as lengths, for the panel frame's sliding width (match PANEL_WIDTH) */
+const OPEN_WIDTH = { left: '24rem', right: '26rem' } as const;
+const RAIL_WIDTH = '2.5rem';
 
 type Side = 'left' | 'right';
 
@@ -40,11 +35,22 @@ type Side = 'left' | 'right';
 export const PANEL_MOTION = 'transition-[width] duration-200 ease-out';
 
 /**
- * The space a side panel takes in the row: its width when open, the 40px rail when folded,
- * sliding between the two. A maximized panel floats over the graph from here (WIDE_STOPS_AT).
+ * A side panel's place in the row (its open width, or the 40px rail when folded), and the panel
+ * itself in a frame on top that slides: to that width, or, maximized, over the graph up to the
+ * other panel's edge. The graph never resizes when a panel maximizes; every change slides the same way.
  */
-export function PanelSlot({ open, width, children }: { open: boolean; width: string; children: ReactNode }) {
-	return <div className={`${open ? width : 'w-10'} shrink-0 h-screen overflow-hidden ${PANEL_MOTION}`}>{children}</div>;
+export function PanelSlot({ side, open, wide = false, otherOpen = true, children }: { side: Side; open: boolean; wide?: boolean; otherOpen?: boolean; children: ReactNode }) {
+	const other = otherOpen ? OPEN_WIDTH[side === 'left' ? 'right' : 'left'] : RAIL_WIDTH;
+	const frame = !open ? RAIL_WIDTH : wide ? `calc(100% - ${other})` : OPEN_WIDTH[side];
+	return (
+		<div className={`${open ? PANEL_WIDTH[side] : 'w-10'} shrink-0 h-screen ${PANEL_MOTION}`}>
+			<div
+				className={`absolute inset-y-0 ${side === 'left' ? 'left-0' : 'right-0'} z-20 overflow-hidden transition-[width,box-shadow] duration-200 ease-out ${wide ? 'shadow-xl' : ''}`}
+				style={{ width: frame }}>
+				{children}
+			</div>
+		</div>
+	);
 }
 
 /**

@@ -10,7 +10,7 @@ import FilterPanel from '@/components/filters/FilterPanel';
 import { useAppStore } from '@/lib/stores/app-state';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter } from 'lucide-react';
-import { PANEL_HEADER, PANEL_TAB, PANEL_WIDTH, WIDE_STOPS_AT, PanelMaximizeButton, PanelRail, widenOnDoubleClick } from '@/components/layout/PanelChrome';
+import { PANEL_HEADER, PANEL_TAB, PanelMaximizeButton, PanelRail, widenOnDoubleClick } from '@/components/layout/PanelChrome';
 
 /**
  * SearchPanel - Unified left sidebar for search and filtering
@@ -39,8 +39,6 @@ export function SearchPanel() {
 	const expanded = useAppStore((state) => state.searchPanelExpanded);
 	const setExpanded = useAppStore((state) => state.setSearchPanelExpanded);
 	const collapsed = useAppStore((state) => state.searchPanelCollapsed);
-	// Maximized, it covers the graph up to the chat panel (or its rail)
-	const rightCollapsed = useAppStore((state) => state.rightPanelCollapsed);
 	const setCollapsed = useAppStore((state) => state.setSearchPanelCollapsed);
 
 	useEffect(() => {
@@ -82,7 +80,7 @@ export function SearchPanel() {
 		return (
 			<div
 				data-testid="search-panel"
-				className={`absolute inset-y-0 left-0 ${rightCollapsed ? WIDE_STOPS_AT.left.closed : WIDE_STOPS_AT.left.open} z-20 shadow-xl bg-card border-r border-sidebar-border flex flex-col`}>
+				className="h-screen w-full bg-card border-r border-sidebar-border flex flex-col">
 				<div data-panel-header="left" className={PANEL_HEADER} {...widen}>
 					<span className="flex items-center gap-2 text-sm font-semibold text-primary">
 						<Search className="h-3 w-3" />
@@ -122,7 +120,7 @@ export function SearchPanel() {
 	return (
 		<div
 			data-testid="search-panel"
-			className={`${PANEL_WIDTH.left} shrink-0 bg-card border-r border-sidebar-border flex flex-col h-screen`}>
+			className="w-full bg-card border-r border-sidebar-border flex flex-col h-screen">
 
 			{/* Tabbed Content Area */}
 			<div className="flex-1 overflow-hidden">

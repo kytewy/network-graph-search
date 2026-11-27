@@ -1,6 +1,6 @@
 'use client';
 
-import { PANEL_WIDTH, WIDE_STOPS_AT, PanelMaximizeButton, PanelRail, PanelSlot, widenOnDoubleClick } from '@/components/layout/PanelChrome';
+import { PanelMaximizeButton, PanelRail, PanelSlot, widenOnDoubleClick } from '@/components/layout/PanelChrome';
 import { ColorLegend } from '@/components/network/ColorLegend';
 import { NetworkGraphCanvas } from '@/components/network/NetworkGraphCanvas';
 import { NetworkGraphProvider } from '@/lib/contexts/network-graph-context';
@@ -17,8 +17,8 @@ export function GraphPageClient() {
 	);
 	const rightCollapsed = useAppStore((state) => state.rightPanelCollapsed);
 	const setRightCollapsed = useAppStore((state) => state.setRightPanelCollapsed);
-	// Maximized, the chat covers the graph up to the search panel (or its rail)
 	const leftCollapsed = useAppStore((state) => state.searchPanelCollapsed);
+	const leftWide = useAppStore((state) => state.searchPanelExpanded);
 
 	// The search, filters and graph settings in the web address
 	// (refresh, shared link, Back/Forward)
@@ -29,7 +29,7 @@ export function GraphPageClient() {
 		<NetworkGraphProvider>
 			<div data-page="graph" className="relative flex h-screen overflow-clip bg-background">
 				{/* Search & filters, sliding to its rail when folded */}
-				<PanelSlot open={!leftCollapsed} width={PANEL_WIDTH.left}>
+				<PanelSlot side="left" open={!leftCollapsed} wide={leftWide} otherOpen={!rightCollapsed}>
 					<SearchPanel />
 				</PanelSlot>
 
@@ -42,14 +42,12 @@ export function GraphPageClient() {
 				</div>
 
 				{/* Right Panel, or its thin rail when closed */}
-				<PanelSlot open={!rightCollapsed} width={PANEL_WIDTH.right}>
+				<PanelSlot side="right" open={!rightCollapsed} wide={rightPanelExpanded} otherOpen={!leftCollapsed}>
 				{rightCollapsed ? (
 					<PanelRail side="right" name="analysis" onOpen={() => setRightCollapsed(false)} />
 				) : (
 				<div
-					className={`${
-						rightPanelExpanded ? `absolute inset-y-0 right-0 ${leftCollapsed ? WIDE_STOPS_AT.right.closed : WIDE_STOPS_AT.right.open} z-20 shadow-xl` : `${PANEL_WIDTH.right} shrink-0`
-					} h-screen bg-card border-l border-sidebar-border overflow-clip flex flex-col`}>
+					className="w-full h-screen bg-card border-l border-sidebar-border overflow-clip flex flex-col">
 					{/* Context | Chat | Clusters tabs are the header, like the search panel's */}
 					<ContextManagement
 						rightPanelExpanded={rightPanelExpanded}
