@@ -111,6 +111,8 @@ const FilterPanel = () => {
 	const rounds = useAppStore((s) => s.rounds.length);
 	const selectedSearches = useAppStore((s) => s.selectedSearches);
 	const publishedSet = useAppStore((s) => s.selectedPublished.length > 0);
+	// The timeline needs room: only in the wide panel's filters column
+	const wide = useAppStore((s) => s.searchPanelExpanded);
 
 	if (!isClient) {
 		return (
@@ -184,9 +186,11 @@ const FilterPanel = () => {
 				<SimilarityHistogram />
 			</FilterSection>
 
+			{wide && (
 			<FilterSection icon={CalendarRange} title="Published" about="When each result was published. Drag the handles, tap a bar, or pick a range to keep only those dates.">
 				<PublishedTimeline />
 			</FilterSection>
+			)}
 
 			{/* Geographic Filters Card */}
 			<FilterSection icon={Globe} title="Location" about={`Filter by continent or country (${availableContinents.length} continents, ${filteredResults.length} results)`}>

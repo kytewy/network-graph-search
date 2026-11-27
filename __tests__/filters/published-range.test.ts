@@ -17,11 +17,12 @@ describe('timelineBars', () => {
 		const bars = timelineBars(['2024-01-05', '2024-03-01', '2024-03-20']);
 		expect(bars.map((b) => [b.from, b.count])).toEqual([['2024-01', 1], ['2024-02', 0], ['2024-03', 2]]);
 	});
-	it('uses quarters up to six years, and calendar years beyond', () => {
-		expect(timelineBars(['2020-02-01', '2024-11-01'])[0]).toEqual({ from: '2020-01', to: '2020-03', count: 1 });
-		const years = timelineBars(['2010-05-01', '2024-07-12']);
-		expect(years[0]).toEqual({ from: '2010-01', to: '2010-12', count: 1 });
-		expect(years).toHaveLength(15);
+	it('uses months up to ten years, quarters up to thirty, and calendar years beyond', () => {
+		expect(timelineBars(['2016-02-01', '2024-11-01'])).toHaveLength(106);
+		expect(timelineBars(['2000-02-01', '2024-11-01'])[0]).toEqual({ from: '2000-01', to: '2000-03', count: 1 });
+		const years = timelineBars(['1980-05-01', '2024-07-12']);
+		expect(years[0]).toEqual({ from: '1980-01', to: '1980-12', count: 1 });
+		expect(years).toHaveLength(45);
 	});
 	it('labels months', () => {
 		expect(monthLabel('2024-07')).toBe('Jul 2024');

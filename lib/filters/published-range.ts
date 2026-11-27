@@ -20,12 +20,12 @@ export interface TimelineBar {
 	count: number;
 }
 
-/** Bars from the earliest to the latest date: by month up to 2 years, by quarter up to 6, else by year */
+/** Bars from the earliest to the latest date: by month up to 10 years, by quarter up to 30, else by year */
 export function timelineBars(dates: readonly string[]): TimelineBar[] {
 	if (dates.length === 0) return [];
 	const months = dates.map(toIndex);
 	const span = Math.max(...months) - Math.min(...months) + 1;
-	const step = span <= 24 ? 1 : span <= 72 ? 3 : 12;
+	const step = span <= 120 ? 1 : span <= 360 ? 3 : 12;
 	const first = Math.floor(Math.min(...months) / step) * step;
 	const last = Math.floor(Math.max(...months) / step) * step;
 	const bars: TimelineBar[] = [];
