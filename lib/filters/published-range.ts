@@ -4,6 +4,9 @@
 const toIndex = (month: string) => Number(month.slice(0, 4)) * 12 + Number(month.slice(5, 7)) - 1;
 const toMonth = (index: number) => `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}`;
 
+/** A month as the number Pinecone stores (published_month), e.g. "2024-07" → 202407 */
+export const monthNumber = (month: string) => Number(month.slice(0, 4)) * 100 + Number(month.slice(5, 7));
+
 /** In the range when its month is from..to inclusive; undated documents drop out once a range is set */
 export function inPublishedRange(published: string | undefined, range: readonly string[]): boolean {
 	if (range.length < 2) return true;

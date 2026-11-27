@@ -2,7 +2,7 @@
 
 import { CONTROL, CONTROL_ICON } from '@/components/ui/control';
 import { SearchError } from './SearchError';
-import { FilterDropdowns } from './FilterDropdowns';
+import { SearchScope } from './SearchScope';
 import { RecentSearches } from './RecentSearches';
 import { useRecentSearches } from '@/lib/stores/recent-searches';
 import { useSearch } from '@/hooks/use-search';
@@ -13,15 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useAppStore } from '@/lib/stores/app-state';
 import { SEARCH_CONFIG, SearchConfigHelpers } from '@/lib/config/search-config';
-import { Search, Loader2, X, Plus, Minus, Globe, ChevronDown } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { Search, Loader2, X, Plus, Minus } from 'lucide-react';
 
 /**
  * SearchInput - Main search interface component
@@ -51,13 +43,6 @@ export function SearchInput() {
 	// Adding needs a workspace to add to
 	const canAdd = useAppStore((state) => state.rounds.length > 0);
 
-	// Metadata filter state
-	const selectedContinents = useAppStore((state) => state.selectedContinents);
-	const selectedCountries = useAppStore((state) => state.selectedCountries);
-	const toggleContinent = useAppStore((state) => state.toggleContinent);
-	// The wide search panel has no filters column: its filters sit in this row instead
-	const wide = useAppStore((state) => state.searchPanelExpanded);
-	const clearLocationFilters = useAppStore((state) => state.clearLocationFilters);
 
 	useEffect(() => {
 		setIsClient(true);
@@ -106,16 +91,6 @@ export function SearchInput() {
 		event.currentTarget.parentElement?.querySelector('input')?.focus({ preventScroll: true });
 	};
 
-	// Metadata filter data - Always show these 6 continents for pre-search filtering
-	const continents = [
-		'North America',
-		'Europe',
-		'Asia',
-		'Africa',
-		'South America',
-		'Oceania',
-	];
-	const geoCount = selectedContinents.length + selectedCountries.length;
 
 	return (
 		<div className="relative space-y-2">
@@ -145,64 +120,9 @@ export function SearchInput() {
 				)}
 			</div>
 
-			{/* One row under the box: Geography (and, when wide, the other filters), then how many results, then search */}
+			{/* One row under the box: what to search within, then how many results, then search */}
 			<div className="flex flex-wrap items-center gap-2">
-				{/* Geography Filter */}
-				<Popover>
-					<PopoverTrigger asChild>
-						<Button
-							variant={geoCount > 0 ? 'default' : 'outline'}
-							size="sm"
-							className="h-9 rounded-lg gap-1 text-xs">
-							<Globe className="h-3 w-3" />
-							Geography
-							{geoCount > 0 && (
-								<Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
-									{geoCount}
-								</Badge>
-							)}
-							<ChevronDown className="h-3 w-3 ml-1" />
-						</Button>
-					</PopoverTrigger>
-					<PopoverContent className="w-64 p-3" align="start">
-						<div className="space-y-3">
-							<div className="flex items-center justify-between">
-								<h4 className="font-semibold text-sm">Geography</h4>
-								{geoCount > 0 && (
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={clearLocationFilters}
-										className="h-6 px-2 text-xs">
-										Clear
-									</Button>
-								)}
-							</div>
-							<div className="space-y-1 max-h-64 overflow-y-auto">
-								{continents.map((continent) => (
-									<div 
-										key={continent} 
-										className="flex items-center space-x-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer group"
-										onClick={() => toggleContinent(continent)}
-									>
-										<Checkbox
-											id={`continent-${continent}`}
-											checked={selectedContinents.includes(continent)}
-											onCheckedChange={() => toggleContinent(continent)}
-											className="transition-transform group-hover:scale-110"
-										/>
-										<Label
-											htmlFor={`continent-${continent}`}
-											className="text-sm cursor-pointer flex-1 select-none">
-											{continent}
-										</Label>
-									</div>
-								))}
-							</div>
-						</div>
-					</PopoverContent>
-				</Popover>
-				{wide && <FilterDropdowns />}
+				<SearchScope />
 
 				<div className="ml-auto flex items-center gap-2">
 					<div

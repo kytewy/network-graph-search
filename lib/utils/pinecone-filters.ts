@@ -20,7 +20,7 @@ export type FilterMetadata = Partial<FilterSelections>;
 export function buildPineconeFilter(filters: FilterMetadata | Record<string, unknown>): Record<string, any> | undefined {
 	const groups = activeGroups(cleanSelections(filters as Record<string, unknown>), (f) => f.inPinecone);
 	const conditions = groups.map((group) => {
-		const parts = group.map(({ def, selected }) => ({ [def.pineconeField as string]: { $in: selected } }));
+		const parts = group.map(({ def, selected }) => def.pinecone?.(selected) ?? { [def.pineconeField as string]: { $in: selected } });
 		// Same group (continent or country): either may match
 		return parts.length === 1 ? parts[0] : { $or: parts };
 	});

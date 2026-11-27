@@ -35,13 +35,17 @@ export async function fetchSearch(request: SearchRequest, signal?: AbortSignal):
 	return reply.data;
 }
 
-export const searchQueryKey = (query: string, topK: number) => ['search', query, topK] as const;
+/** What to search within (location, publisher, dates), sent for Pinecone to apply before ranking */
+export type SearchScope = Record<string, string[]>;
+
+export const searchQueryKey = (query: string, topK: number, scope: SearchScope = {}) => ['search', query, topK, scope] as const;
 
 /** One search, answered from memory when the same one ran recently. */
-export function searchOnce(query: string, topK: number): Promise<SearchResponse> {
+export function searchOnce(query: string, topK: number, scope: SearchScope = {}): Promise<SearchResponse> {
+	const filters = Object.keys(scope).length ? scope : undefined;
 	return queryClient.fetchQuery({
-		queryKey: searchQueryKey(query, topK),
-		queryFn: ({ signal }) => fetchSearch({ query, topK }, signal),
+		queryKey: searchQueryKey(query, topK, scope),
+		queryFn: ({ signal }) => fetchSearch({ query, topK, ...(filters && { filters }) }, signal),
 		staleTime: SEARCH_CACHE.FRESH_MS,
 		retry: shouldRetry,
 		retryDelay: RETRY.DELAY_MS,
@@ -49,6 +53,6 @@ export function searchOnce(query: string, topK: number): Promise<SearchResponse>
 }
 
 /** Stop a search that is still running (it is replaced by a newer one). */
-export function cancelSearch(query: string, topK: number) {
-	return queryClient.cancelQueries({ queryKey: searchQueryKey(query, topK) });
+export function cancelSearch(query: string, topK: number, scope: SearchScope = {}) {
+	return queryClient.cancelQueries({ queryKey: searchQueryKey(query, topK, scope) });
 }

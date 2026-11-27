@@ -23,7 +23,7 @@ describe('filter registry', () => {
 	});
 
 	it('marks which filters Pinecone can apply (similarity is per search, so it cannot)', () => {
-		expect(FILTERS.filter((f) => f.inPinecone).map((f) => f.id)).toEqual(['continents', 'countries', 'tags', 'publishers']);
+		expect(FILTERS.filter((f) => f.inPinecone).map((f) => f.id)).toEqual(['continents', 'countries', 'tags', 'publishers', 'published']);
 		expect(buildPineconeFilter({ ...emptySelections(), similarityRanges: ['81-100'] })).toBeUndefined();
 	});
 

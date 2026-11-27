@@ -9,7 +9,7 @@
 import type { Node } from '@/lib/config/types';
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { SEARCH_CONFIG } from '@/lib/config/search-config';
-import { inPublishedRange } from '@/lib/filters/published-range';
+import { inPublishedRange, monthNumber } from '@/lib/filters/published-range';
 import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from '@/lib/stores/country_map';
 
 interface FilterDef {
@@ -24,6 +24,8 @@ interface FilterDef {
 	/** Can Pinecone apply this before searching? Then: the metadata field */
 	inPinecone: boolean;
 	pineconeField?: string;
+	/** Pinecone's condition when it isn't "field is one of the ticked values" */
+	pinecone?: (selected: readonly string[]) => Record<string, unknown>;
 	/** Values a link may contain; anything else is dropped (none = free text) */
 	knownValues?: () => readonly string[];
 	/** false: not kept in the web address (the workspace's searches aren't in it yet) */
@@ -87,13 +89,16 @@ export const FILTERS = [
 		knownValues: () => SEARCH_CONFIG.SIMILARITY_RANGES.map((r) => r.range),
 	},
 	{
-		// A range of months [from, to], YYYY-MM, set on the Published timeline; only the page has the dates
+		// A range of months [from, to], YYYY-MM: on the Published timeline, or to search within
+		// (Pinecone keeps it as a number, published_month, set by scripts/index-dates.mjs)
 		id: 'published',
 		urlKey: 'published',
 		storeKey: 'selectedPublished',
 		group: 'published',
 		matches: (n, s) => inPublishedRange(n.published, s),
-		inPinecone: false,
+		inPinecone: true,
+		pineconeField: 'published_month',
+		pinecone: (s) => ({ published_month: { $gte: monthNumber(s[0]), $lte: monthNumber(s[1] ?? s[0]) } }),
 	},
 	{
 		// Which searches in the workspace found it; "2+" = found by more than one

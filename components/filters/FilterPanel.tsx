@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter, Target, Globe, Tag, Building2, Info, Search, CalendarRange, type LucideIcon } from 'lucide-react';
+import { Filter, Target, Globe, Building2, Info, Search, CalendarRange, type LucideIcon } from 'lucide-react';
 import { SearchesFilter } from './SearchesFilter';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -10,7 +10,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { SimilarityHistogram } from '@/components/filters/SimilarityHistogram';
 import { GeographicFilters } from './GeographicFilters';
 import { PublisherFilters } from './PublisherFilters';
-import { TagFilters } from './TagFilters';
 import { PublishedTimeline } from './PublishedTimeline';
 
 /**
@@ -19,7 +18,6 @@ import { PublishedTimeline } from './PublishedTimeline';
  * Centralizes all filtering functionality:
  * - Similarity filtering (histogram)
  * - Geographic filtering (continents/countries)
- * - Tag filtering
  * - Publisher filtering (who published the document)
  *
  * Manages state and delegates rendering to sub-components
@@ -68,10 +66,7 @@ const FilterPanel = () => {
 		getAvailableContinents,
 		getCountriesByContinent,
 		selectedTags,
-		toggleTag,
 		clearTagFilters,
-		getAvailableTags,
-		getNodeCountByTag,
 		selectedSimilarityRanges,
 		clearSimilarityRanges,
 		selectedPublishers,
@@ -93,10 +88,7 @@ const FilterPanel = () => {
 			getAvailableContinents: state.getAvailableContinents,
 			getCountriesByContinent: state.getCountriesByContinent,
 			selectedTags: state.selectedTags,
-			toggleTag: state.toggleTag,
 			clearTagFilters: state.clearTagFilters,
-			getAvailableTags: state.getAvailableTags,
-			getNodeCountByTag: state.getNodeCountByTag,
 			selectedSimilarityRanges: state.selectedSimilarityRanges,
 			clearSimilarityRanges: state.clearSimilarityRanges,
 			selectedPublishers: state.selectedPublishers,
@@ -149,7 +141,6 @@ const FilterPanel = () => {
 
 	// Derived data
 	const availableContinents = getAvailableContinents();
-	const availableTags = getAvailableTags();
 	const availablePublishers = getAvailablePublishers();
 
 	const totalFiltersActive =
@@ -227,17 +218,6 @@ const FilterPanel = () => {
 				</FilterSection>
 			)}
 
-			{/* Tags Card */}
-			{availableTags.length > 0 && (
-				<FilterSection icon={Tag} title="Tags" about="Filter by document tags or categories.">
-					<TagFilters
-									availableTags={availableTags}
-									selectedTags={selectedTags}
-									toggleTag={toggleTag}
-									getNodeCountByTag={getNodeCountByTag}
-								/>
-				</FilterSection>
-			)}
 		</div>
 	);
 };

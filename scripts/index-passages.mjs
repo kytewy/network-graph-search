@@ -36,7 +36,8 @@ async function main() {
 	const namespace = new Pinecone({ apiKey: PINECONE_API_KEY }).index(PINECONE_INDEX_NAME, PINECONE_INDEX_HOST || undefined).namespace(passagesNamespace());
 	try {
 		const docs = await sql`
-			SELECT id, title, body, url, publisher, document_type AS "documentType", country, continent, source
+			SELECT id, title, body, url, publisher, document_type AS "documentType", country, continent, source,
+				to_char(published_at, 'YYYYMM')::int AS "publishedMonth"
 			FROM documents WHERE body IS NOT NULL AND body <> ''`;
 		let total = 0;
 		let pending = [];

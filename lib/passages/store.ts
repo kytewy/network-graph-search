@@ -16,6 +16,7 @@ export type PassageDoc = {
 	country?: string | null;
 	continent?: string | null;
 	source: string;
+	publishedMonth?: number | null;
 };
 
 /** Pinecone takes at most 96 records per upsert with integrated embedding */

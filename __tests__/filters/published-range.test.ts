@@ -27,3 +27,13 @@ describe('timelineBars', () => {
 		expect(monthLabel('2024-07')).toBe('Jul 2024');
 	});
 });
+
+describe('searching within dates', () => {
+	it('turns a month range into a Pinecone range on published_month', async () => {
+		const { buildPineconeFilter } = await import('@/lib/utils/pinecone-filters');
+		expect(buildPineconeFilter({ published: ['2023-01', '2024-07'] })).toEqual({ published_month: { $gte: 202301, $lte: 202407 } });
+		expect(buildPineconeFilter({ published: ['2023-01', '2024-07'], publishers: ['Regulator'] })).toEqual({
+			$and: [{ publisher: { $in: ['Regulator'] } }, { published_month: { $gte: 202301, $lte: 202407 } }],
+		});
+	});
+});

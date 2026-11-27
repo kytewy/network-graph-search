@@ -1,6 +1,6 @@
 import { debugLog } from '@/lib/utils/debug';
 import { isCancelledError } from '@tanstack/react-query';
-import { cancelSearch, searchOnce } from '@/lib/api/search-client';
+import { cancelSearch, searchOnce, type SearchScope } from '@/lib/api/search-client';
 import { isAbortError } from '@/lib/utils/latest-request';
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { facetNodes, filterNodes } from '@/lib/filters/filter-nodes';
@@ -20,7 +20,10 @@ import { reportError } from '@/lib/observability/capture-client';
 
 // A new search cancels the one still running
 // The search currently on screen (or on its way), so older replies are ignored
-let latestSearch: { query: string; topK: number } | null = null;
+let latestSearch: { query: string; topK: number; scope: SearchScope } | null = null;
+
+/** Only the parts of the scope with something picked */
+const pickedScope = (scope: SearchScope): SearchScope => Object.fromEntries(Object.entries(scope).filter(([, v]) => v.length > 0));
 
 // Search results and filters; view settings and the hover highlight are slices
 interface SearchState {
@@ -72,6 +75,9 @@ interface SearchState {
 	// Tag filtering state
 	selectedTags: string[]; // e.g., ['important', 'regulations']
 	selectedPublishers: string[]; // e.g., ['Law firm', 'Government']
+	/** What the next search looks within, by filter id (continents, publishers, published); empty = everything */
+	searchScope: SearchScope;
+	setSearchScope: (id: 'continents' | 'publishers' | 'published', values: string[]) => void;
 	/** Published between these months, [from, to] as YYYY-MM; empty = any date */
 	selectedPublished: string[];
 	setPublishedRange: (range: string[]) => void;
@@ -152,6 +158,8 @@ export const useAppStore = create<AppState>()(
 		selectedTags: [],
 		selectedPublishers: [],
 		selectedPublished: [],
+		searchScope: {},
+		setSearchScope: (id, values) => set((state) => ({ searchScope: { ...state.searchScope, [id]: values } })),
 
 		// Basic actions
 		setQuery: (query) => set({ query }),
@@ -228,15 +236,16 @@ export const useAppStore = create<AppState>()(
 			state.setQuery(query);
 
 			// A newer search replaces this one: stop the old one and ignore its reply
-			if (latestSearch && (latestSearch.query !== query || latestSearch.topK !== topK)) {
-				cancelSearch(latestSearch.query, latestSearch.topK);
+			const scope = pickedScope(get().searchScope);
+			if (latestSearch && (latestSearch.query !== query || latestSearch.topK !== topK || JSON.stringify(latestSearch.scope) !== JSON.stringify(scope))) {
+				cancelSearch(latestSearch.query, latestSearch.topK, latestSearch.scope);
 			}
-			const thisSearch = { query, topK };
+			const thisSearch = { query, topK, scope };
 			latestSearch = thisSearch;
 
 			try {
 				// Answered from memory when the same search ran in the last few minutes
-				const reply = await searchOnce(query, topK);
+				const reply = await searchOnce(query, topK, scope);
 				if (latestSearch !== thisSearch) return;
 
 				// The route has already turned Pinecone's results into documents
