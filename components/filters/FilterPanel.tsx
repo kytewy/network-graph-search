@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter, Target, Globe, Building2, Info, Search, CalendarRange, type LucideIcon } from 'lucide-react';
+import { Filter, Target, Globe, Building2, Info, Search, CalendarRange, CalendarPlus, type LucideIcon } from 'lucide-react';
 import { SearchesFilter } from './SearchesFilter';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppStore } from '@/lib/stores/app-state';
@@ -10,7 +10,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { SimilarityHistogram } from '@/components/filters/SimilarityHistogram';
 import { GeographicFilters } from './GeographicFilters';
 import { PublisherFilters } from './PublisherFilters';
-import { PublishedTimeline } from './PublishedTimeline';
+import { DateTimeline } from './DateTimeline';
 
 /**
  * FilterPanel - Main coordinator for filtering options
@@ -110,9 +110,7 @@ const FilterPanel = () => {
 	// The workspace's searches (the Searches filter shows once there are two or more)
 	const rounds = useAppStore((s) => s.rounds.length);
 	const selectedSearches = useAppStore((s) => s.selectedSearches);
-	const publishedSet = useAppStore((s) => s.selectedPublished.length > 0);
-	// The timeline needs room: only in the wide panel's filters column
-	const wide = useAppStore((s) => s.searchPanelExpanded);
+	const datesSet = useAppStore((s) => (s.selectedPublished.length > 0 ? 1 : 0) + (s.selectedAdded.length > 0 ? 1 : 0));
 
 	if (!isClient) {
 		return (
@@ -139,6 +137,7 @@ const FilterPanel = () => {
 		clearSimilarityRanges();
 		clearPublisherFilters();
 		useAppStore.getState().setPublishedRange([]);
+		useAppStore.getState().setAddedRange([]);
 	};
 
 	// Derived data
@@ -152,7 +151,7 @@ const FilterPanel = () => {
 		selectedPublishers.length +
 		selectedSimilarityRanges.length +
 		selectedSearches.length +
-		(publishedSet ? 1 : 0);
+		datesSet;
 
 	return (
 		<div className="space-y-3">
@@ -186,11 +185,12 @@ const FilterPanel = () => {
 				<SimilarityHistogram />
 			</FilterSection>
 
-			{wide && (
 			<FilterSection icon={CalendarRange} title="Published" about="When each result was published. Drag the handles, tap a bar, or pick a range to keep only those dates.">
-				<PublishedTimeline />
+				<DateTimeline field="published" />
 			</FilterSection>
-			)}
+			<FilterSection icon={CalendarPlus} title="Added" about="When each result was added to Lantern. Drag the handles, tap a bar, or pick a range.">
+				<DateTimeline field="added" />
+			</FilterSection>
 
 			{/* Geographic Filters Card */}
 			<FilterSection icon={Globe} title="Location" about={`Filter by continent or country (${availableContinents.length} continents, ${filteredResults.length} results)`}>

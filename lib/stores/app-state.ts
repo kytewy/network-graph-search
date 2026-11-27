@@ -81,6 +81,9 @@ interface SearchState {
 	/** Published between these months, [from, to] as YYYY-MM; empty = any date */
 	selectedPublished: string[];
 	setPublishedRange: (range: string[]) => void;
+	/** Added between these dates, [from, to]; empty = any */
+	selectedAdded: string[];
+	setAddedRange: (range: string[]) => void;
 
 	// Location filtering actions
 	toggleContinent: (continent: string) => void; // Smart toggle: selects continent, deselects its individual countries
@@ -158,6 +161,7 @@ export const useAppStore = create<AppState>()(
 		selectedTags: [],
 		selectedPublishers: [],
 		selectedPublished: [],
+		selectedAdded: [],
 		searchScope: {},
 		setSearchScope: (id, values) => set((state) => ({ searchScope: { ...state.searchScope, [id]: values } })),
 
@@ -422,6 +426,11 @@ export const useAppStore = create<AppState>()(
 
 		setPublishedRange: (range) => {
 			set({ selectedPublished: range });
+			get().applyFilters();
+		},
+
+		setAddedRange: (range) => {
+			set({ selectedAdded: range });
 			get().applyFilters();
 		},
 

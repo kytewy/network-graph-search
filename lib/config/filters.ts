@@ -9,7 +9,7 @@
 import type { Node } from '@/lib/config/types';
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
 import { SEARCH_CONFIG } from '@/lib/config/search-config';
-import { inPublishedRange, monthNumber } from '@/lib/filters/published-range';
+import { inDateRange, monthNumber } from '@/lib/filters/date-range';
 import { CONTINENT_COUNTRY_MAP, COUNTRY_CONTINENT_MAP } from '@/lib/stores/country_map';
 
 interface FilterDef {
@@ -95,10 +95,19 @@ export const FILTERS = [
 		urlKey: 'published',
 		storeKey: 'selectedPublished',
 		group: 'published',
-		matches: (n, s) => inPublishedRange(n.published, s),
+		matches: (n, s) => inDateRange(n.published, s),
 		inPinecone: true,
 		pineconeField: 'published_month',
 		pinecone: (s) => ({ published_month: { $gte: monthNumber(s[0]), $lte: monthNumber(s[1] ?? s[0]) } }),
+	},
+	{
+		// When it was added to Lantern, [from, to] as YYYY-MM-DD or YYYY-MM; only the page has the dates
+		id: 'added',
+		urlKey: 'added',
+		storeKey: 'selectedAdded',
+		group: 'added',
+		matches: (n, s) => inDateRange(n.added, s),
+		inPinecone: false,
 	},
 	{
 		// Which searches in the workspace found it; "2+" = found by more than one

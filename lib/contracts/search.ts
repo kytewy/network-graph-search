@@ -67,6 +67,8 @@ export const apiNodeSchema = z.object({
 	matches: z.number().optional(),
 	/** When it was published, YYYY-MM-DD (from Postgres; missing when undated) */
 	published: z.string().optional(),
+	/** When it was added to Lantern, YYYY-MM-DD */
+	added: z.string().optional(),
 });
 
 /** A link between two documents in the results. */

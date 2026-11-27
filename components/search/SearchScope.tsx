@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CONTROL } from '@/components/ui/control';
 import { PUBLISHERS } from '@/lib/config/document-taxonomy';
-import { monthLabel } from '@/lib/filters/published-range';
+import { periodLabel } from '@/lib/filters/date-range';
 import { useAppStore } from '@/lib/stores/app-state';
 
 const CONTINENTS = ['North America', 'Europe', 'Asia', 'Africa', 'South America', 'Oceania'];
@@ -79,7 +79,7 @@ export function SearchScope() {
 	const publishers = scope.publishers ?? [];
 	const [from = '', to = ''] = scope.published ?? [];
 	const setDates = (a: string, b: string) => setScope('published', a || b ? [a || '1900-01', b || '2100-12'] : []);
-	const datesLabel = from || to ? `${from && from !== '1900-01' ? monthLabel(from) : 'Any'} – ${to && to !== '2100-12' ? monthLabel(to) : 'now'}` : '';
+	const datesLabel = from || to ? `${from && from !== '1900-01' ? periodLabel(from) : 'Any'} – ${to && to !== '2100-12' ? periodLabel(to) : 'now'}` : '';
 
 	return (
 		<div className="flex flex-wrap items-center gap-2" role="group" aria-label="Search within">

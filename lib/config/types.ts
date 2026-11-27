@@ -31,6 +31,8 @@ export interface Node {
   matches?: number;
   /** When it was published, YYYY-MM-DD (missing when undated) */
   published?: string;
+  /** When it was added to Lantern, YYYY-MM-DD */
+  added?: string;
   /** Which searches in the workspace found it (#1, #2, …), set when results merge */
   foundBy?: number[];
   
