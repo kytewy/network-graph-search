@@ -35,8 +35,12 @@ export function ChatSwitcher({ onSwitch }: { onSwitch: () => void }) {
 	// The open chat always has a tab, even if it was closed before
 	const tabs = chats.filter((c) => c.id === active.id || !closed.includes(c.id));
 
-	useEffect(() => setClosed(readClosed()), []);
-	useEffect(() => activeRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' }), [active.id]);
+	useEffect(() => {
+		setClosed(readClosed());
+	}, []);
+	useEffect(() => {
+		activeRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+	}, [active.id]);
 
 	const saveClosed = (next: string[]) => {
 		setClosed(next);
