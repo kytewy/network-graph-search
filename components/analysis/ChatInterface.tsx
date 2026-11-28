@@ -14,6 +14,8 @@ import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 import { matchPrompts, recentPrompts, useSavedPrompts, type SavedPrompt } from '@/lib/stores/saved-prompts';
 import { SavedPromptsDialog } from './SavedPromptsDialog';
 import { ReceiptDialog } from './ReceiptDialog';
+import type { ReceiptSection } from '@/lib/chat/receipt';
+import type { PassageMatch } from '@/lib/contracts/search';
 import DocumentOverlay, { nodeToReadingItem } from '@/components/network/DocumentOverlay';
 import { CoverageLink } from './CoverageLink';
 import { ChatSwitcher } from './ChatSwitcher';
@@ -59,6 +61,15 @@ const FAILED = 'Sorry, something went wrong while analysing the documents. Try a
  * app (newest at the bottom, box underneath); follow-ups remember the last
  * few turns, and Stop really cancels.
  */
+/**
+ * The receipt's sections as reading view's matches, the clicked one first (reading view starts at the first).
+ * The receipt keeps only a section's first words; padding to its length lets reading view light all of it.
+ */
+function sectionsAsPassages(sections: ReceiptSection[], index: number): PassageMatch[] {
+	const ordered = [sections[index], ...sections.filter((_, i) => i !== index)];
+	return ordered.map((s) => ({ position: s.position, heading: s.heading, start: s.start, text: s.text.padEnd(s.chars), score: s.score ?? 0 }));
+}
+
 export default function ChatInterface({ rightPanelExpanded, contextSummary, documents }: ChatInterfaceProps) {
 	// The documents strip: "12 documents ▾" opens this chat's list in place
 	const [docsOpen, setDocsOpen] = useState(false);
@@ -70,7 +81,8 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 	// The answer whose receipt ("What was sent") is open
 	const [receiptId, setReceiptId] = useState<string | null>(null);
 	// A document opened in reading mode from the receipt, and the receipt to return to
-	const [reading, setReading] = useState<{ docId: string; receiptId: string | null } | null>(null);
+	// `at`: the receipt's sections for it, the one clicked first, so reading view opens there
+	const [reading, setReading] = useState<{ docId: string; receiptId: string | null; at?: { sections: ReceiptSection[]; index: number } } | null>(null);
 	const chatDocs = useContextStore((s) => s.contextNodes);
 	const readingNode = reading
 		? (useAppStore.getState().searchResults.find((n) => n.id === reading.docId) ?? chatDocs.find((n) => n.id === reading.docId) ?? null)
@@ -517,15 +529,15 @@ export default function ChatInterface({ rightPanelExpanded, contextSummary, docu
 				receipt={conversations.find((c) => c.id === receiptId)?.receipt ?? null}
 				answer={conversations.find((c) => c.id === receiptId)?.response ?? ''}
 				onClose={() => setReceiptId(null)}
-				onOpenDocument={(docId) => {
+				onOpenDocument={(docId, at) => {
 					// The receipt steps aside for reading mode, and comes back when it closes
-					setReading({ docId, receiptId });
+					setReading({ docId, receiptId, at });
 					setReceiptId(null);
 				}}
 			/>
 			{readingNode && (
 				<DocumentOverlay
-					document={nodeToReadingItem(readingNode)}
+					document={{ ...nodeToReadingItem(readingNode), ...(reading?.at && { passages: sectionsAsPassages(reading.at.sections, reading.at.index), matches: reading.at.sections.length }) }}
 					onClose={() => {
 						setReceiptId(reading!.receiptId);
 						setReading(null);

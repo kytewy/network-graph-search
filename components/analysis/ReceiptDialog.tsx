@@ -1,20 +1,20 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { Check, Search, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { coverage } from '@/lib/chat/coverage';
 import { BUDGET_CHARS } from '@/lib/chat/read-document';
 import { useState } from 'react';
-import { READ_LABELS, cutCount, readKind, seenShare, sentDetail, type Receipt, type SentDocument } from '@/lib/chat/receipt';
+import { READ_LABELS, cutCount, readKind, seenShare, sentDetail, type Receipt, type ReceiptSection, type SentDocument } from '@/lib/chat/receipt';
 
 interface ReceiptDialogProps {
 	receipt: Receipt | null;
 	/** The answer, to mark which documents it cites */
 	answer: string;
 	onClose: () => void;
-	/** Opens a document in reading mode (the receipt comes back when it closes) */
-	onOpenDocument?: (id: string) => void;
+	/** Opens a document in reading mode (the receipt comes back when it closes), at one of its sections if given */
+	onOpenDocument?: (id: string, at?: { sections: ReceiptSection[]; index: number }) => void;
 }
 
 const n = (x: number) => x.toLocaleString('en-US');
@@ -88,6 +88,9 @@ export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: Rece
 									<ReadBadge d={d} />
 									<SentMeter d={d} />
 									<span className="text-right text-xs tabular-nums text-muted-foreground">{n(lengthOf(d))}</span>
+									{d.sections && d.sections.length > 0 && (
+										<SectionList sections={d.sections} onOpen={(index) => onOpenDocument?.(d.id, { sections: d.sections!, index })} />
+									)}
 								</li>
 							))}
 						</ul>
@@ -124,8 +127,35 @@ export function ReceiptDialog({ receipt, answer, onClose, onOpenDocument }: Rece
 
 const BADGE = { full: 'bg-lit-soft text-lit-foreground', partly: 'bg-lit-soft/50 text-lit-foreground', summary: 'text-muted-foreground' };
 
-/** The kind of reading: In full, Partly or Summary */
+/**
+ * The sections sent for one document (P3), under its title: a magnifier for the search's best match,
+ * a sparkle for each one the AI asked for, with its reason. Clicking one opens reading view there.
+ */
+function SectionList({ sections, onOpen }: { sections: ReceiptSection[]; onOpen: (index: number) => void }) {
+	return (
+		<ol className="col-span-4 col-start-2 space-y-0.5 pb-1 text-xs" aria-label="Sections sent">
+			{sections.map((s, i) => {
+				const Icon = s.by === 'ai' ? Sparkles : Search;
+				return (
+					<li key={s.position} className="flex min-w-0 items-baseline gap-1.5">
+						<Icon aria-label={s.by === 'ai' ? 'Asked for by the AI' : 'Best match from the search'} className="h-3 w-3 shrink-0 translate-y-0.5 text-muted-foreground" />
+						<button type="button" onClick={() => onOpen(i)} title="Open in reading view at this section" className="max-w-[45%] shrink-0 truncate text-left hover:text-primary hover:underline">
+							{s.heading ?? `${s.text.split(/\s+/).slice(0, 6).join(' ')}…`}
+						</button>
+						<span className="min-w-0 truncate text-muted-foreground">{s.by === 'ai' ? s.why ?? 'Asked for by the AI' : 'Best match'}</span>
+					</li>
+				);
+			})}
+		</ol>
+	);
+}
+
+/** The kind of reading: In full, Partly or Summary; for key sections, how many */
 function ReadBadge({ d }: { d: SentDocument }) {
+	if (d.sections?.length && !d.readOnRequest) {
+		const k = d.sections.length;
+		return <span className="w-fit rounded-md bg-primary-soft px-1.5 text-[11px] text-primary" title={sentDetail(d)}>{k} section{k === 1 ? '' : 's'}</span>;
+	}
 	const kind = readKind(d);
 	return <span className={`w-fit rounded-md px-1.5 text-[11px] ${BADGE[kind]}`} title={sentDetail(d)}>{READ_LABELS[kind]}</span>;
 }

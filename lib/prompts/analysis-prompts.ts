@@ -25,6 +25,8 @@ export interface AnalyzeNodesParams {
 	}>;
 	customPrompt?: string;
 	charLimitPerDoc?: number;
+	/** Per document id, its key section (P3), sent in place of the opening */
+	keySections?: ReadonlyMap<string, { label: string; text: string }>;
 }
 
 export interface ClusterNamingParams {
@@ -88,10 +90,16 @@ export const PROMPT_CONFIG = {
  */
 export function formatNodesForPrompt(
 	nodes: AnalyzeNodesParams['nodes'],
-	charLimit: number = PROMPT_CONFIG.CHAR_LIMIT_GENERAL_ANALYSIS
+	charLimit: number = PROMPT_CONFIG.CHAR_LIMIT_GENERAL_ANALYSIS,
+	/** Per document id, its key section (P3), sent in place of the opening */
+	keySections?: ReadonlyMap<string, { label: string; text: string }>
 ): string {
 	return nodes
 		.map((node) => {
+			const key = keySections?.get(String(node.id));
+			if (key) return `**[${node.name || node.id}]**
+Best matching section: ${key.label}
+${key.text}`;
 			const text = node.text || node.content || node.summary || node.name || '';
 			const metadata = [
 				node.publisher && `Publisher: ${node.publisher}`,
@@ -139,8 +147,8 @@ export const CITE_RULE =
 	'**Important:** When making claims or observations, cite the relevant document(s) using their actual titles in brackets, e.g., [Article 76: Supervision Testing in Real World Conditions by Market Surveillance Authorities].';
 
 export function buildAnalyzeNodesPrompt(params: AnalyzeNodesParams): string {
-	const { nodes, customPrompt, charLimitPerDoc } = params;
-	const nodeTexts = formatNodesForPrompt(nodes, charLimitPerDoc);
+	const { nodes, customPrompt, charLimitPerDoc, keySections } = params;
+	const nodeTexts = formatNodesForPrompt(nodes, charLimitPerDoc, keySections);
 
 	// Default structured prompt if no custom prompt provided
 	const defaultPrompt = `Analyze these ${nodes.length} documents from a network graph. Identify patterns, themes, and relationships between them. Pay attention to any metadata provided (type, country, source).

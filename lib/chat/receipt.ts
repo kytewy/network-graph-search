@@ -9,6 +9,20 @@ import { PROMPT_CONFIG } from '@/lib/prompts/analysis-prompts';
 /** How a document's words reached the AI */
 export type SentAs = 'summary' | 'text' | 'title';
 
+/** One section sent (P3): picked by the search as the best match, or asked for by the AI with its reason */
+export interface ReceiptSection {
+	position: number;
+	heading: string | null;
+	/** Where it starts in the document's text, and its first words (enough to light it in reading view) */
+	start: number;
+	text: string;
+	/** Characters of it sent */
+	chars: number;
+	score?: number;
+	by: 'search' | 'ai';
+	why?: string;
+}
+
 export interface SentDocument {
 	id: string;
 	title: string;
@@ -21,6 +35,8 @@ export interface SentDocument {
 	length: number;
 	/** The AI asked for this document's full text (read_document) */
 	readOnRequest?: boolean;
+	/** The sections sent instead of the opening, in the order they were picked */
+	sections?: ReceiptSection[];
 }
 
 export interface Receipt {
@@ -66,6 +82,8 @@ export function buildReceipt(input: {
 	read?: ReadonlyMap<string, number>;
 	readsRefused?: number;
 	readRounds?: number;
+	/** Sections sent per document (P3): id → sections */
+	sections?: ReadonlyMap<string, ReceiptSection[]>;
 }): Receipt {
 	const chars = input.messages.reduce((n, m) => n + m.content.length, 0);
 	return {
@@ -74,7 +92,12 @@ export function buildReceipt(input: {
 		tokens: Math.ceil(chars / 4),
 		charLimit: PROMPT_CONFIG.CHAR_LIMIT_GENERAL_ANALYSIS,
 		documents: input.nodes.map((node) => {
-			const d = sentDocument(node);
+			const base = sentDocument(node);
+			const sections = input.sections?.get(base.id);
+			// Sections replace the opening: what was sent is their characters, out of the whole document
+			const d = sections?.length
+				? { ...base, sentAs: 'text' as const, sent: sections.reduce((n, s) => n + s.chars, 0), total: base.length, sections }
+				: base;
 			const chars = input.read?.get(d.id);
 			return chars === undefined ? d : { ...d, sentAs: 'text' as const, sent: Math.max(chars, d.sent), total: Math.max(chars, d.total), readOnRequest: true };
 		}),
