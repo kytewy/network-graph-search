@@ -9,7 +9,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader } from '@/components/ui/card';
-import { X, Tag, Plus, Check } from 'lucide-react';
+import { X, Tag, Plus, Check, Search, Sparkles } from 'lucide-react';
 import { Z_INDEX } from '@/lib/config/graph-config';
 import { Node } from '@/lib/config/types';
 import { reportError } from '@/lib/observability/capture-client';
@@ -71,19 +71,30 @@ const ContentParagraphs = React.memo(({ content }: { content: string }) => {
 	);
 });
 
-/** The article with its matching passages lit: the one picked strongly, the others faintly */
+/**
+ * The article with its matching passages lit: the one picked strongly, the others faintly. A passage's
+ * paragraphs share one tinted block, so a section reads as one piece instead of separate boxes.
+ */
 function PassageText({ text, passages, active }: { text: string; passages: PassageMatch[]; active: number }) {
-	const paragraphs = useMemo(() => paragraphsOf(text), [text]);
+	const runs = useMemo(() => {
+		const out: { hit: number; paras: string[] }[] = [];
+		for (const p of paragraphsOf(text)) {
+			if (!p.text.trim()) continue;
+			const hit = passages.findIndex((m) => inPassage(p, m));
+			const last = out.at(-1);
+			if (last && last.hit === hit) last.paras.push(p.text);
+			else out.push({ hit, paras: [p.text] });
+		}
+		return out;
+	}, [text, passages]);
 	return (
 		<div className="max-w-none space-y-3 text-sm leading-relaxed">
-			{paragraphs.map((p, i) => {
-				if (!p.text.trim()) return null;
-				const hit = passages.findIndex((m) => inPassage(p, m));
-				const lit = hit === active ? 'rounded-md bg-lit-soft px-3 py-1.5 text-foreground shadow-[inset_3px_0_0_var(--lit)]' : hit >= 0 ? 'rounded-md bg-lit-soft/40 px-3 py-1' : 'text-muted-foreground';
+			{runs.map((run, i) => {
+				const lit = run.hit === active ? 'rounded-md bg-lit-soft px-3 py-2 text-foreground shadow-[inset_3px_0_0_var(--lit)]' : run.hit >= 0 ? 'rounded-md bg-lit-soft/40 px-3 py-2' : 'text-muted-foreground';
 				return (
-					<p key={i} data-passage={hit >= 0 ? hit : undefined} className={lit}>
-						{p.text}
-					</p>
+					<div key={i} data-passage={run.hit >= 0 ? run.hit : undefined} className={`space-y-2 ${lit}`}>
+						{run.paras.map((t, j) => <p key={j}>{t}</p>)}
+					</div>
 				);
 			})}
 		</div>
@@ -110,6 +121,7 @@ export default function DocumentOverlay({
 
 	// Matches from the search: the full text comes from the database, so every passage can be shown
 	const passages = documentItem.passages ?? [];
+	const fromChat = passages.some((m) => m.by);
 	const [active, setActive] = useState(0);
 	const [fullText, setFullText] = useState<string | null>(null);
 	const scrollRef = useRef<HTMLDivElement>(null);
@@ -376,13 +388,20 @@ export default function DocumentOverlay({
 					<aside aria-label="Key sections" className="w-64 shrink-0 space-y-2 overflow-y-auto border-l border-border bg-muted/40 p-3">
 						{passages.map((m, i) => (
 							<div key={m.position}>
-								{i === 0 && <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-lit-foreground">Start here</p>}
-								{i === 1 && <p className="mb-1 mt-3 text-xs text-muted-foreground">Also relevant</p>}
+								{/* From a chat receipt: the sections sent to the AI; from a search: where to start */}
+								{i === 0 && <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-lit-foreground">{fromChat ? 'Sent to the AI' : 'Start here'}</p>}
+								{i === 1 && !fromChat && <p className="mb-1 mt-3 text-xs text-muted-foreground">Also relevant</p>}
 								<button type="button" onClick={() => setActive(i)} aria-pressed={i === active}
 									className={`w-full rounded-lg border px-2.5 py-2 text-left text-xs ${i === active ? 'border-lit bg-lit-soft' : 'border-border bg-card hover:border-lit/60'}`}>
 									<span className="block font-medium text-foreground">{matchLabel(m)}</span>
+									{m.by && (
+										<span className="mt-0.5 flex items-start gap-1 text-muted-foreground">
+											{m.by === 'ai' ? <Sparkles aria-label="Asked for by the AI" className="mt-0.5 h-3 w-3 shrink-0" /> : <Search aria-label="Best match from the search" className="mt-0.5 h-3 w-3 shrink-0" />}
+											<span>{m.by === 'ai' ? m.why ?? 'Asked for by the AI' : 'Best match'}</span>
+										</span>
+									)}
 									{/* line-clamp sets its own display, so no "block" here */}
-									<span className="mt-0.5 line-clamp-2 text-muted-foreground">{m.text}</span>
+									<span className={`mt-0.5 text-muted-foreground ${m.by ? 'line-clamp-1' : 'line-clamp-2'}`}>{m.text.trim()}</span>
 								</button>
 							</div>
 						))}

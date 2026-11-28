@@ -67,7 +67,7 @@ const FAILED = 'Sorry, something went wrong while analysing the documents. Try a
  */
 function sectionsAsPassages(sections: ReceiptSection[], index: number): PassageMatch[] {
 	const ordered = [sections[index], ...sections.filter((_, i) => i !== index)];
-	return ordered.map((s) => ({ position: s.position, heading: s.heading, start: s.start, text: s.text.padEnd(s.chars), score: s.score ?? 0 }));
+	return ordered.map((s) => ({ position: s.position, heading: s.heading, start: s.start, text: s.text.padEnd(s.chars), score: s.score ?? 0, by: s.by, why: s.why }));
 }
 
 export default function ChatInterface({ rightPanelExpanded, contextSummary, documents }: ChatInterfaceProps) {

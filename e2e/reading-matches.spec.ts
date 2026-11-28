@@ -27,7 +27,7 @@ test('reading mode points to where to start, lists the key sections and lights t
 	await expect(matches).toContainText('Start here');
 	await expect(matches).toContainText('Also relevant');
 	await expect(matches.getByRole('button', { name: /Model Inventory/ })).toHaveAttribute('aria-pressed', 'true');
-	await expect(page.locator('[data-passage="0"]').first()).toHaveText('Model Inventory');
+	await expect(page.locator('[data-passage="0"]').first()).toContainText('Model Inventory');
 
 	await matches.getByRole('button', { name: /Model Review/ }).click();
 	await expect(matches.getByRole('button', { name: /Model Review/ })).toHaveAttribute('aria-pressed', 'true');

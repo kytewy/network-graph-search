@@ -45,6 +45,9 @@ export const passageMatchSchema = z.object({
 	start: z.number(),
 	text: z.string(),
 	score: z.number(),
+	/** Opened from a chat receipt (P3): who picked it for the AI, and the AI's reason */
+	by: z.enum(['search', 'ai']).optional(),
+	why: z.string().optional(),
 });
 
 /** One document as the search route sends it. */
